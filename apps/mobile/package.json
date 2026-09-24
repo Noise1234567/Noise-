@@ -1,0 +1,28 @@
+{
+  "name": "@noise/mobile",
+  "version": "0.1.0",
+  "main": "index.ts",
+  "dependencies": {
+    "expo": "~57.0.25",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-native": "0.86.3",
+    "@noise/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "typecheck": "tsc --noEmit",
+    "test": "node -e \"console.log('Tests mobiles : mis en place dans NOISE-008 (jest-expo + RN Testing Library)')\"",
+    "doctor": "expo-doctor",
+    "build:dev": "eas build --profile development --platform android",
+    "build:preview": "eas build --profile preview --platform android",
+    "build:production": "eas build --profile production --platform android"
+  },
+  "private": true,
+  "description": "App mobile Noise (Expo / React Native) — vues participant et organisateur"
+}

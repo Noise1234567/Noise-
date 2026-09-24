@@ -1,0 +1,6 @@
+Sprint,Début,Fin,Milestone,Objectif,Statut
+S1,2026-09-24,2026-09-30,M0,"Fondations, auth de bout en bout, premier APK, choix du fournisseur de paiement",En cours
+S2,2026-10-01,2026-10-07,M1,"Événements (API + deux vues mobiles), staging, abstraction paiement",À venir
+S3,2026-10-08,2026-10-14,M2,"Commandes, paiement, billets, QR hors ligne, E2E sandbox",À venir
+S4,2026-10-15,2026-10-21,M3,"Scanner, stats, push, annulation, sécurité, release v0.1.0, AAB",À venir
+S5,2026-10-22,2026-10-28,M4,"Paiement production (si KYC), production, test terrain",À venir

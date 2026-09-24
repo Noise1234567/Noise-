@@ -1,0 +1,7 @@
+ID,Nom,Sprint,Date prévue,Objectif,Critères de sortie,Statut
+M0,Fondations et pilotage,S1,2026-09-30,"Socle validé, décisions tranchées, auth de bout en bout sur appareil, fournisseur de paiement choisi",NOISE-003 mergée ; un utilisateur s'inscrit et se connecte depuis l'APK de développement ; DEC-005 complétée,En cours
+M1,Événements,S2,2026-10-07,"Un organisateur crée un événement, un participant le consulte ; staging en ligne",Parcours création → consultation vérifié sur staging depuis l'APK preview,À venir
+M2,Achat de billet,S3,2026-10-14,Achat → paiement sandbox → billet → QR hors ligne,NOISE-023 validée avec preuves,À venir
+M3,"Contrôle, statistiques et release v0.1.0",S4,2026-10-21,Cycle complet achat → paiement → QR → scan sur APK (objectif technique du CDC),NOISE-032 validée ; tag v0.1.0,À venir
+M4,Production et pilotes,S5,2026-10-28 (dépend du KYC),"Paiement réel, production, 2–3 organisateurs pilotes",NOISE-036 : bilan du test terrain,À venir
+M5,Google Play,Post-MVP,Après M4 + 14 jours minimum,Application publiée sur Google Play,Accès production Google Play obtenu,À venir

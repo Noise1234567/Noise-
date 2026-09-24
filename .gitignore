@@ -1,0 +1,42 @@
+# Dépendances
+node_modules/
+
+# Builds
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Secrets et environnements — ne JAMAIS commiter
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+*.p8
+*.p12
+*.key
+*.pem
+google-services.json
+credentials.json
+
+# Expo / React Native
+.expo/
+web-build/
+expo-env.d.ts
+apps/mobile/android/
+apps/mobile/ios/
+.metro-health-check*
+*.apk
+*.aab
+
+# Prisma client généré
+apps/api/src/generated/
+
+# Divers
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/*
+!.vscode/extensions.json

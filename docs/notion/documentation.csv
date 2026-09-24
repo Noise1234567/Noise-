@@ -1,0 +1,15 @@
+Document,Chemin dans le repo,Domaine,Responsable,Statut
+CLAUDE.md,CLAUDE.md,Règles,Commun,En vigueur
+Roadmap,roadmap.md,Pilotage,Commun,En vigueur
+Progress,progress.md,Pilotage,Commun,En vigueur
+Décisions,decisions.md,Pilotage,Commun,En vigueur
+Architecture,docs/architecture.md,Architecture,Commun,Rédigé (cible)
+API,docs/api.md,Backend,Commun,Rédigé (cible)
+Base de données,docs/database.md,Backend,Commun,Rédigé (cible)
+Sécurité,docs/security.md,Sécurité,Commun,En vigueur
+Paiements,docs/payments.md,Paiement,Commun,Rédigé (cible)
+QR et scanner,docs/qr-scanner.md,Scanner,Commun,Rédigé (cible)
+Tests,docs/testing.md,Qualité,Commun,En vigueur
+Environnements,docs/environments.md,DevOps,Commun,Rédigé (cible)
+Android,docs/android-release.md,Android,Commun,Rédigé (cible)
+Git,docs/git-workflow.md,Process,Commun,En vigueur

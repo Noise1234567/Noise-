@@ -1,0 +1,3 @@
+Titre,Description,Impact,Effort,Priorité,Responsable,Statut,Origine (PR/tâche),Échéance
+Tests mobiles non configurés,Le script test du mobile est un simple message ; jest-expo à installer,Aucun test UI possible,Faible,P1,Orias,Planifiée,NOISE-000,NOISE-008
+Génération Prisma absente de la CI,db:generate et db:deploy à ajouter avec les premiers modèles,Pas de vérification du schéma en CI,Faible,P1,Commun,Planifiée,NOISE-000,NOISE-006
