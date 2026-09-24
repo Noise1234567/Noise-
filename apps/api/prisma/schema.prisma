@@ -1,0 +1,12 @@
+// Schéma Prisma de Noise.
+// Les modèles métier (User, Event, TicketType, Order, Payment, Ticket, ScannerLink, ScanLog)
+// sont conçus dans NOISE-006 à partir de docs/database.md. Ne pas les ajouter hors de cette tâche.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}

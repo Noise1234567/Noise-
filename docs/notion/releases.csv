@@ -1,0 +1,3 @@
+Version,Statut,Date prévue,Environnement,Build,versionCode,Fonctionnalités,Bugs corrigés,Validation,Changelog
+v0.1.0,Planifiée,2026-10-21,Staging,APK preview,1,Cycle complet achat → paiement sandbox → QR → scan,—,Checklist docs/testing.md section 4 + NOISE-032,CHANGELOG.md
+v0.2.0,Planifiée,Après KYC,Production,APK preview (prod),,"Paiement réel, admin minimale, export ventes",,NOISE-034 à NOISE-036,

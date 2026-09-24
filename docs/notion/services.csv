@@ -1,0 +1,12 @@
+Service,Usage,Propriétaire du compte,Environnements,Emplacement des secrets (jamais la valeur),Coût,Statut,Tâche
+GitHub,"Code, CI, protection de branche",Yannis,Tous,GitHub Secrets,Gratuit,Actif,NOISE-005
+FedaPay,Paiement (candidat),À décider (DEC-016),"Staging (sandbox), production",Railway,Frais par transaction,À créer,NOISE-002
+KKiaPay,Paiement (candidat),À décider (DEC-016),"Staging (sandbox), production",Railway,Frais par transaction,À créer,NOISE-002
+Railway,API + Postgres staging/production,À décider,"Staging, production",Railway (variables),~5–20 $/mois,À créer,NOISE-016
+Expo / EAS,"Builds Android, keystore",À décider,Tous,EAS credentials,Gratuit (file d'attente),À créer,NOISE-009
+Cloudinary,Affiches,À décider,Tous,Railway / .env local,Gratuit (quota),À créer,NOISE-012
+Firebase (FCM),Notifications push,À décider,"Staging, production",EAS / Railway,Gratuit,À créer,NOISE-028
+Sentry,Erreurs API et mobile,À décider,"Staging, production",Railway / EAS,Gratuit (quota),À créer,NOISE-030
+UptimeRobot,Disponibilité,À décider,"Staging, production",—,Gratuit,À créer,NOISE-030
+Google Play Console,Publication,À décider,Production,—,25 $ une fois,Post-MVP,NOISE-038
+Notion,Pilotage,Orias,—,—,Gratuit,À connecter,NOISE-004

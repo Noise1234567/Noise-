@@ -1,0 +1,5 @@
+# Chaque PR doit être relue par l'autre développeur (règle de protection de main).
+# À activer dans NOISE-005 : décommenter et remplacer ORIAS_GITHUB par l'identifiant GitHub réel.
+# *                  @YannisYenoussi @ORIAS_GITHUB
+# /apps/api/prisma/  @YannisYenoussi @ORIAS_GITHUB
+# /packages/shared/  @YannisYenoussi @ORIAS_GITHUB

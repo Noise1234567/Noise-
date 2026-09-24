@@ -1,0 +1,22 @@
+{
+  "name": "@noise/scanner",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Scanner web staff (HTML/TS + caméra), servi par l'API en staging/production",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@noise/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.3",
+    "vite": "^8.3.1",
+    "vitest": "^5.0.1"
+  }
+}

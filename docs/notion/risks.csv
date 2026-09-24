@@ -1,0 +1,12 @@
+Risque,Probabilité (1-3),Impact (1-3),Mitigation,Responsable,Statut,Tâches liées
+Accès sandbox paiement lent ou documentation insuffisante,2,3,Comptes créés dès S1 ; spike NOISE-010 ; FakeProvider pour ne pas bloquer le développement,Yannis,Ouvert,"NOISE-002, NOISE-010, NOISE-017"
+KYC / passage en production du paiement plus long que 4 semaines,3,3,"Démarche lancée S1 ; test terrain conditionné au KYC, pas au code",Commun,Ouvert,"NOISE-002, NOISE-034"
+Survente ou double confirmation de paiement,2,3,"Réservation de stock (DEC-007), idempotence, tests de concurrence",Orias,Ouvert,"NOISE-018, NOISE-019"
+"Double scan, QR falsifié, billet annulé accepté",2,3,"Scan atomique, HMAC, tests par cas",Yannis,Ouvert,"NOISE-020, NOISE-025"
+Réseau faible sur le lieu de l'événement,2,2,"Scanner léger, message clair, test réel en S4 ; mode hors ligne post-MVP",Yannis,Ouvert,"NOISE-026, NOISE-032"
+Chaîne de build Android découverte trop tard,1,3,Premier APK de développement en S1,Orias,Ouvert,NOISE-009
+Friction du sideloading,2,2,"Guide illustré, test sur 3 modèles",Commun,Ouvert,NOISE-032
+Déséquilibre de charge ou de compétences entre les deux développeurs,2,2,"Vue Équilibre Notion, rétrospective hebdomadaire, API et écran attribués à deux personnes",Commun,Ouvert,—
+Disponibilités réelles inconnues,2,2,DEC-019 ; recalibrer les sprints,Commun,Ouvert,NOISE-001
+Fuite de données personnelles (téléphones) ou de secrets,1,3,"Masquage des logs, secrets hors Git, checklist sécurité",Commun,Ouvert,NOISE-030
+Adoption faible par les organisateurs pilotes,2,2,"Onboarding accompagné, support WhatsApp, interface sans formation",Commun,Ouvert,NOISE-036
