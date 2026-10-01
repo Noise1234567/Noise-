@@ -26,12 +26,12 @@ Un paiement n'est réussi que lorsque le backend l'a confirmé. Ni l'app, ni l'U
 
 Le tableau est complété par des preuves dans NOISE-010, puis la décision DEC-005 est mise à jour.
 
-### 2.1 FedaPay : relevé documentaire (NOISE-010, 2026-09-27, non testé en sandbox)
+### 2.1 FedaPay : relevé documentaire (NOISE-010, 2026-09-27) et essais sandbox (2026-10-01)
 
 - Flux : création d'une transaction (`amount` entier, `description`, `currency` `XOF`) puis paiement direct sans redirection via `POST /v1/{methode}` avec le token de la transaction. Opérateurs listés pour ce mode : MTN Bénin, Moov Bénin, Celtiis Bénin. Une ancienne page de la même doc indique « MTN uniquement » : à trancher en sandbox.
 - Statuts : `pending`, `approved`, `declined`, `canceled`, `refunded`, `transferred`.
 - Revérification serveur : `GET /v1/transactions/{id}`. La doc demande explicitement de ne pas se fier au statut renvoyé dans l'URL de retour.
-- Webhook : en-tête `X-FEDAPAY-SIGNATURE`, HMAC-SHA256 calculé avec le secret du webhook (tableau de bord). Format exact de l'en-tête et chaîne signée (corps brut seul ou avec horodatage) à confirmer sur un vrai webhook : un projet tiers a rencontré cette incertitude.
+- Webhook : en-tête `X-FEDAPAY-SIGNATURE`, HMAC-SHA256 calculé avec le secret du webhook (tableau de bord). Format vérifié en sandbox le 2026-10-01 : voir l'essai ci-dessous.
 - Numéros de test (doc v1) : MTN `66000001` succès, `66000000` échec ; Moov `64000001` succès, `64000000` échec. Remplacés en pratique par le format à 10 chiffres (`0166000001`, voir l'essai sandbox ci-dessous).
 - Clés : `pk_sandbox_…` / `sk_sandbox_…` dans Paramètres → Clés API du compte sandbox.
 
@@ -52,6 +52,11 @@ Essai sandbox du 2026-10-01 (script `scripts/spikes/payment/fedapay-sandbox.mjs`
   Les anciens numéros à 8 chiffres (`66000001`, `64000001`, etc.) et le format `+229…` donnent tous `declined`.
 
 - Frais observés : pour une transaction de 100 XOF, le montant débité au client est 104 XOF. Par défaut, les 4 % de frais semblent donc ajoutés à la charge du client ; réglage à vérifier dans le tableau de bord (DEC-009).
+- Webhook vérifié (récepteur `scripts/spikes/payment/webhook-receiver.mjs` derrière un tunnel cloudflared) :
+  - en-tête `X-FEDAPAY-SIGNATURE: t=<horodatage unix>,s=<signature>` ;
+  - `s` = HMAC-SHA256 en hexadécimal de la chaîne `<t>.<corps brut>`, avec le secret du webhook. Le corps doit donc être lu brut, avant tout parsing JSON ; la comparaison se fait en temps constant ; l'horodatage permet de refuser les webhooks trop anciens (rejeu) ;
+  - événements reçus pour un paiement : `transaction.created` (`pending`) puis `transaction.approved` ou `transaction.declined`, environ 1 s après le paiement ; la transaction est sous la clé `entity` ;
+  - 4 webhooks reçus sur 4 attendus (1 paiement approuvé, 1 refusé), tous avec une signature valide.
 - Conclusion provisoire : en sandbox, le paiement direct passe par `momo_test` ; les modes réels (`mtn_open`, `moov`) restent refusés. À confirmer auprès du support : s'ils sont utilisables en production une fois le compte activé (KYC).
 
 ### 2.2 KKiaPay : relevé documentaire (NOISE-010, 2026-09-27, non testé en sandbox)
