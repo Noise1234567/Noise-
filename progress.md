@@ -26,6 +26,8 @@ Rien n'est encore au statut Validé.
 
 | NOISE-004 Espace Notion | Implémenté, revue Orias à faire | Créé par Claude via le connecteur le 2026-09-24 : page « Noise — Pilotage » (privée), 11 bases reliées, 41 tâches avec dépendances, formules de charge et d'équilibre, vues (Kanban, Tâches Yannis/Orias, Partagées, Bloquées, Prêtes, Externes, Roadmap, Équilibre, À relire) et tableau de bord. Non fait : partage de la page, invitation de Yannis. |
 
+| NOISE-017 Interface PaymentProvider | En cours (Yannis, depuis le 2026-10-02, code écrit par Claude à sa demande) | Branche `feat/NOISE-017-payment-provider` : interface, FedaPayProvider, FakeProvider, sélection par `PAYMENT_PROVIDER` validée au démarrage. Vérifié le 2026-10-02 sous Windows : format, lint, typecheck et 47 tests API passent ; deux régressions volontaires détectées par les tests. Non vérifié : FedaPayProvider contre la vraie sandbox (testé avec un fetch simulé ; le flux réel a été vérifié par les scripts de NOISE-010). |
+
 Non vérifié par Claude (à faire dans NOISE-003) :
 
 - `prisma generate` : le téléchargement des moteurs Prisma est bloqué par le réseau de l'environnement de Claude ;
