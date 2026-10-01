@@ -1,6 +1,6 @@
 # Paiements
 
-État : conception. Fournisseur proposé : FedaPay (DEC-005, validation d'Orias attendue). Flux vérifié en sandbox par des scripts d'exploration (section 2.1) ; rien n'est implémenté dans l'API.
+État : conception. Fournisseur retenu : FedaPay (DEC-005, acceptée le 2026-10-01). Flux vérifié en sandbox par des scripts d'exploration (section 2.1) ; rien n'est implémenté dans l'API.
 
 ## 1. Principe
 
@@ -67,7 +67,7 @@ Essai sandbox du 2026-10-01 (script `scripts/spikes/payment/fedapay-sandbox.mjs`
 - Numéro au format international obligatoire (`+229…`).
 - Reversement : gratuit vers un compte Mobile Money, 7 000 FCFA vers un compte bancaire.
 
-### 2.3 Choix proposé : FedaPay (DEC-005, validation d'Orias attendue)
+### 2.3 Choix retenu : FedaPay (DEC-005, acceptée le 2026-10-01)
 
 FedaPay correspond à l'architecture prévue, et c'est vérifié en sandbox : paiement initié par le serveur, revérification par l'API, webhook signé en HMAC avec horodatage. KKiaPay est écarté sur la documentation (widget côté mobile obligatoire, webhook protégé par un simple secret partagé), sans essai sandbox. Points ouverts : modes réels en production, frais exacts, délais de KYC (voir DEC-005).
 

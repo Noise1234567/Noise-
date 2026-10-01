@@ -6,28 +6,28 @@ Statuts : Proposée · Acceptée · En attente (bloquée par une information ou 
 
 ## Index
 
-| ID      | Décision                                                                                | Statut                                                  | Date       |
-| ------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------- | ---------- |
-| DEC-001 | Monorepo pnpm workspaces                                                                | Acceptée                                                | 2026-09-24 |
-| DEC-002 | Conserver la stack du cahier des charges (Express/TS, Prisma, PostgreSQL, React Native) | Acceptée                                                | 2026-09-24 |
-| DEC-003 | Expo (CNG) + EAS Build plutôt que React Native bare                                     | Acceptée                                                | 2026-09-24 |
-| DEC-004 | Hébergement Railway (API + Postgres), staging et production                             | Acceptée                                                | 2026-09-24 |
-| DEC-005 | Paiement via un agrégateur béninois (FedaPay) plutôt que MTN et Moov en direct          | Acceptée ; FedaPay proposé, validation d'Orias attendue | 2026-10-01 |
-| DEC-006 | Google Play après le MVP ; AAB préparé dès la S4                                        | Acceptée                                                | 2026-09-24 |
-| DEC-007 | Réservation du stock à la création de la commande                                       | Acceptée (écart au CDC)                                 | 2026-09-24 |
-| DEC-008 | Maximum 5 billets par commande                                                          | Acceptée                                                | 2026-09-24 |
-| DEC-009 | Reversements aux organisateurs manuels pour le MVP                                      | Acceptée ; taux et frais en attente                     | 2026-09-24 |
-| DEC-010 | Remboursements manuels en cas d'annulation d'événement                                  | Acceptée                                                | 2026-09-24 |
-| DEC-011 | Navigation mobile : Expo Router (bâti sur React Navigation)                             | Proposée                                                | 2026-09-24 |
-| DEC-012 | Format des commits vérifié en CI (titre de PR), sans hook Git local                     | Acceptée                                                | 2026-09-24 |
-| DEC-013 | Stratégie Git trunk-based : main protégée + branches courtes + squash                   | Acceptée                                                | 2026-09-24 |
-| DEC-014 | Scanner en ligne uniquement pour le MVP                                                 | Acceptée                                                | 2026-09-24 |
-| DEC-015 | Identifiant Android `com.noise.app`                                                     | Proposée                                                | 2026-09-24 |
-| DEC-016 | Entité légale et titulaire du compte marchand (KYC)                                     | En attente                                              | —          |
-| DEC-017 | Vérification du téléphone et mot de passe oublié (OTP SMS)                              | En attente                                              | —          |
-| DEC-018 | Validation des organisateurs avant la mise en vente                                     | En attente                                              | —          |
-| DEC-019 | Disponibilité hebdomadaire de Yannis et Orias                                           | En attente                                              | —          |
-| DEC-020 | Administration minimale : rôle ADMIN + endpoints internes, pas d'interface dédiée       | Acceptée                                                | 2026-09-24 |
+| ID      | Décision                                                                                | Statut                              | Date       |
+| ------- | --------------------------------------------------------------------------------------- | ----------------------------------- | ---------- |
+| DEC-001 | Monorepo pnpm workspaces                                                                | Acceptée                            | 2026-09-24 |
+| DEC-002 | Conserver la stack du cahier des charges (Express/TS, Prisma, PostgreSQL, React Native) | Acceptée                            | 2026-09-24 |
+| DEC-003 | Expo (CNG) + EAS Build plutôt que React Native bare                                     | Acceptée                            | 2026-09-24 |
+| DEC-004 | Hébergement Railway (API + Postgres), staging et production                             | Acceptée                            | 2026-09-24 |
+| DEC-005 | Paiement via un agrégateur béninois (FedaPay) plutôt que MTN et Moov en direct          | Acceptée (FedaPay)                  | 2026-10-01 |
+| DEC-006 | Google Play après le MVP ; AAB préparé dès la S4                                        | Acceptée                            | 2026-09-24 |
+| DEC-007 | Réservation du stock à la création de la commande                                       | Acceptée (écart au CDC)             | 2026-09-24 |
+| DEC-008 | Maximum 5 billets par commande                                                          | Acceptée                            | 2026-09-24 |
+| DEC-009 | Reversements aux organisateurs manuels pour le MVP                                      | Acceptée ; taux et frais en attente | 2026-09-24 |
+| DEC-010 | Remboursements manuels en cas d'annulation d'événement                                  | Acceptée                            | 2026-09-24 |
+| DEC-011 | Navigation mobile : Expo Router (bâti sur React Navigation)                             | Proposée                            | 2026-09-24 |
+| DEC-012 | Format des commits vérifié en CI (titre de PR), sans hook Git local                     | Acceptée                            | 2026-09-24 |
+| DEC-013 | Stratégie Git trunk-based : main protégée + branches courtes + squash                   | Acceptée                            | 2026-09-24 |
+| DEC-014 | Scanner en ligne uniquement pour le MVP                                                 | Acceptée                            | 2026-09-24 |
+| DEC-015 | Identifiant Android `com.noise.app`                                                     | Proposée                            | 2026-09-24 |
+| DEC-016 | Entité légale et titulaire du compte marchand (KYC)                                     | En attente                          | —          |
+| DEC-017 | Vérification du téléphone et mot de passe oublié (OTP SMS)                              | En attente                          | —          |
+| DEC-018 | Validation des organisateurs avant la mise en vente                                     | En attente                          | —          |
+| DEC-019 | Disponibilité hebdomadaire de Yannis et Orias                                           | En attente                          | —          |
+| DEC-020 | Administration minimale : rôle ADMIN + endpoints internes, pas d'interface dédiée       | Acceptée                            | 2026-09-24 |
 
 ---
 
@@ -71,7 +71,7 @@ Statuts : Proposée · Acceptée · En attente (bloquée par une information ou 
 - Conséquence : le code passe par une interface `PaymentProvider` (NOISE-017) pour pouvoir changer de fournisseur.
 - Personnes : Yannis, Orias.
 
-Choix du fournisseur (NOISE-010, 2026-10-01) — statut : Proposée par Yannis, validation d'Orias attendue.
+Choix du fournisseur (NOISE-010, 2026-10-01) — statut : Acceptée (proposée par Yannis, validée par Orias le 2026-10-01).
 
 - Choix proposé : FedaPay.
 - Raisons (preuves dans `docs/payments.md` section 2.1) :
