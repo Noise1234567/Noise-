@@ -1,6 +1,6 @@
 # Paiements
 
-État : conception. Fournisseur à choisir dans NOISE-010 (DEC-005). Rien n'est implémenté ni testé.
+État : conception. Fournisseur proposé : FedaPay (DEC-005, validation d'Orias attendue). Flux vérifié en sandbox par des scripts d'exploration (section 2.1) ; rien n'est implémenté dans l'API.
 
 ## 1. Principe
 
@@ -21,7 +21,7 @@ Un paiement n'est réussi que lorsque le backend l'a confirmé. Ni l'app, ni l'U
 | Devise XOF                     | Oui                             | Oui                             | Oui                                                |
 | Webhook et signature           | HMAC-SHA256 (voir 2.1)          | Secret partagé (voir 2.2)       | Oui (MTN callback)                                 |
 | Paiement initié par le serveur | Oui (voir 2.1)                  | Non documenté (voir 2.2)        | Oui                                                |
-| Frais                          | 4 % annoncés (source tierce)    | Non publiés dans la FAQ         | Aucun intermédiaire, mais deux contrats            |
+| Frais                          | 4 % (observé en sandbox)        | Non publiés dans la FAQ         | Aucun intermédiaire, mais deux contrats            |
 | KYC production                 | À relever                       | Vérification annoncée sous 24 h | Deux processus                                     |
 
 Le tableau est complété par des preuves dans NOISE-010, puis la décision DEC-005 est mise à jour.
@@ -67,9 +67,9 @@ Essai sandbox du 2026-10-01 (script `scripts/spikes/payment/fedapay-sandbox.mjs`
 - Numéro au format international obligatoire (`+229…`).
 - Reversement : gratuit vers un compte Mobile Money, 7 000 FCFA vers un compte bancaire.
 
-### 2.3 Premier constat (à confirmer en sandbox, décision commune)
+### 2.3 Choix proposé : FedaPay (DEC-005, validation d'Orias attendue)
 
-FedaPay correspond mieux à l'architecture prévue : paiement initié par le serveur, revérification par l'API, webhook signé en HMAC. KKiaPay reste possible mais impose un widget côté mobile et un webhook moins bien protégé. Reste à obtenir les frais exacts des deux fournisseurs et les délais de KYC, puis à valider en sandbox avant de compléter DEC-005.
+FedaPay correspond à l'architecture prévue, et c'est vérifié en sandbox : paiement initié par le serveur, revérification par l'API, webhook signé en HMAC avec horodatage. KKiaPay est écarté sur la documentation (widget côté mobile obligatoire, webhook protégé par un simple secret partagé), sans essai sandbox. Points ouverts : modes réels en production, frais exacts, délais de KYC (voir DEC-005).
 
 Sources : [FedaPay, transactions](https://docs-v1.fedapay.com/paiements/transactions), [FedaPay, tests](https://docs-v1.fedapay.com/paiements/test), [FedaPay, webhooks](https://docs.fedapay.com/integration-api/en/webhooks-en), [KKiaPay, webhook](https://docs.kkiapay.me/v1/tableau-de-bord/webhook), [KKiaPay, sandbox](https://docs.kkiapay.me/v1/compte/kkiapay-sandbox-guide-de-test), [KKiaPay, FAQ](https://kkiapay.me/faq/?lang=en).
 
