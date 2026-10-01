@@ -14,16 +14,40 @@ Un paiement n'est réussi que lorsque le backend l'a confirmé. Ni l'app, ni l'U
 
 ## 2. Fournisseurs envisagés
 
-| Critère                | FedaPay                         | KKiaPay                   | MTN + Moov en direct                               |
-| ---------------------- | ------------------------------- | ------------------------- | -------------------------------------------------- |
-| MTN Bénin / Moov Bénin | Documentés                      | À vérifier dans NOISE-010 | Deux intégrations séparées                         |
-| Sandbox                | Oui (`sandbox-api.fedapay.com`) | À vérifier                | Oui pour MTN (devise de test EUR), Moov à vérifier |
-| Devise XOF             | Oui                             | À vérifier                | Oui                                                |
-| Webhook et signature   | À vérifier                      | À vérifier                | Oui (MTN callback)                                 |
-| Frais                  | À relever                       | À relever                 | Aucun intermédiaire, mais deux contrats            |
-| KYC production         | À relever                       | À relever                 | Deux processus                                     |
+| Critère                        | FedaPay                         | KKiaPay                         | MTN + Moov en direct                               |
+| ------------------------------ | ------------------------------- | ------------------------------- | -------------------------------------------------- |
+| MTN Bénin / Moov Bénin         | Documentés                      | Documentés                      | Deux intégrations séparées                         |
+| Sandbox                        | Oui (`sandbox-api.fedapay.com`) | Oui                             | Oui pour MTN (devise de test EUR), Moov à vérifier |
+| Devise XOF                     | Oui                             | Oui                             | Oui                                                |
+| Webhook et signature           | HMAC-SHA256 (voir 2.1)          | Secret partagé (voir 2.2)       | Oui (MTN callback)                                 |
+| Paiement initié par le serveur | Oui (voir 2.1)                  | Non documenté (voir 2.2)        | Oui                                                |
+| Frais                          | 4 % annoncés (source tierce)    | Non publiés dans la FAQ         | Aucun intermédiaire, mais deux contrats            |
+| KYC production                 | À relever                       | Vérification annoncée sous 24 h | Deux processus                                     |
 
 Le tableau est complété par des preuves dans NOISE-010, puis la décision DEC-005 est mise à jour.
+
+### 2.1 FedaPay : relevé documentaire (NOISE-010, 2026-09-27, non testé en sandbox)
+
+- Flux : création d'une transaction (`amount` entier, `description`, `currency` `XOF`) puis paiement direct sans redirection via `POST /v1/{methode}` avec le token de la transaction. Opérateurs listés pour ce mode : MTN Bénin, Moov Bénin, Celtiis Bénin. Une ancienne page de la même doc indique « MTN uniquement » : à trancher en sandbox.
+- Statuts : `pending`, `approved`, `declined`, `canceled`, `refunded`, `transferred`.
+- Revérification serveur : `GET /v1/transactions/{id}`. La doc demande explicitement de ne pas se fier au statut renvoyé dans l'URL de retour.
+- Webhook : en-tête `X-FEDAPAY-SIGNATURE`, HMAC-SHA256 calculé avec le secret du webhook (tableau de bord). Format exact de l'en-tête et chaîne signée (corps brut seul ou avec horodatage) à confirmer sur un vrai webhook : un projet tiers a rencontré cette incertitude.
+- Numéros de test (doc v1) : MTN `66000001` succès, `66000000` échec ; Moov `64000001` succès, `64000000` échec. D'autres sources citent d'autres numéros : à confirmer dans le tableau de bord sandbox.
+- Clés : `pk_sandbox_…` / `sk_sandbox_…` dans Paramètres → Clés API du compte sandbox.
+
+### 2.2 KKiaPay : relevé documentaire (NOISE-010, 2026-09-27, non testé en sandbox)
+
+- Intégration centrée sur un widget et des SDK côté client (JS, Android, Flutter, React Native) ; SDK serveur (Node.js, PHP) pour vérifier une transaction et rembourser. Aucune API publique trouvée pour qu'un serveur déclenche lui-même la demande de paiement sur le téléphone du client. Impact : le mobile devrait ouvrir le widget, ce qui s'écarte de notre flux où le backend initie le paiement (section 1). À confirmer auprès du support ou en sandbox.
+- Webhook : événements `transaction.success` et `transaction.failed` ; authentification par un secret partagé envoyé tel quel dans l'en-tête `x-kkiapay-secret` (pas de HMAC du corps). Moins robuste : un secret intercepté permet de forger des webhooks, d'où l'importance de la revérification serveur. Renvoi 5 fois si la réponse n'est pas 2xx.
+- Numéros de test : MTN `61000000` / `97000000` succès, `…01` erreur de traitement, `…02` fonds insuffisants, `…03` refusé ; Moov `68000000` / `95000000` succès, mêmes suffixes pour les échecs.
+- Numéro au format international obligatoire (`+229…`).
+- Reversement : gratuit vers un compte Mobile Money, 7 000 FCFA vers un compte bancaire.
+
+### 2.3 Premier constat (à confirmer en sandbox, décision commune)
+
+FedaPay correspond mieux à l'architecture prévue : paiement initié par le serveur, revérification par l'API, webhook signé en HMAC. KKiaPay reste possible mais impose un widget côté mobile et un webhook moins bien protégé. Reste à obtenir les frais exacts des deux fournisseurs et les délais de KYC, puis à valider en sandbox avant de compléter DEC-005.
+
+Sources : [FedaPay, transactions](https://docs-v1.fedapay.com/paiements/transactions), [FedaPay, tests](https://docs-v1.fedapay.com/paiements/test), [FedaPay, webhooks](https://docs.fedapay.com/integration-api/en/webhooks-en), [KKiaPay, webhook](https://docs.kkiapay.me/v1/tableau-de-bord/webhook), [KKiaPay, sandbox](https://docs.kkiapay.me/v1/compte/kkiapay-sandbox-guide-de-test), [KKiaPay, FAQ](https://kkiapay.me/faq/?lang=en).
 
 ## 3. États
 
