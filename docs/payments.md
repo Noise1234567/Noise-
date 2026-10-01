@@ -32,8 +32,27 @@ Le tableau est complété par des preuves dans NOISE-010, puis la décision DEC-
 - Statuts : `pending`, `approved`, `declined`, `canceled`, `refunded`, `transferred`.
 - Revérification serveur : `GET /v1/transactions/{id}`. La doc demande explicitement de ne pas se fier au statut renvoyé dans l'URL de retour.
 - Webhook : en-tête `X-FEDAPAY-SIGNATURE`, HMAC-SHA256 calculé avec le secret du webhook (tableau de bord). Format exact de l'en-tête et chaîne signée (corps brut seul ou avec horodatage) à confirmer sur un vrai webhook : un projet tiers a rencontré cette incertitude.
-- Numéros de test (doc v1) : MTN `66000001` succès, `66000000` échec ; Moov `64000001` succès, `64000000` échec. D'autres sources citent d'autres numéros : à confirmer dans le tableau de bord sandbox.
+- Numéros de test (doc v1) : MTN `66000001` succès, `66000000` échec ; Moov `64000001` succès, `64000000` échec. Remplacés en pratique par le format à 10 chiffres (`0166000001`, voir l'essai sandbox ci-dessous).
 - Clés : `pk_sandbox_…` / `sk_sandbox_…` dans Paramètres → Clés API du compte sandbox.
+
+Essai sandbox du 2026-10-01 (script `scripts/spikes/payment/fedapay-sandbox.mjs`, compte sandbox de Yannis) :
+
+- `POST /v1/transactions` (100 XOF) : HTTP 200, statut `pending`. La réponse est enveloppée sous la clé `v1/transaction` et contient déjà un `payment_token` et une `payment_url` (page de paiement hébergée).
+- `POST /v1/transactions/{id}/token` : HTTP 200 (`token` + `url`).
+- `POST /v1/mtn_open`, `/v1/moov` et `/v1/mtn` avec ce token : HTTP 400 « Opération non autorisée » pour les trois. Même résultat avec les numéros au format 8 chiffres, `01…` (10 chiffres) et `+229…`, et sans `phone_number` dans le corps : le format du numéro n'est pas en cause. La référence API indique le chemin `/transactions/{mode}`, qui répond 404 : le chemin du SDK (`/{mode}`) est le bon. La doc affirme qu'un compte sandbox fonctionne sans activation, mais le tableau de bord affiche « Compte: Account.Null ». Cause non identifiée : question posée au support FedaPay.
+- La liste des modes renvoyée pour la devise XOF contient `momo_test`. `POST /v1/momo_test` avec le token fonctionne en sandbox (HTTP 200, réponse sous la clé `v1/payment_intent`) et le statut final est relu par `GET /v1/transactions/{id}` (pas d'état `pending` observé après 3 s) :
+
+  | Numéro (format béninois à 10 chiffres) | Résultat   |
+  | -------------------------------------- | ---------- |
+  | `0166000001`                           | `approved` |
+  | `0164000001`                           | `approved` |
+  | `0166000000`                           | `declined` |
+  | `0164000000`                           | `declined` |
+
+  Les anciens numéros à 8 chiffres (`66000001`, `64000001`, etc.) et le format `+229…` donnent tous `declined`.
+
+- Frais observés : pour une transaction de 100 XOF, le montant débité au client est 104 XOF. Par défaut, les 4 % de frais semblent donc ajoutés à la charge du client ; réglage à vérifier dans le tableau de bord (DEC-009).
+- Conclusion provisoire : en sandbox, le paiement direct passe par `momo_test` ; les modes réels (`mtn_open`, `moov`) restent refusés. À confirmer auprès du support : s'ils sont utilisables en production une fois le compte activé (KYC).
 
 ### 2.2 KKiaPay : relevé documentaire (NOISE-010, 2026-09-27, non testé en sandbox)
 
