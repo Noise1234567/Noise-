@@ -26,6 +26,8 @@ Rien n'est encore au statut Validé.
 
 | NOISE-004 Espace Notion | Implémenté, revue Orias à faire | Créé par Claude via le connecteur le 2026-09-24 : page « Noise — Pilotage » (privée), 11 bases reliées, 41 tâches avec dépendances, formules de charge et d'équilibre, vues (Kanban, Tâches Yannis/Orias, Partagées, Bloquées, Prêtes, Externes, Roadmap, Équilibre, À relire) et tableau de bord. Non fait : partage de la page, invitation de Yannis. |
 
+| NOISE-007 Authentification API | En cours (Yannis, depuis le 2026-10-02) | Étape 1 sur la branche `feat/NOISE-007-auth`, sans base de données : normalisation des numéros béninois et schémas Zod d'inscription / connexion (`packages/shared`), hachage argon2id, access token JWT 15 min, refresh token opaque haché, middlewares `requireAuth` / `requireRole`. Vérifié le 2026-10-02 : format, lint, typecheck, 26 tests shared + 25 tests API ; deux régressions volontaires détectées. Reste (étape 2, après NOISE-006) : routes register / login / refresh / logout, rotation et révocation en base, `PATCH /me/roles`, rate limiting, variables JWT dans `env.ts`. |
+
 Non vérifié par Claude (à faire dans NOISE-003) :
 
 - `prisma generate` : le téléchargement des moteurs Prisma est bloqué par le réseau de l'environnement de Claude ;

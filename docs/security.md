@@ -23,7 +23,8 @@ Authentification et autorisation :
 
 - Toutes les routes sont protégées sauf `/health*`, `/auth/register`, `/auth/login`, `/auth/refresh` et le webhook (protégé par signature).
 - Vérification du rôle ET de la propriété côté serveur, jamais uniquement dans l'interface.
-- Access token 15 min ; refresh token 30 jours, stocké haché, rotation à chaque usage, réutilisation d'un ancien token = révocation de toute la chaîne.
+- Access token : JWT HS256 de 15 min (émetteur `noise-api`, audience `noise-app`, rôles dans le jeton). Refresh token : chaîne aléatoire opaque de 32 octets (et non un JWT : rien à décoder côté client, révocable en base), valable 30 jours, stocké haché en SHA-256, rotation à chaque usage, réutilisation d'un ancien token = révocation de toute la chaîne. Code : `apps/api/src/modules/auth/tokens.ts`.
+- Connexion : un numéro inconnu déclenche quand même une vérification argon2 (temps de réponse identique, on ne peut pas deviner quels numéros ont un compte).
 - Mots de passe : argon2id, minimum 8 caractères.
 
 Entrées et sorties :
