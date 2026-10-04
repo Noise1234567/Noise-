@@ -26,6 +26,8 @@ Rien n'est encore au statut Validé.
 
 | NOISE-004 Espace Notion | Implémenté, revue Orias à faire | Créé par Claude via le connecteur le 2026-09-24 : page « Noise — Pilotage » (privée), 11 bases reliées, 41 tâches avec dépendances, formules de charge et d'équilibre, vues (Kanban, Tâches Yannis/Orias, Partagées, Bloquées, Prêtes, Externes, Roadmap, Équilibre, À relire) et tableau de bord. Non fait : partage de la page, invitation de Yannis. |
 
+| NOISE-012 Upload des affiches (Cloudinary) | En cours (Yannis, depuis le 2026-10-04) | Étape 1 sur la branche `feat/NOISE-012-poster-upload` : réception multipart (5 Mo, champ `poster`), format reconnu par les premiers octets (JPEG, PNG, WebP), envoi à Cloudinary par l'API, URL optimisée et versionnée (`apps/api/src/modules/uploads/`). Vérifié le 2026-10-04 : lint, typecheck, 25 tests API avec un stockage simulé ; une régression volontaire détectée. Non vérifié : envoi réel vers Cloudinary (accès au compte nécessaire). Reste (étape 2, avec NOISE-011) : route `POST /api/v1/events/:id/poster` avec auth et propriété, enregistrement de l'URL sur l'événement, `CLOUDINARY_URL` dans `env.ts`. |
+
 Non vérifié par Claude (à faire dans NOISE-003) :
 
 - `prisma generate` : le téléchargement des moteurs Prisma est bloqué par le réseau de l'environnement de Claude ;

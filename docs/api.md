@@ -79,3 +79,12 @@ Base : CDC section 7, complétée par les décisions.
 Écart avec le CDC : un seul endpoint webhook (`/payments/webhook`) car l'agrégateur envoie MTN et Moov au même endroit (DEC-005).
 
 Chaque endpoint, une fois implémenté, est documenté ici avec : corps de requête, réponse, erreurs possibles.
+
+### `POST /api/v1/events/:id/poster` (NOISE-012, monté avec NOISE-011)
+
+- Accès : organisateur propriétaire de l'événement.
+- Requête : `multipart/form-data`, un seul fichier dans le champ `poster`.
+- Règles : 5 Mo maximum ; JPEG, PNG ou WebP, reconnus à partir des premiers octets du fichier (le nom et le Content-Type annoncés ne comptent pas).
+- Traitement : l'API envoie le fichier à Cloudinary (dossier `noise/posters`, identifiant = id de l'événement, remplacé à chaque envoi). Le mobile ne détient aucun identifiant Cloudinary.
+- Réponse : URL HTTPS de diffusion, limitée à 1080 px de large, qualité et format automatiques (WebP ou AVIF selon le téléphone), avec la version dans l'URL pour qu'une affiche remplacée ne reste pas en cache.
+- Erreurs : 400 `VALIDATION_ERROR` (aucun fichier, mauvais champ, format refusé, plus de 5 Mo) ; 401 ; 403 ; 404 ; 500 `INTERNAL_ERROR` si Cloudinary est indisponible.
