@@ -103,3 +103,12 @@ Format des numéros : toute écriture béninoise est acceptée (`01 97 45 45 47`
 | `GET /api/v1/admin/events/:eventId/sales.csv` | 200 `text/csv; charset=utf-8`, fichier `ventes-<titre>-<date>.csv` (voir docs/payments.md section 7.1)                                                          | idem                                                                                                                       |
 
 Seules les commandes PAID sont comptées, à partir de la répartition enregistrée à la confirmation du paiement (DEC-022). Chaque appel est journalisé (identifiant de l'administrateur, événement, action).
+
+### `POST /api/v1/events/:id/poster` (NOISE-012, monté avec NOISE-011)
+
+- Accès : organisateur propriétaire de l'événement.
+- Requête : `multipart/form-data`, un seul fichier dans le champ `poster`.
+- Règles : 5 Mo maximum ; JPEG, PNG ou WebP, reconnus à partir des premiers octets du fichier (le nom et le Content-Type annoncés ne comptent pas).
+- Traitement : l'API envoie le fichier à Cloudinary (dossier `noise/posters`, identifiant = id de l'événement, remplacé à chaque envoi). Le mobile ne détient aucun identifiant Cloudinary.
+- Réponse : URL HTTPS de diffusion, limitée à 1080 px de large, qualité et format automatiques (WebP ou AVIF selon le téléphone), avec la version dans l'URL pour qu'une affiche remplacée ne reste pas en cache.
+- Erreurs : 400 `VALIDATION_ERROR` (aucun fichier, mauvais champ, format refusé, plus de 5 Mo) ; 401 ; 403 ; 404 ; 500 `INTERNAL_ERROR` si Cloudinary est indisponible.
