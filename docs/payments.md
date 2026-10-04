@@ -67,6 +67,18 @@ Essai sandbox du 2026-10-01 (script `scripts/spikes/payment/fedapay-sandbox.mjs`
 - Numéro au format international obligatoire (`+229…`).
 - Reversement : gratuit vers un compte Mobile Money, 7 000 FCFA vers un compte bancaire.
 
+### 2.2 bis FeexPay : essais du 2026-10-04 (NOISE-041, en pause)
+
+Comparaison des frais relevés sur les pages officielles le 2026-10-04 : FeexPay 1,5 % (MTN, Moov), KKiaPay 1,5 % à la charge du client plus 9 900 FCFA HT par mois (offre Intégration), FedaPay 1,8 % d'après une source indirecte (4 % observé en sandbox avec `momo_test`). Page de tarifs FedaPay inaccessible lors de la vérification.
+
+Essais (script `scripts/spikes/payment/feexpay-sandbox.mjs`, compte d'un tiers, clé « de test ») :
+
+- API : `https://api-v2.feexpay.me`, en-tête `Authorization: Bearer <clé>`, identifiant de boutique `shop` dans le corps.
+- `POST /api/transactions/public/requesttopay/{mtn|moov|celtiis_bj}` (numéro au format `229` + 10 chiffres, montant, nom, description) : HTTP 202, `status: PENDING`, `reference` (UUID). Paiement déclenché par le serveur : conforme à notre architecture.
+- `GET /api/transactions/public/single/status/{reference}` : statuts `PENDING` puis `FAILED`, avec un champ `reason`.
+- Numéro inexistant `0166000001` : `FAILED`, `PAYEE_NOT_FOUND`. Numéro de test de la sandbox MTN `46733123450` (succès attendu en sandbox MTN) : `FAILED`, `PAYER_NOT_FOUND`. Le mode test de FeexPay ne passe donc pas par la sandbox MTN ; il est possible que les demandes partent vers le vrai réseau. Aucun paiement réussi, personne n'a été débité.
+- Non vérifié : existence de numéros de test, format et authentification des webhooks, KYC, délais de reversement. La clé a cessé d'être acceptée (HTTP 401) ; essais suspendus faute d'accès au compte.
+
 ### 2.3 Choix retenu : FedaPay (DEC-005, acceptée le 2026-10-01)
 
 FedaPay correspond à l'architecture prévue, et c'est vérifié en sandbox : paiement initié par le serveur, revérification par l'API, webhook signé en HMAC avec horodatage. KKiaPay est écarté sur la documentation (widget côté mobile obligatoire, webhook protégé par un simple secret partagé), sans essai sandbox. Points ouverts : modes réels en production, frais exacts, délais de KYC (voir DEC-005).

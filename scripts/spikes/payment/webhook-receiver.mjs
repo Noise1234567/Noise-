@@ -40,6 +40,27 @@ function checkSignature(header, rawBody) {
   return matches.length ? matches : ['aucun format testé ne correspond'];
 }
 
+/** Forme d'une valeur sans la révéler : hex, base64, JWT, préfixe éventuel. */
+function shape(value) {
+  if (/^[0-9a-f]+$/i.test(value)) return 'hexadécimal';
+  if (/^eyJ[\w-]+\.[\w-]+\.[\w-]+$/.test(value)) return 'JWT';
+  if (/^\w+=/.test(value)) return `préfixe « ${value.split('=')[0]}= »`;
+  if (/^[\w+/=-]+$/.test(value)) return 'base64 ou jeton';
+  return 'texte libre';
+}
+
+/** Masque les valeurs qui pourraient être des secrets, numéros ou e-mails. */
+function redact(value) {
+  return JSON.parse(
+    JSON.stringify(value, (key, v) => {
+      if (typeof v !== 'string') return v;
+      if (/token|secret|key|sign|hash|shop/i.test(key)) return `[masqué, ${v.length} car.]`;
+      if (/phone|number|email/i.test(key)) return `${v.slice(0, 3)}****${v.slice(-2)}`;
+      return v;
+    }),
+  );
+}
+
 createServer((req, res) => {
   const chunks = [];
   req.on('data', (chunk) => chunks.push(chunk));
@@ -48,6 +69,14 @@ createServer((req, res) => {
     const signature = req.headers['x-fedapay-signature'];
     console.log(`\n=== ${new Date().toISOString()} ${req.method} ${req.url}`);
     console.log('En-têtes reçus :', Object.keys(req.headers).join(', '));
+    // En-têtes susceptibles de porter une authentification : forme seulement, jamais la valeur.
+    for (const [name, value] of Object.entries(req.headers)) {
+      if (/sign|secret|token|key|hmac|auth|feex/i.test(name)) {
+        console.log(
+          `  ${name} : ${String(value).length} caractères, forme ${shape(String(value))}`,
+        );
+      }
+    }
     console.log(
       'Forme de X-FEDAPAY-SIGNATURE :',
       signature ? signature.replace(/[0-9a-f]{16,}/gi, '<hex>') : '(absent)',
@@ -59,6 +88,8 @@ createServer((req, res) => {
       console.log(
         `Événement : ${event.name ?? event.type ?? '?'} ; transaction ${entity.id ?? '?'} ; statut ${entity.status ?? '?'}`,
       );
+      // Format générique (NOISE-041, FeexPay) : structure du corps, valeurs sensibles masquées.
+      if (!event.entity) console.log('Corps (masqué) :', JSON.stringify(redact(event), null, 2));
     } catch {
       console.log('Corps non JSON (début) :', rawBody.slice(0, 200));
     }
