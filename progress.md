@@ -26,6 +26,8 @@ Rien n'est encore au statut Validé.
 
 | NOISE-004 Espace Notion | Implémenté, revue Orias à faire | Créé par Claude via le connecteur le 2026-09-24 : page « Noise — Pilotage » (privée), 11 bases reliées, 41 tâches avec dépendances, formules de charge et d'équilibre, vues (Kanban, Tâches Yannis/Orias, Partagées, Bloquées, Prêtes, Externes, Roadmap, Équilibre, À relire) et tableau de bord. Non fait : partage de la page, invitation de Yannis. |
 
+| NOISE-026 Web app scanner staff | En cours (Yannis, depuis le 2026-10-06, en avance sur S4) | Branche `feat/NOISE-026-scanner-web` : lecture du jeton du lien, caméra (BarcodeDetector puis jsQR), écrans vert / rouge / orange, filtre des doubles lectures, lien expiré ou révoqué, perte de réseau, caméra refusée ; scanner servi par l'API sous `/scan` ; contrat partagé `schemas/scanner.ts`. Vérifié le 2026-10-06 : lint, typecheck, 22 tests unitaires scanner, 12 tests Playwright (Chromium format Android, fausse caméra avec vrai QR, API simulée), 3 tests API ; deux régressions volontaires détectées. Non vérifié : sur un vrai téléphone et avec la vraie API. Reste : branchement sur NOISE-024 et NOISE-025, test manuel sur 2 téléphones. |
+
 Non vérifié par Claude (à faire dans NOISE-003) :
 
 - `prisma generate` : le téléchargement des moteurs Prisma est bloqué par le réseau de l'environnement de Claude ;

@@ -1,6 +1,6 @@
 # QR codes et scanner
 
-État : conception. Rien n'est implémenté.
+État : scanner web (NOISE-026) implémenté contre une API simulée ; liens (NOISE-024), QR signés (NOISE-020) et validation (NOISE-025) restent à faire.
 
 ## 1. QR token (NOISE-020)
 
@@ -42,6 +42,14 @@ Ordre des contrôles dans `POST /scanner/validate`, dans une transaction :
 | Billet expiré (événement passé) | Étape 1 (le lien expire après l'événement) ; contrôle de date à ajouter si besoin |
 
 ## 4. Comportement du scanner (NOISE-026)
+
+Implémentation : `apps/scanner/src/`, servi par l'API sous `/scan` dès que le scanner est construit. Contrat avec l'API : `packages/shared/src/schemas/scanner.ts` (`POST /api/v1/scanner/validate`, corps `{ qrCode }`, réponse `{ result, holderName?, ticketTypeName?, usedAt? }`).
+
+- Le jeton est lu après le « # », effacé de la barre d'adresse et gardé pour la session (rechargement possible).
+- Un lien dont la date `exp` est passée est refusé dès l'ouverture ; sinon c'est l'API qui décide (401 → écran « Lien expiré ou révoqué », la caméra est coupée).
+- Lecture : BarcodeDetector si disponible (Chrome Android), sinon jsQR, chargé seulement dans ce cas (26 Ko compressés pour la page, 47 Ko de plus pour jsQR).
+- Délai maximal d'attente de l'API : 8 s, puis écran orange « Pas de connexion ».
+- Tests : unitaires (`apps/scanner/src/scanner.test.ts`) et Playwright (`apps/scanner/e2e/`) avec fausse caméra affichant un vrai QR et API simulée.
 
 | Situation             | Affichage                                                                     |
 | --------------------- | ----------------------------------------------------------------------------- |
