@@ -48,7 +48,18 @@ Payment : INITIATED ─► PENDING ─► SUCCEEDED
 
 ## 5. Implémentation (NOISE-017, NOISE-019)
 
-- Interface `PaymentProvider` : `initiate(order, operator, phone)`, `getStatus(providerTransactionId)`, `verifyWebhookSignature(headers, rawBody)`, `parseWebhook(body)`.
+Implémenté dans NOISE-017 : `apps/api/src/modules/payments/providers/`.
+
+- Interface `PaymentProvider` (`payment-provider.ts`) :
+  - `initiate(input)` : crée la transaction chez le fournisseur et déclenche la demande sur le téléphone ; renvoie toujours `PENDING`. `input.paymentId` (identifiant de notre tentative) est envoyé comme `merchant_reference`, unique chez FedaPay : une même tentative ne peut pas être créée deux fois.
+  - `getStatus(providerTransactionId)` : revérification serveur ; renvoie le statut converti, le montant hors frais et le statut brut.
+  - `verifyWebhookSignature(headers, rawBody)` : en-tête `x-fedapay-signature`, format `t=…,s=…`, comparaison en temps constant, webhook refusé si l'horodatage s'écarte de plus de 5 minutes.
+  - `parseWebhook(rawBody)` : événements `transaction.*` convertis, les autres ignorés ; corps validé par Zod.
+- Conversion des statuts FedaPay : `approved` et `transferred` → SUCCEEDED ; `declined`, `canceled` et `refunded` → FAILED ; `pending` et tout statut inconnu → PENDING (un statut inattendu ne confirme jamais un paiement).
+- Mode de paiement direct : `momo_test` en sandbox (seul accepté), `mtn_open` (MTN) et `moov` (Moov) en production, à confirmer par le support FedaPay.
+- Le client FedaPay est créé avec nom et téléphone seulement (pas d'email, vérifié en sandbox). Les frais (4 %) sont ajoutés au montant payé par le client : `amount` reste le montant de la commande, c'est lui qu'on contrôle.
+- Sélection par `PAYMENT_PROVIDER` (`createPaymentProvider` dans `index.ts`). `loadEnv` refuse le FakeProvider en production, une clé absente, et une clé `sk_live_` en sandbox (ou l'inverse).
+- FakeProvider (`fake-provider.ts`), pour le local et les tests : même format de webhook et de signature que FedaPay. Scénario selon le numéro : `0166000001` succès, `0166000000` échec, `0166000002` reste PENDING jusqu'à `settle()` ; `buildWebhook()` produit un webhook signé, rejouable.
 - Le webhook lit le corps brut (nécessaire au calcul de la signature) avant le parsing JSON.
 - Le webhook répond 200 rapidement dès que l'événement est enregistré ou déjà traité, pour éviter les renvois inutiles ; il répond 4xx si la signature est invalide.
 - Toutes les transitions sont journalisées (sans numéro complet).
