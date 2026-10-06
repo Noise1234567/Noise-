@@ -67,7 +67,7 @@ Essai sandbox du 2026-10-01 (script `scripts/spikes/payment/fedapay-sandbox.mjs`
 - Numéro au format international obligatoire (`+229…`).
 - Reversement : gratuit vers un compte Mobile Money, 7 000 FCFA vers un compte bancaire.
 
-### 2.2 bis FeexPay : essais du 2026-10-04 (NOISE-042, en pause)
+### 2.2 bis FeexPay : essais du 2026-10-04 et doc du 2026-10-07 (NOISE-042, close : FedaPay conservé)
 
 Comparaison des frais relevés sur les pages officielles le 2026-10-04 : FeexPay 1,5 % (MTN, Moov), KKiaPay 1,5 % à la charge du client plus 9 900 FCFA HT par mois (offre Intégration), FedaPay 1,8 % d'après une source indirecte (4 % observé en sandbox avec `momo_test`). Page de tarifs FedaPay inaccessible lors de la vérification.
 
@@ -78,6 +78,15 @@ Essais (script `scripts/spikes/payment/feexpay-sandbox.mjs`, compte d'un tiers, 
 - `GET /api/transactions/public/single/status/{reference}` : statuts `PENDING` puis `FAILED`, avec un champ `reason`.
 - Numéro inexistant `0166000001` : `FAILED`, `PAYEE_NOT_FOUND`. Numéro de test de la sandbox MTN `46733123450` (succès attendu en sandbox MTN) : `FAILED`, `PAYER_NOT_FOUND`. Le mode test de FeexPay ne passe donc pas par la sandbox MTN ; il est possible que les demandes partent vers le vrai réseau. Aucun paiement réussi, personne n'a été débité.
 - Non vérifié : existence de numéros de test, format et authentification des webhooks, KYC, délais de reversement. La clé a cessé d'être acceptée (HTTP 401) ; essais suspendus faute d'accès au compte.
+
+Relevé de la documentation officielle le 2026-10-07 (docs.feexpay.me, section API REST) :
+
+- La sandbox a sa propre adresse : `https://sandbox-api.feexpay.me`. Les essais du 2026-10-04 visaient `https://api-v2.feexpay.me`, l'API de production : les échecs `PAYEE_NOT_FOUND` / `PAYER_NOT_FOUND` venaient donc du vrai réseau.
+- Les clés API commencent par `fp_` (environ 66 caractères) ; la clé disponible le 2026-10-07 n'avait pas ce format et était refusée (401) en sandbox comme en production.
+- Numéros de test : le résultat dépend des 2 derniers chiffres (00 succès, 01 solde insuffisant, 02 erreur 503, 03 délai dépassé, 04 numéro invalide, 05 en attente puis succès, 06 en attente puis refus du client).
+- Webhook : POST JSON (référence, montant, statut, `callback_info`) vers une URL configurée dans le tableau de bord. Aucune signature ni secret documentés : impossible de prouver qu'un webhook vient de FeexPay, seule la revérification du statut par l'API protège.
+
+Conclusion (Yannis, 2026-10-07) : FedaPay est conservé (DEC-005 inchangée). FeexPay est 0,3 point moins cher (1,5 % contre 1,8 %) mais ses webhooks ne sont pas signés et aucun paiement n'a pu être validé en sandbox. Réévaluable plus tard grâce à l'interface PaymentProvider (NOISE-017).
 
 ### 2.3 Choix retenu : FedaPay (DEC-005, acceptée le 2026-10-01)
 
