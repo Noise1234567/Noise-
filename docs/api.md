@@ -94,3 +94,12 @@ Format des numéros : toute écriture béninoise est acceptée (`01 97 45 45 47`
 | `PATCH /api/v1/me/roles`     | `role` (`PARTICIPANT` ou `ORGANIZER`)                                        | 200 `{ accessToken, user }` : nouvel access token contenant le rôle ajouté | 400 (ADMIN refusé) ; 401                                                                                             |
 
 À l'attention du mobile (NOISE-008) : ne jamais lancer deux `refresh` en parallèle avec le même jeton. Le second est traité comme une réutilisation et déconnecte l'utilisateur partout. L'intercepteur Axios doit mettre les requêtes en attente pendant un rafraîchissement.
+
+### Export des ventes (NOISE-039, rôle ADMIN)
+
+| Endpoint                                      | Réponse                                                                                                                                                         | Erreurs                                                                                                                    |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/v1/admin/events/:eventId/sales`     | 200 `{ eventTitle, lines: [{ ticketTypeName, unitPriceXof, ticketsSold, grossXof }], totals: { ticketsSold, grossXof, noiseXof, affiliateXof, organizerXof } }` | 400 identifiant invalide ; 401 ; 403 (pas ADMIN) ; 404 événement inconnu ; 409 commande payée sans répartition enregistrée |
+| `GET /api/v1/admin/events/:eventId/sales.csv` | 200 `text/csv; charset=utf-8`, fichier `ventes-<titre>-<date>.csv` (voir docs/payments.md section 7.1)                                                          | idem                                                                                                                       |
+
+Seules les commandes PAID sont comptées, à partir de la répartition enregistrée à la confirmation du paiement (DEC-022). Chaque appel est journalisé (identifiant de l'administrateur, événement, action).

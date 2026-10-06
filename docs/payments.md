@@ -132,7 +132,7 @@ Exemple, billet à 5 000 FCFA : le client paie 5 000 FCFA plus les frais de l'ag
 
 - Rapport par événement : `buildSalesReport` (`apps/api/src/modules/admin/sales-report.ts`), à partir des seules commandes PAID du registre ; un registre incohérent bloque l'export.
 - CSV : `salesReportToCsv` (`apps/api/src/modules/admin/sales-csv.ts`), lisible dans Excel en français : une ligne par type de billet (prix, billets vendus, montant), puis total, commission Noise, commission des partageurs et net à reverser. Les formules saisies par un organisateur (=, +, -, @) sont neutralisées.
-- Route d'export réservée au rôle ADMIN : étape 2, avec NOISE-006, NOISE-019 et NOISE-037.
+- Routes réservées au rôle ADMIN : `GET /api/v1/admin/events/:eventId/sales` (JSON) et `.../sales.csv` (fichier), voir docs/api.md. Elles lisent la répartition enregistrée sur les commandes PAID ; tant que NOISE-019 n'écrit pas cette répartition, aucune commande réelle n'est exportable.
 
 ### 7.2 Procédure de reversement à l'organisateur (MVP, manuel)
 
