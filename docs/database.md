@@ -1,6 +1,10 @@
 # Base de données
 
-État : modèle cible, à implémenter dans NOISE-006. PostgreSQL 17, Prisma 7.
+État : implémenté dans NOISE-006 (`apps/api/prisma/schema.prisma`, migration initiale, seed). PostgreSQL 17, Prisma 7.
+
+Écarts et ajouts par rapport au tableau ci-dessous : `User.phone` en E.164 (14 caractères, colonne de 16) ; `Event.affiliationEnabled` et, sur `Order`, `referrerId` et les parts `noiseShareXof` / `affiliateShareXof` / `organizerShareXof` (DEC-022) ; `ScannerLink.label` (nom du membre du staff) ; index `Ticket(eventId, usedAt)` pour les statistiques d'entrées. Contraintes CHECK ajoutées en SQL dans la migration : prix et quantités positifs, `quantitySold <= quantityTotal`, 1 à 5 billets par commande, `total = prix × quantité`, répartition complète et égale au total, fin d'événement après le début, billet USED si et seulement si `usedAt` est renseigné.
+
+En local : `pnpm db:up` puis `pnpm --filter @noise/api db:deploy` et `db:seed` (1 organisateur, 1 participant, mot de passe « motdepasse », 2 événements, 3 types de billets). Si un PostgreSQL est déjà installé sur la machine et occupe le port 5432, définir `NOISE_DB_PORT=55432` dans un `.env` à la racine et adapter `DATABASE_URL` / `TEST_DATABASE_URL`. Les tests d'intégration appliquent eux-mêmes les migrations à `noise_test` avant de s'exécuter.
 
 ## 1. Entités
 
