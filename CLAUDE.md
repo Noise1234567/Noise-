@@ -188,6 +188,8 @@ Le reviewer vérifie, dans cet ordre :
 
 Règles : une PR doit rester relisible (idéalement moins de 400 lignes hors fichiers générés). Commentaires préfixés `bloquant:`, `question:`, `suggestion:`, `détail:`. Réponse à une demande de revue sous 24 h. On critique le code, pas la personne. Le reviewer lance la branche en local pour toute PR qui touche paiement, scan ou auth.
 
+Revue automatique par IA (NOISE-041, DEC-021) : à l'ouverture de chaque PR non brouillon, Claude Code GitHub Actions commente le diff (bugs, sécurité, respect de ce fichier). Cette revue est consultative, jamais bloquante : le workflow n'a que des permissions de lecture, Claude ne peut ni approuver ni merger. Elle s'ajoute à la revue humaine (CODEOWNERS, approbation obligatoire), elle ne la remplace pas. Traiter ses remarques comme celles d'un reviewer junior : utiles à trier, jamais à appliquer sans comprendre.
+
 ## 13. Définition de terminé
 
 Une tâche est terminée (statut Validé) seulement si :
@@ -224,6 +226,9 @@ pnpm install                 # installer tout le monorepo
 pnpm db:up                   # Postgres local (Docker)
 cp apps/api/.env.example apps/api/.env
 pnpm --filter @noise/shared build
+pnpm --filter @noise/api db:generate   # client Prisma
+pnpm --filter @noise/api db:deploy     # migrations sur noise_dev
+pnpm --filter @noise/api db:seed       # données de démo
 pnpm dev:api                 # API sur http://localhost:3000
 pnpm dev:mobile              # Metro / Expo
 pnpm dev:scanner             # scanner sur http://localhost:5173/scan/
