@@ -16,7 +16,7 @@ Statuts : Proposée · Acceptée · En attente (bloquée par une information ou 
 | DEC-006 | Google Play après le MVP ; AAB préparé dès la S4                                        | Acceptée                                        | 2026-09-24 |
 | DEC-007 | Réservation du stock à la création de la commande                                       | Acceptée (écart au CDC)                         | 2026-09-24 |
 | DEC-008 | Maximum 5 billets par commande                                                          | Acceptée                                        | 2026-09-24 |
-| DEC-009 | Reversements aux organisateurs manuels pour le MVP                                      | Acceptée ; taux et frais en attente             | 2026-09-24 |
+| DEC-009 | Reversements aux organisateurs manuels pour le MVP                                      | Acceptée ; commission 10 % (DEC-021)            | 2026-10-06 |
 | DEC-010 | Remboursements manuels en cas d'annulation d'événement                                  | Acceptée                                        | 2026-09-24 |
 | DEC-011 | Navigation mobile : Expo Router (bâti sur React Navigation)                             | Proposée                                        | 2026-09-24 |
 | DEC-012 | Format des commits vérifié en CI (titre de PR), sans hook Git local                     | Acceptée                                        | 2026-09-24 |
@@ -28,6 +28,7 @@ Statuts : Proposée · Acceptée · En attente (bloquée par une information ou 
 | DEC-018 | Validation des organisateurs avant la mise en vente                                     | En attente                                      | —          |
 | DEC-019 | Disponibilité hebdomadaire de Yannis et Orias                                           | En attente                                      | —          |
 | DEC-020 | Administration minimale : rôle ADMIN + endpoints internes, pas d'interface dédiée       | Acceptée                                        | 2026-09-24 |
+| DEC-021 | Répartition de chaque vente, commission Noise 10 %, affiliation après le MVP            | Acceptée                                        | 2026-10-06 |
 
 ---
 
@@ -91,7 +92,7 @@ Statuts : Proposée · Acceptée · En attente (bloquée par une information ou 
 ## DEC-009 — Reversements manuels
 
 - Choix : Noise encaisse via l'agrégateur, puis reverse manuellement aux organisateurs après l'événement, sur la base d'un export des ventes (NOISE-039).
-- En attente : taux de commission (5 % ou 10 %, ou selon l'organisateur) et répartition des frais de l'agrégateur. À fixer avant la mise en production du paiement (NOISE-034).
+- Commission et frais : fixés par DEC-021 (2026-10-06) : 10 % pour Noise, frais de l'agrégateur payés par le client.
 
 ## DEC-010 — Remboursements manuels
 
@@ -144,3 +145,18 @@ Statuts : Proposée · Acceptée · En attente (bloquée par une information ou 
 ## DEC-020 — Administration minimale
 
 - Choix : rôle ADMIN en base, quelques endpoints protégés (suspendre un organisateur ou un événement, lister les paiements, exporter les ventes) et Prisma Studio pour le reste. Pas d'interface d'administration dédiée dans le MVP.
+
+## DEC-021 — Répartition de chaque vente et affiliation
+
+- Contexte : DEC-009 laissait le taux de commission en attente. Yannis et Orias ajoutent une affiliation : une personne qui partage l'événement touche une part des billets vendus grâce à son lien.
+- Alternatives étudiées : sous-comptes FedaPay (répartition automatique à chaque paiement) ; virements par l'API FedaPay (payouts) ; reversements manuels.
+- Choix :
+  - Commission Noise : 10 % du prix du billet, obligatoire. L'organisateur en est informé au moment de fixer son prix (montant qu'il recevra par billet affiché à la création de l'événement, NOISE-013).
+  - Frais de l'agrégateur (environ 1,8 %, taux exact à confirmer) : payés par le client, en plus du prix du billet (réglage du compte FedaPay).
+  - Affiliation (option choisie par l'organisateur) : 1 % du prix du billet pour le partageur, pris sur la part de l'organisateur. Implémentée après le MVP ; les données sont préparées dès le MVP (voir conséquences).
+  - Organisateur : le reste. Arrondis : chaque commission est arrondie au FCFA inférieur, l'organisateur reçoit le reste, la somme des parts est toujours égale au prix payé.
+  - La répartition de chaque commande est calculée et enregistrée par l'API à la confirmation du paiement (registre), jamais saisie à la main.
+  - Reversement à l'organisateur après l'événement, à partir du registre : manuel pour le MVP (DEC-009, procédure NOISE-039) ; virement par l'API FedaPay envisagé ensuite. Les partageurs seront payés de façon groupée au-delà d'un seuil (le coût d'un virement, 150 FCFA minimum, dépasse 1 % d'un petit billet).
+- Écartés : les sous-comptes FedaPay, qui versent l'argent à l'organisateur dès la vente (impossible de rembourser les clients si l'événement est annulé, risque de fraude) et exigent un compte FedaPay vérifié pour chaque bénéficiaire.
+- Conséquences : NOISE-006 prévoit sur la commande les parts calculées (Noise, partageur, organisateur) et un partageur facultatif ; NOISE-019 enregistre la répartition à la confirmation ; NOISE-039 produit l'export à partir du registre. À vérifier avant la production : le cadre réglementaire de la détention des fonds des organisateurs entre la vente et le reversement (BCEAO), auprès de FedaPay ou d'un juriste.
+- Personnes : Yannis, Orias (accord du 2026-10-06).

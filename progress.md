@@ -26,6 +26,8 @@ Rien n'est encore au statut Validé.
 
 | NOISE-004 Espace Notion | Implémenté, revue Orias à faire | Créé par Claude via le connecteur le 2026-09-24 : page « Noise — Pilotage » (privée), 11 bases reliées, 41 tâches avec dépendances, formules de charge et d'équilibre, vues (Kanban, Tâches Yannis/Orias, Partagées, Bloquées, Prêtes, Externes, Roadmap, Équilibre, À relire) et tableau de bord. Non fait : partage de la page, invitation de Yannis. |
 
+| NOISE-039 Export des ventes et procédure de reversement | En cours (Yannis, depuis le 2026-10-06, en avance sur S5) | Branche `feat/NOISE-039-sales-export`. DEC-021 acceptée (Yannis et Orias) : Noise 10 %, frais de l'agrégateur payés par le client, affiliation 1 % après le MVP, arrondi au FCFA inférieur. Étape 1 sans base : `splitSale` partagé (`packages/shared`), rapport par événement et CSV pour Excel (`apps/api/src/modules/admin/`), procédures de reversement et de remboursement (`docs/payments.md` section 7). Vérifié le 2026-10-06 : lint, typecheck, 11 tests shared + 15 tests API ; régression d'arrondi volontaire détectée. Reste (étape 2) : lecture du registre en base et route d'export ADMIN (après NOISE-006, NOISE-019, NOISE-037). |
+
 Non vérifié par Claude (à faire dans NOISE-003) :
 
 - `prisma generate` : le téléchargement des moteurs Prisma est bloqué par le réseau de l'environnement de Claude ;
