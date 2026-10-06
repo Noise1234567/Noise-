@@ -48,7 +48,7 @@ Implémentation : `apps/scanner/src/`, servi par l'API sous `/scan` dès que le 
 - Le jeton est lu après le « # », effacé de la barre d'adresse et gardé pour la session (rechargement possible).
 - Un lien dont la date `exp` est passée est refusé dès l'ouverture ; sinon c'est l'API qui décide (401 → écran « Lien expiré ou révoqué », la caméra est coupée).
 - Lecture : BarcodeDetector si disponible (Chrome Android), sinon jsQR, chargé seulement dans ce cas (26 Ko compressés pour la page, 47 Ko de plus pour jsQR).
-- iPhone (Safari, ou Chrome qui utilise le même moteur) : pas de BarcodeDetector, lecture par jsQR ; pas de vibration (seule la couleur de l'écran change). Les tests sans caméra passent dans WebKit ; les tests de lecture ne peuvent pas y tourner sous Windows (canvas.captureStream absent du WebKit de Playwright) : à vérifier sur un vrai iPhone.
+- iPhone (Safari, ou Chrome qui utilise le même moteur) : pas de BarcodeDetector, lecture par jsQR ; pas de vibration (seule la couleur de l'écran change). Les tests sans caméra passent dans WebKit ; les tests de lecture ne peuvent pas y tourner sous Windows (canvas.captureStream absent du WebKit de Playwright) ; vérifié manuellement sur un iPhone (iOS 18.7, Safari) le 2026-10-06.
 - Délai maximal d'attente de l'API : 8 s, puis écran orange « Pas de connexion ».
 - Tests : unitaires (`apps/scanner/src/scanner.test.ts`) et Playwright (`apps/scanner/e2e/`) avec fausse caméra affichant un vrai QR et API simulée.
 
