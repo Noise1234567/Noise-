@@ -29,6 +29,7 @@ Statuts : Proposée · Acceptée · En attente (bloquée par une information ou 
 | DEC-019 | Disponibilité hebdomadaire de Yannis et Orias                                           | En attente                                      | —          |
 | DEC-020 | Administration minimale : rôle ADMIN + endpoints internes, pas d'interface dédiée       | Acceptée                                        | 2026-09-24 |
 | DEC-021 | Répartition de chaque vente, commission Noise 10 %, affiliation après le MVP            | Acceptée                                        | 2026-10-06 |
+| DEC-022 | Versement à l'organisateur au fil des ventes, alerte de non-tenue, réserve              | Proposée (en discussion)                        | 2026-10-06 |
 
 ---
 
@@ -160,3 +161,15 @@ Statuts : Proposée · Acceptée · En attente (bloquée par une information ou 
 - Écartés : les sous-comptes FedaPay, qui versent l'argent à l'organisateur dès la vente (impossible de rembourser les clients si l'événement est annulé, risque de fraude) et exigent un compte FedaPay vérifié pour chaque bénéficiaire.
 - Conséquences : NOISE-006 prévoit sur la commande les parts calculées (Noise, partageur, organisateur) et un partageur facultatif ; NOISE-019 enregistre la répartition à la confirmation ; NOISE-039 produit l'export à partir du registre. À vérifier avant la production : le cadre réglementaire de la détention des fonds des organisateurs entre la vente et le reversement (BCEAO), auprès de FedaPay ou d'un juriste.
 - Personnes : Yannis, Orias (accord du 2026-10-06).
+
+## DEC-022 — Versement à l'organisateur au fil des ventes (proposée, en discussion)
+
+- Contexte : les organisateurs financent leur soirée avec les ventes, souvent semaines avant l'événement ; un reversement après l'événement (DEC-021) n'est pas viable pour eux.
+- Proposition (2026-10-06, Yannis, à valider avec Orias et l'équipe) :
+  - versement automatique chaque lendemain de vente, par l'API de virements FedaPay, sur le numéro Mobile Money de l'organisateur (coût du virement déduit de sa part) ;
+  - identité de l'organisateur vérifiée avant son premier versement (lien avec DEC-018) ;
+  - remboursements en cas d'annulation à la charge de l'organisateur, règles affichées à l'achat (remplace DEC-010) ; restitution ou non des 10 % de Noise à trancher ;
+  - alerte de non-tenue : si le taux de billets scannés reste sous un seuil après l'heure de fin, le versement suivant est mis en attente et un administrateur vérifie avant de débloquer, rembourser ou bannir (pas de sanction automatique : fausses alertes possibles) ;
+  - réserve pour les nouveaux organisateurs (part de chaque versement gardée jusqu'à la tenue de la soirée), seule protection permettant réellement de rembourser.
+- Valeurs à fixer : seuil de l'alerte, pourcentage et durée de la réserve, texte des règles de remboursement.
+- Impact : remplace le « reversement après l'événement » de DEC-021 et les procédures 7.2 / 7.3 de docs/payments.md ; nouvelles tâches (versement quotidien, alerte, réserve) à ajouter à la roadmap après validation.
