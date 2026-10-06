@@ -67,7 +67,7 @@ Essai sandbox du 2026-10-01 (script `scripts/spikes/payment/fedapay-sandbox.mjs`
 - Numéro au format international obligatoire (`+229…`).
 - Reversement : gratuit vers un compte Mobile Money, 7 000 FCFA vers un compte bancaire.
 
-### 2.2 bis FeexPay : essais du 2026-10-04 (NOISE-041, en pause)
+### 2.2 bis FeexPay : essais du 2026-10-04 (NOISE-042, en pause)
 
 Comparaison des frais relevés sur les pages officielles le 2026-10-04 : FeexPay 1,5 % (MTN, Moov), KKiaPay 1,5 % à la charge du client plus 9 900 FCFA HT par mois (offre Intégration), FedaPay 1,8 % d'après une source indirecte (4 % observé en sandbox avec `momo_test`). Page de tarifs FedaPay inaccessible lors de la vérification.
 

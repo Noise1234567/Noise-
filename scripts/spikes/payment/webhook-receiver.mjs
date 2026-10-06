@@ -88,7 +88,7 @@ createServer((req, res) => {
       console.log(
         `Événement : ${event.name ?? event.type ?? '?'} ; transaction ${entity.id ?? '?'} ; statut ${entity.status ?? '?'}`,
       );
-      // Format générique (NOISE-041, FeexPay) : structure du corps, valeurs sensibles masquées.
+      // Format générique (NOISE-042, FeexPay) : structure du corps, valeurs sensibles masquées.
       if (!event.entity) console.log('Corps (masqué) :', JSON.stringify(redact(event), null, 2));
     } catch {
       console.log('Corps non JSON (début) :', rawBody.slice(0, 200));

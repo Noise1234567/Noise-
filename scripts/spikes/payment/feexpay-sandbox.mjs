@@ -1,4 +1,4 @@
-// NOISE-041 — script d'exploration jetable (hors src/) : paiement FeexPay en mode test.
+// NOISE-042 — script d'exploration jetable (hors src/) : paiement FeexPay en mode test.
 // Usage depuis la racine : node scripts/spikes/payment/feexpay-sandbox.mjs [reseau] [numero]
 //   reseau : mtn (défaut), moov ou celtiis_bj
 //   numero : numéro à 10 chiffres (défaut : 0166000001), envoyé au format 229XXXXXXXXXX
@@ -56,14 +56,14 @@ async function call(method, path, body) {
   return { status: res.status, data };
 }
 
-const reference = `noise041-${Date.now()}`;
+const reference = `noise042-${Date.now()}`;
 const { data } = await call('POST', `/api/transactions/public/requesttopay/${network}`, {
   phoneNumber,
   amount: 100,
   shop: shopId,
   firstName: 'Ama',
   lastName: 'Test',
-  description: 'NOISE 041 test',
+  description: 'NOISE 042 test',
   custom_id: reference,
   // Adresse de retour (tunnel vers webhook-receiver.mjs), si FeexPay l'accepte par requête.
   ...(process.env.FEEXPAY_CALLBACK_URL ? { callback_url: process.env.FEEXPAY_CALLBACK_URL } : {}),
