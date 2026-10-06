@@ -8,6 +8,7 @@ const logger = createLogger(env.LOG_LEVEL);
 const prisma = env.DATABASE_URL ? createPrismaClient(env.DATABASE_URL) : null;
 if (!prisma) logger.warn('DATABASE_URL absente : /health/ready répondra 503');
 const app = createApp(env, logger, {
+  prisma: prisma ?? undefined,
   checkDatabase: prisma
     ? async () => {
         await prisma.$queryRaw`SELECT 1`;

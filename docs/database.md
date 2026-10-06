@@ -10,18 +10,18 @@ En local : `pnpm db:up` puis `pnpm --filter @noise/api db:deploy` et `db:seed` (
 
 Base : CDC section 6, complétée (Payment, ScanLog, révocation des liens, rôles multiples, réservation de stock).
 
-| Table        | Champs principaux                                                                                                                | Notes                                                                  |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| User         | id (uuid), name, phone (unique, normalisé), passwordHash, roles (enum[]), status, createdAt                                      | `roles` : PARTICIPANT, ORGANIZER, ADMIN                                |
-| RefreshToken | id, userId, tokenHash (unique), expiresAt, revokedAt, replacedById                                                               | Rotation : l'ancien est révoqué à chaque refresh                       |
-| Event        | id, organizerId, title, description, genre, venue, city, startsAt, endsAt, posterUrl, status, cancelledAt                        | status : DRAFT, PUBLISHED, CANCELLED ; « à venir / passé » est calculé |
-| TicketType   | id, eventId, name, priceXof (Int), quantityTotal, quantitySold, salesEndAt                                                       | Contrainte : quantitySold ≤ quantityTotal                              |
-| Order        | id, participantId, ticketTypeId, quantity (1–5), unitPriceXof, totalXof, status, expiresAt, paidAt                               | Prix figé à la création                                                |
-| Payment      | id, orderId, provider, operator (MTN/MOOV), phoneMasked, amountXof, status, providerTransactionId (unique), rawStatus, createdAt | Une commande peut avoir plusieurs tentatives                           |
-| Ticket       | id, orderId, ticketTypeId, eventId, holderName, qrTokenHash (unique), status, usedAt                                             | Créé uniquement à la confirmation du paiement                          |
-| ScannerLink  | id, eventId, createdById, jti (unique), expiresAt, revokedAt                                                                     | Le JWT lui-même n'est pas stocké                                       |
-| ScanLog      | id, scannerLinkId, ticketId (nullable), result, scannedAt                                                                        | Journal de toutes les tentatives                                       |
-| PushToken    | id, userId, token (unique), platform, updatedAt                                                                                  | NOISE-028                                                              |
+| Table        | Champs principaux                                                                                                                 | Notes                                                                  |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| User         | id (uuid), name, phone (unique, E.164 : +229 puis 10 chiffres commençant par 01), passwordHash, roles (enum[]), status, createdAt | `roles` : PARTICIPANT, ORGANIZER, ADMIN                                |
+| RefreshToken | id, userId, tokenHash (unique), expiresAt, revokedAt, replacedById                                                                | Rotation : l'ancien est révoqué à chaque refresh                       |
+| Event        | id, organizerId, title, description, genre, venue, city, startsAt, endsAt, posterUrl, status, cancelledAt                         | status : DRAFT, PUBLISHED, CANCELLED ; « à venir / passé » est calculé |
+| TicketType   | id, eventId, name, priceXof (Int), quantityTotal, quantitySold, salesEndAt                                                        | Contrainte : quantitySold ≤ quantityTotal                              |
+| Order        | id, participantId, ticketTypeId, quantity (1–5), unitPriceXof, totalXof, status, expiresAt, paidAt                                | Prix figé à la création                                                |
+| Payment      | id, orderId, provider, operator (MTN/MOOV), phoneMasked, amountXof, status, providerTransactionId (unique), rawStatus, createdAt  | Une commande peut avoir plusieurs tentatives                           |
+| Ticket       | id, orderId, ticketTypeId, eventId, holderName, qrTokenHash (unique), status, usedAt                                              | Créé uniquement à la confirmation du paiement                          |
+| ScannerLink  | id, eventId, createdById, jti (unique), expiresAt, revokedAt                                                                      | Le JWT lui-même n'est pas stocké                                       |
+| ScanLog      | id, scannerLinkId, ticketId (nullable), result, scannedAt                                                                         | Journal de toutes les tentatives                                       |
+| PushToken    | id, userId, token (unique), platform, updatedAt                                                                                   | NOISE-028                                                              |
 
 Conventions : noms Prisma en PascalCase / camelCase, tables et colonnes mappées en snake_case (`@@map`, `@map`). Identifiants UUID. Toutes les dates en `timestamptz` UTC. Montants en `Int` (FCFA).
 

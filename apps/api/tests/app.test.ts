@@ -31,8 +31,16 @@ describe('loadEnv', () => {
     expect(() => loadEnv({ PORT: 'abc' })).toThrow(/Configuration invalide/);
   });
 
+  it('exige JWT_ACCESS_SECRET (32 caractères minimum) hors des tests', () => {
+    expect(() => loadEnv({ NODE_ENV: 'development' })).toThrow(/JWT_ACCESS_SECRET/);
+    expect(() => loadEnv({ NODE_ENV: 'production', JWT_ACCESS_SECRET: 'court' })).toThrow(
+      /JWT_ACCESS_SECRET/,
+    );
+    expect(loadEnv({ JWT_ACCESS_SECRET: 'x'.repeat(32) }).JWT_ACCESS_SECRET).toHaveLength(32);
+  });
+
   it('utilise le FakeProvider par défaut', () => {
-    expect(loadEnv({}).PAYMENT_PROVIDER).toBe('fake');
+    expect(loadEnv({ NODE_ENV: 'test' }).PAYMENT_PROVIDER).toBe('fake');
   });
 
   it('interdit le FakeProvider en production', () => {
@@ -58,6 +66,7 @@ describe('loadEnv', () => {
 
   it('accepte une configuration FedaPay sandbox complète', () => {
     const env = loadEnv({
+      NODE_ENV: 'test',
       PAYMENT_PROVIDER: 'fedapay',
       PAYMENT_API_KEY: 'sk_sandbox_xxx',
       PAYMENT_WEBHOOK_SECRET: 'whsec',
