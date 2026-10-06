@@ -13,9 +13,9 @@ export const scanValidateRequestSchema = z.object({
 
 export const scanValidateResponseSchema = z.object({
   result: z.enum(SCAN_RESULTS),
-  /** ACCEPTED, ALREADY_USED : nom du titulaire du billet. */
+  /** Tous les résultats sauf INVALID (billet introuvable) : nom complet du titulaire. */
   holderName: z.string().optional(),
-  /** ACCEPTED, ALREADY_USED : nom du type de billet (ex. VIP). */
+  /** Tous les résultats sauf INVALID : type de billet (ex. Early bird, VIP). */
   ticketTypeName: z.string().optional(),
   /** ALREADY_USED : date du premier scan (ISO 8601, UTC). */
   usedAt: z.string().optional(),
