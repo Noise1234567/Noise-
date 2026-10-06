@@ -6,28 +6,29 @@ Statuts : Proposée · Acceptée · En attente (bloquée par une information ou 
 
 ## Index
 
-| ID      | Décision                                                                                | Statut                                          | Date       |
-| ------- | --------------------------------------------------------------------------------------- | ----------------------------------------------- | ---------- |
-| DEC-001 | Monorepo pnpm workspaces                                                                | Acceptée                                        | 2026-09-24 |
-| DEC-002 | Conserver la stack du cahier des charges (Express/TS, Prisma, PostgreSQL, React Native) | Acceptée                                        | 2026-09-24 |
-| DEC-003 | Expo (CNG) + EAS Build plutôt que React Native bare                                     | Acceptée                                        | 2026-09-24 |
-| DEC-004 | Hébergement Railway (API + Postgres), staging et production                             | Acceptée                                        | 2026-09-24 |
-| DEC-005 | Paiement via un agrégateur béninois plutôt que MTN et Moov en direct                    | Acceptée (fournisseur à choisir dans NOISE-010) | 2026-09-24 |
-| DEC-006 | Google Play après le MVP ; AAB préparé dès la S4                                        | Acceptée                                        | 2026-09-24 |
-| DEC-007 | Réservation du stock à la création de la commande                                       | Acceptée (écart au CDC)                         | 2026-09-24 |
-| DEC-008 | Maximum 5 billets par commande                                                          | Acceptée                                        | 2026-09-24 |
-| DEC-009 | Reversements aux organisateurs manuels pour le MVP                                      | Acceptée ; taux et frais en attente             | 2026-09-24 |
-| DEC-010 | Remboursements manuels en cas d'annulation d'événement                                  | Acceptée                                        | 2026-09-24 |
-| DEC-011 | Navigation mobile : Expo Router (bâti sur React Navigation)                             | Proposée                                        | 2026-09-24 |
-| DEC-012 | Format des commits vérifié en CI (titre de PR), sans hook Git local                     | Acceptée                                        | 2026-09-24 |
-| DEC-013 | Stratégie Git trunk-based : main protégée + branches courtes + squash                   | Acceptée                                        | 2026-09-24 |
-| DEC-014 | Scanner en ligne uniquement pour le MVP                                                 | Acceptée                                        | 2026-09-24 |
-| DEC-015 | Identifiant Android `com.noise.app`                                                     | Proposée                                        | 2026-09-24 |
-| DEC-016 | Entité légale et titulaire du compte marchand (KYC)                                     | En attente                                      | —          |
-| DEC-017 | Vérification du téléphone et mot de passe oublié (OTP SMS)                              | En attente                                      | —          |
-| DEC-018 | Validation des organisateurs avant la mise en vente                                     | En attente                                      | —          |
-| DEC-019 | Disponibilité hebdomadaire de Yannis et Orias                                           | En attente                                      | —          |
-| DEC-020 | Administration minimale : rôle ADMIN + endpoints internes, pas d'interface dédiée       | Acceptée                                        | 2026-09-24 |
+| ID      | Décision                                                                                      | Statut                                          | Date       |
+| ------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------- | ---------- |
+| DEC-001 | Monorepo pnpm workspaces                                                                      | Acceptée                                        | 2026-09-24 |
+| DEC-002 | Conserver la stack du cahier des charges (Express/TS, Prisma, PostgreSQL, React Native)       | Acceptée                                        | 2026-09-24 |
+| DEC-003 | Expo (CNG) + EAS Build plutôt que React Native bare                                           | Acceptée                                        | 2026-09-24 |
+| DEC-004 | Hébergement Railway (API + Postgres), staging et production                                   | Acceptée                                        | 2026-09-24 |
+| DEC-005 | Paiement via un agrégateur béninois plutôt que MTN et Moov en direct                          | Acceptée (fournisseur à choisir dans NOISE-010) | 2026-09-24 |
+| DEC-006 | Google Play après le MVP ; AAB préparé dès la S4                                              | Acceptée                                        | 2026-09-24 |
+| DEC-007 | Réservation du stock à la création de la commande                                             | Acceptée (écart au CDC)                         | 2026-09-24 |
+| DEC-008 | Maximum 5 billets par commande                                                                | Acceptée                                        | 2026-09-24 |
+| DEC-009 | Reversements aux organisateurs manuels pour le MVP                                            | Acceptée ; taux et frais en attente             | 2026-09-24 |
+| DEC-010 | Remboursements manuels en cas d'annulation d'événement                                        | Acceptée                                        | 2026-09-24 |
+| DEC-011 | Navigation mobile : Expo Router (bâti sur React Navigation)                                   | Proposée                                        | 2026-09-24 |
+| DEC-012 | Format des commits vérifié en CI (titre de PR), sans hook Git local                           | Acceptée                                        | 2026-09-24 |
+| DEC-013 | Stratégie Git trunk-based : main protégée + branches courtes + squash                         | Acceptée                                        | 2026-09-24 |
+| DEC-014 | Scanner en ligne uniquement pour le MVP                                                       | Acceptée                                        | 2026-09-24 |
+| DEC-015 | Identifiant Android `com.noise.app`                                                           | Proposée                                        | 2026-09-24 |
+| DEC-016 | Entité légale et titulaire du compte marchand (KYC)                                           | En attente                                      | —          |
+| DEC-017 | Vérification du téléphone et mot de passe oublié (OTP SMS)                                    | En attente                                      | —          |
+| DEC-018 | Validation des organisateurs avant la mise en vente                                           | En attente                                      | —          |
+| DEC-019 | Disponibilité hebdomadaire de Yannis et Orias                                                 | En attente                                      | —          |
+| DEC-020 | Administration minimale : rôle ADMIN + endpoints internes, pas d'interface dédiée             | Acceptée                                        | 2026-09-24 |
+| DEC-021 | Revue de PR par IA (Claude Code GitHub Actions), consultative, validation humaine obligatoire | Acceptée                                        | 2026-10-06 |
 
 ---
 
@@ -144,3 +145,11 @@ Statuts : Proposée · Acceptée · En attente (bloquée par une information ou 
 ## DEC-020 — Administration minimale
 
 - Choix : rôle ADMIN en base, quelques endpoints protégés (suspendre un organisateur ou un événement, lister les paiements, exporter les ventes) et Prisma Studio pour le reste. Pas d'interface d'administration dédiée dans le MVP.
+
+## DEC-021 — Revue de PR par IA, consultative, validation humaine obligatoire
+
+- Contexte : vérifier automatiquement chaque PR (sécurité, règles métier, respect de CLAUDE.md) sans affaiblir la revue humaine entre Yannis et Orias.
+- Choix : Claude Code GitHub Actions (`anthropics/claude-code-action@v1`) commente chaque PR non brouillon à l'ouverture et à la réouverture (`.github/workflows/claude-review.yml`). Le workflow n'a que des permissions de lecture (`contents: read`, `pull-requests: read`, `issues: read`) : Claude ne peut ni approuver, ni merger, ni modifier le code. La protection de la branche `main` exige toujours une approbation humaine (`.github/CODEOWNERS`, 1 reviewer minimum, dismiss des approbations obsolètes) ; les commentaires de Claude sont des suggestions à trier par le reviewer, pas une validation.
+- Authentification : token lié à l'abonnement Claude d'Orias (`CLAUDE_CODE_OAUTH_TOKEN`, généré par `claude setup-token`), stocké en secret GitHub. À revoir si le token personnel bloque l'équipe (ex. en cas d'absence) : bascule possible vers une clé API de la Claude Console.
+- Écarté : le service « Code Review » géré par Anthropic (claude.ai/admin-settings/claude-code), réservé aux abonnements Team/Enterprise et facturé 15 à 25 $ par revue — hors budget et hors périmètre d'un abonnement personnel.
+- Suivi : si le coût ou le bruit des commentaires devient gênant, ajouter un fichier `REVIEW.md` pour recalibrer ce que Claude signale.
