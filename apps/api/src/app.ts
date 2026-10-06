@@ -14,7 +14,12 @@ import { errorHandler, notFoundHandler } from './middlewares/error-handler.js';
  * Les modules métier (src/modules/<domaine>) seront montés ici sous /api/v1
  * au fil des tâches NOISE-007 et suivantes.
  */
-export function createApp(env: Env, logger: Logger) {
+export interface AppDependencies {
+  /** Vérifie que la base répond (lève une erreur sinon). Absent : /health/ready répond 503. */
+  checkDatabase?: () => Promise<void>;
+}
+
+export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) {
   const app = express();
 
   app.disable('x-powered-by');
@@ -26,6 +31,18 @@ export function createApp(env: Env, logger: Logger) {
 
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', env: env.NODE_ENV });
+  });
+
+  // Prêt à servir : la base répond. Utilisé par Railway et UptimeRobot (NOISE-016, NOISE-030).
+  app.get('/health/ready', async (req, res) => {
+    try {
+      if (!deps.checkDatabase) throw new Error('Base non configurée');
+      await deps.checkDatabase();
+      res.json({ status: 'ready', checks: { database: 'up' } });
+    } catch (error) {
+      req.log.warn({ err: error }, 'Base de données injoignable');
+      res.status(503).json({ status: 'unavailable', checks: { database: 'down' } });
+    }
   });
 
   app.use(notFoundHandler);

@@ -26,6 +26,8 @@ Rien n'est encore au statut Validé.
 
 | NOISE-004 Espace Notion | Implémenté, revue Orias à faire | Créé par Claude via le connecteur le 2026-09-24 : page « Noise — Pilotage » (privée), 11 bases reliées, 41 tâches avec dépendances, formules de charge et d'équilibre, vues (Kanban, Tâches Yannis/Orias, Partagées, Bloquées, Prêtes, Externes, Roadmap, Équilibre, À relire) et tableau de bord. Non fait : partage de la page, invitation de Yannis. |
 
+| NOISE-006 Schéma Prisma v1, migration initiale et seed | En cours (binôme ; premier jet de Yannis le 2026-10-06, à relire et approuver par Orias) | Branche `feat/NOISE-006-prisma-schema` : 10 modèles (User, RefreshToken, Event, TicketType, Order, Payment, Ticket, ScannerLink, ScanLog, PushToken), enums, index, contraintes CHECK en SQL, parts de répartition et affiliation préparées (DEC-022) ; client `apps/api/src/lib/prisma.ts` ; `/health/ready` ; seed ; CI (db:generate, db:deploy). Vérifié le 2026-10-06 : migration appliquée sur noise_dev et noise_test (Docker, port 55432 sur cette machine), seed relançable, lint, typecheck, 23 tests dont 16 d'intégration sur noise_test ; un test a révélé un trou dans une contrainte CHECK (NULL), corrigé. Non vérifié : CI GitHub. |
+
 Non vérifié par Claude (à faire dans NOISE-003) :
 
 - `prisma generate` : le téléchargement des moteurs Prisma est bloqué par le réseau de l'environnement de Claude ;
