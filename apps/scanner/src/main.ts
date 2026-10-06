@@ -74,7 +74,7 @@ async function runScanner(token: string) {
       {
         tone: 'error',
         title: 'Caméra inaccessible',
-        detail: 'Autorisez l’accès à la caméra dans Chrome, puis réessayez.',
+        detail: 'Autorisez l’accès à la caméra dans les réglages du navigateur, puis réessayez.',
       },
       { label: 'Réessayer', onClick: () => void runScanner(token) },
     );

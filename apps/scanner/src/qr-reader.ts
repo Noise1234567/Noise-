@@ -26,9 +26,10 @@ export async function startCamera(video: HTMLVideoElement): Promise<MediaStream>
     video: { facingMode: { ideal: 'environment' } },
     audio: false,
   });
-  video.srcObject = stream;
-  video.setAttribute('playsinline', '');
+  // Safari (iOS) : vidéo muette et intégrée à la page AVANT d'y brancher la caméra.
   video.muted = true;
+  video.setAttribute('playsinline', '');
+  video.srcObject = stream;
   await video.play();
   return stream;
 }
