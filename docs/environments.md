@@ -20,19 +20,21 @@ Un environnement « test » séparé en ligne n'est pas nécessaire : la CI couv
 
 ## 2. Variables d'environnement de l'API
 
-| Variable                                                        | Local                 | Staging / Production                | Introduite par |
-| --------------------------------------------------------------- | --------------------- | ----------------------------------- | -------------- |
-| `NODE_ENV`                                                      | development           | staging / production                | NOISE-000      |
-| `PORT`                                                          | 3000                  | fourni par Railway                  | NOISE-000      |
-| `LOG_LEVEL`                                                     | debug                 | info                                | NOISE-000      |
-| `DATABASE_URL`                                                  | Docker                | fourni par Railway                  | NOISE-000      |
-| `CORS_ORIGINS`                                                  | http://localhost:5173 | URL du scanner                      | NOISE-000      |
-| `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`                       | valeurs locales       | secrets distincts par environnement | NOISE-007      |
-| `CLOUDINARY_URL`                                                | compte de dev         | compte Noise                        | NOISE-012      |
-| `PAYMENT_PROVIDER`, `PAYMENT_API_KEY`, `PAYMENT_WEBHOOK_SECRET` | fake / sandbox        | sandbox / live                      | NOISE-017, 019 |
-| `QR_SIGNING_SECRET`                                             | valeur locale         | secret distinct                     | NOISE-020      |
-| `SCANNER_JWT_SECRET`                                            | valeur locale         | secret distinct                     | NOISE-024      |
-| `SENTRY_DSN`                                                    | vide                  | projet Sentry                       | NOISE-030      |
+| Variable                                    | Local                 | Staging / Production                                 | Introduite par |
+| ------------------------------------------- | --------------------- | ---------------------------------------------------- | -------------- |
+| `NODE_ENV`                                  | development           | staging / production                                 | NOISE-000      |
+| `PORT`                                      | 3000                  | fourni par Railway                                   | NOISE-000      |
+| `LOG_LEVEL`                                 | debug                 | info                                                 | NOISE-000      |
+| `DATABASE_URL`                              | Docker                | fourni par Railway                                   | NOISE-000      |
+| `CORS_ORIGINS`                              | http://localhost:5173 | URL du scanner                                       | NOISE-000      |
+| `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`   | valeurs locales       | secrets distincts par environnement                  | NOISE-007      |
+| `CLOUDINARY_URL`                            | compte de dev         | compte Noise                                         | NOISE-012      |
+| `PAYMENT_PROVIDER` (`fake` ou `fedapay`)    | fake                  | fedapay (`fake` refusé en production)                | NOISE-017      |
+| `PAYMENT_ENVIRONMENT` (`sandbox` ou `live`) | sandbox               | sandbox (staging) / live (production)                | NOISE-017      |
+| `PAYMENT_API_KEY`, `PAYMENT_WEBHOOK_SECRET` | vides (fake)          | clé `sk_sandbox_` / `sk_live_` vérifiée au démarrage | NOISE-017      |
+| `QR_SIGNING_SECRET`                         | valeur locale         | secret distinct                                      | NOISE-020      |
+| `SCANNER_JWT_SECRET`                        | valeur locale         | secret distinct                                      | NOISE-024      |
+| `SENTRY_DSN`                                | vide                  | projet Sentry                                        | NOISE-030      |
 
 Chaque nouvelle variable est ajoutée à la fois dans `apps/api/src/config/env.ts`, `apps/api/.env.example` et ce tableau.
 

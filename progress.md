@@ -28,6 +28,8 @@ Rien n'est encore au statut Validé.
 
 | NOISE-006 Schéma Prisma v1, migration initiale et seed | En cours (binôme ; premier jet de Yannis le 2026-10-06, à relire et approuver par Orias) | Branche `feat/NOISE-006-prisma-schema` : 10 modèles (User, RefreshToken, Event, TicketType, Order, Payment, Ticket, ScannerLink, ScanLog, PushToken), enums, index, contraintes CHECK en SQL, parts de répartition et affiliation préparées (DEC-022) ; client `apps/api/src/lib/prisma.ts` ; `/health/ready` ; seed ; CI (db:generate, db:deploy). Vérifié le 2026-10-06 : migration appliquée sur noise_dev et noise_test (Docker, port 55432 sur cette machine), seed relançable, lint, typecheck, 23 tests dont 16 d'intégration sur noise_test ; un test a révélé un trou dans une contrainte CHECK (NULL), corrigé. Non vérifié : CI GitHub. |
 
+| NOISE-017 Interface PaymentProvider | Implémenté (mergé dans main, PR #3, 2026-10-06) | Branche `feat/NOISE-017-payment-provider` : interface, FedaPayProvider, FakeProvider, sélection par `PAYMENT_PROVIDER` validée au démarrage. Vérifié le 2026-10-02 sous Windows : format, lint, typecheck et 47 tests API passent ; deux régressions volontaires détectées par les tests. FedaPayProvider vérifié manuellement contre la vraie sandbox le 2026-10-02 (MTN `0166000001` → SUCCEEDED, Moov `0164000000` → FAILED) ; les tests automatiques utilisent un fetch simulé. |
+
 Non vérifié par Claude (à faire dans NOISE-003) :
 
 - `prisma generate` : le téléchargement des moteurs Prisma est bloqué par le réseau de l'environnement de Claude ;
