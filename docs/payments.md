@@ -65,7 +65,7 @@ Payment : INITIATED ─► PENDING ─► SUCCEEDED
 
 ## 7. Reversements et remboursements (manuels, DEC-009 / DEC-010)
 
-Règles (DEC-021) : commission Noise 10 % du prix du billet ; frais de l'agrégateur payés par le client en plus du prix ; affiliation (1 %, prise sur la part de l'organisateur) après le MVP. Chaque commission est arrondie au FCFA inférieur et l'organisateur reçoit le reste. La répartition de chaque commande est calculée par `splitSale` (`packages/shared/src/revenue-split.ts`) et enregistrée à la confirmation du paiement (NOISE-019).
+Règles (DEC-022) : commission Noise 10 % du prix du billet ; frais de l'agrégateur payés par le client en plus du prix ; affiliation (1 %, prise sur la part de l'organisateur) après le MVP. Chaque commission est arrondie au FCFA inférieur et l'organisateur reçoit le reste. La répartition de chaque commande est calculée par `splitSale` (`packages/shared/src/revenue-split.ts`) et enregistrée à la confirmation du paiement (NOISE-019).
 
 Exemple, billet à 5 000 FCFA : le client paie 5 000 FCFA plus les frais de l'agrégateur ; Noise 500 ; partageur 50 si la vente vient d'un lien de partage ; organisateur 4 450 (4 500 sans partageur).
 

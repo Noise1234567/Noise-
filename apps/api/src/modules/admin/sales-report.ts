@@ -1,7 +1,7 @@
 import type { SaleSplit } from '@noise/shared';
 
 /**
- * Rapport des ventes d'un événement (NOISE-039, DEC-009, DEC-021) : base du reversement
+ * Rapport des ventes d'un événement (NOISE-039, DEC-009, DEC-022) : base du reversement
  * manuel à l'organisateur après l'événement. Construit à partir du registre (répartition
  * enregistrée sur chaque commande à la confirmation du paiement, NOISE-019) : il n'y a
  * aucun recalcul de commission ici, seulement des sommes.

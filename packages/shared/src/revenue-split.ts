@@ -1,5 +1,5 @@
 /**
- * Répartition d'une vente (DEC-021). Partagée par l'API (registre à la confirmation du
+ * Répartition d'une vente (DEC-022). Partagée par l'API (registre à la confirmation du
  * paiement, export des ventes) et le mobile (montant affiché à l'organisateur quand il
  * fixe son prix). Les frais de l'agrégateur sont payés par le client, en plus : ils
  * n'entrent pas dans cette répartition.
