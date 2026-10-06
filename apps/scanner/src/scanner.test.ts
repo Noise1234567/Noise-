@@ -52,6 +52,14 @@ describe('messages affichés au staff', () => {
     expect(describeScan({ result })).toEqual({ tone: 'error', title });
   });
 
+  it('annulé ou mauvais événement : rouge, avec le nom et le type de billet', () => {
+    const ticket = { holderName: 'Kofi Mensah', ticketTypeName: 'Standard' };
+    expect(describeScan({ result: 'CANCELLED', ...ticket }).detail).toBe('Kofi Mensah · Standard');
+    expect(describeScan({ result: 'WRONG_EVENT', ...ticket }).detail).toBe(
+      'Kofi Mensah · Standard',
+    );
+  });
+
   it('pas de réseau : orange, sans validation locale', () => {
     expect(describeFailure('network').tone).toBe('warning');
   });

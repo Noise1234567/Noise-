@@ -39,9 +39,9 @@ export function describeScan(response: ScanValidateResponse): Display {
       };
     }
     case 'CANCELLED':
-      return { tone: 'error', title: 'Billet annulé' };
+      return { tone: 'error', title: 'Billet annulé', detail: ticketLine(response) };
     case 'WRONG_EVENT':
-      return { tone: 'error', title: 'Billet d’un autre événement' };
+      return { tone: 'error', title: 'Billet d’un autre événement', detail: ticketLine(response) };
     case 'INVALID':
       return { tone: 'error', title: 'Billet invalide' };
   }

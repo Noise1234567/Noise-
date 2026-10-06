@@ -32,6 +32,8 @@ Ordre des contrôles dans `POST /scanner/validate`, dans une transaction :
 7. Sinon : `UPDATE status = USED, usedAt = now()` → `ACCEPTED` (avec nom et type de billet).
 8. Toute tentative est inscrite dans ScanLog.
 
+Heure d'entrée : `Ticket.usedAt` (UTC, écrit dans la même transaction que `status = USED`) est l'heure d'entrée du participant. `ScanLog` garde chaque tentative (heure, résultat, lien scanner, donc membre du staff si un lien par personne). Ces données permettront des statistiques d'entrées (heure de pointe, entrées par type de billet, taux de présence) ; leur affichage aux organisateurs est hors MVP selon le CDC (1.3), sauf décision contraire (DEC-021 à trancher).
+
 | Cas classique                   | Couvert par                                                                       |
 | ------------------------------- | --------------------------------------------------------------------------------- |
 | Duplication (capture d'écran)   | Étape 6                                                                           |
@@ -55,10 +57,10 @@ Implémentation : `apps/scanner/src/`, servi par l'API sous `/scan` dès que le 
 | Situation             | Affichage                                                                     |
 | --------------------- | ----------------------------------------------------------------------------- |
 | ACCEPTED              | Plein écran vert, « Entrée validée », nom, type de billet, vibration courte   |
-| ALREADY_USED          | Plein écran rouge, « Billet déjà utilisé à HH:MM »                            |
+| ALREADY_USED          | Plein écran rouge, « Billet déjà utilisé à HH:MM », nom, type de billet       |
 | INVALID               | Rouge, « Billet invalide »                                                    |
-| CANCELLED             | Rouge, « Billet annulé »                                                      |
-| WRONG_EVENT           | Rouge, « Billet d'un autre événement »                                        |
+| CANCELLED             | Rouge, « Billet annulé », nom, type de billet                                 |
+| WRONG_EVENT           | Rouge, « Billet d'un autre événement », nom, type de billet                   |
 | Lien expiré / révoqué | Écran d'erreur, « Demandez un nouveau lien à l'organisateur »                 |
 | Pas de réseau         | Orange, « Pas de connexion — réessayez » ; aucune validation locale (DEC-014) |
 

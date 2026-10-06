@@ -97,13 +97,21 @@ test.describe('refus', () => {
     [{ result: 'ALREADY_USED', usedAt: '2026-10-21T20:30:00Z' }, 'Billet déjà utilisé à 21:30'],
     [{ result: 'INVALID' }, 'Billet invalide'],
     [{ result: 'CANCELLED' }, 'Billet annulé'],
-    [{ result: 'WRONG_EVENT' }, 'Billet d’un autre événement'],
+    [
+      { result: 'WRONG_EVENT', holderName: 'Kofi Mensah', ticketTypeName: 'VIP' },
+      'Billet d’un autre événement',
+    ],
   ] as const) {
     test(`${response.result} : écran rouge « ${message} »`, async ({ page }) => {
       await fakeCamera(page);
       await page.route(VALIDATE, (route) => route.fulfill({ json: response }));
       await openAndStart(page);
       await expect(page.getByText(message)).toBeVisible();
+      if ('holderName' in response) {
+        await expect(
+          page.getByText(`${response.holderName} · ${response.ticketTypeName}`),
+        ).toBeVisible();
+      }
     });
   }
 });
