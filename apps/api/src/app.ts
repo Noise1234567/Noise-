@@ -6,6 +6,7 @@ import { pinoHttp } from 'pino-http';
 import type { Logger } from 'pino';
 import type { Env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middlewares/error-handler.js';
+import { globalRateLimit } from './middlewares/rate-limit.js';
 
 /**
  * Construit l'application Express sans la démarrer : les tests l'utilisent
@@ -21,6 +22,7 @@ export function createApp(env: Env, logger: Logger) {
   app.set('trust proxy', 1); // derrière le proxy Railway : IP client correcte pour le rate limiting
   app.use(helmet());
   app.use(cors({ origin: env.CORS_ORIGINS }));
+  app.use(globalRateLimit());
   app.use(express.json({ limit: '100kb' }));
   app.use(pinoHttp({ logger, genReqId: () => randomUUID() }));
 
