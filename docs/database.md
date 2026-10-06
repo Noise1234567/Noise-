@@ -1,23 +1,27 @@
 # Base de données
 
-État : modèle cible, à implémenter dans NOISE-006. PostgreSQL 17, Prisma 7.
+État : implémenté dans NOISE-006 (`apps/api/prisma/schema.prisma`, migration initiale, seed). PostgreSQL 17, Prisma 7.
+
+Écarts et ajouts par rapport au tableau ci-dessous : `User.phone` en E.164 (14 caractères, colonne de 16) ; `Event.affiliationEnabled` et, sur `Order`, `referrerId` et les parts `noiseShareXof` / `affiliateShareXof` / `organizerShareXof` (DEC-022) ; `ScannerLink.label` (nom du membre du staff) ; index `Ticket(eventId, usedAt)` pour les statistiques d'entrées. Contraintes CHECK ajoutées en SQL dans la migration : prix et quantités positifs, `quantitySold <= quantityTotal`, 1 à 5 billets par commande, `total = prix × quantité`, répartition complète et égale au total, fin d'événement après le début, billet USED si et seulement si `usedAt` est renseigné.
+
+En local : `pnpm db:up` puis `pnpm --filter @noise/api db:deploy` et `db:seed` (1 organisateur, 1 participant, mot de passe « motdepasse », 2 événements, 3 types de billets). Si un PostgreSQL est déjà installé sur la machine et occupe le port 5432, définir `NOISE_DB_PORT=55432` dans un `.env` à la racine et adapter `DATABASE_URL` / `TEST_DATABASE_URL`. Les tests d'intégration appliquent eux-mêmes les migrations à `noise_test` avant de s'exécuter.
 
 ## 1. Entités
 
 Base : CDC section 6, complétée (Payment, ScanLog, révocation des liens, rôles multiples, réservation de stock).
 
-| Table        | Champs principaux                                                                                                                | Notes                                                                  |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| User         | id (uuid), name, phone (unique, normalisé), passwordHash, roles (enum[]), status, createdAt                                      | `roles` : PARTICIPANT, ORGANIZER, ADMIN                                |
-| RefreshToken | id, userId, tokenHash (unique), expiresAt, revokedAt, replacedById                                                               | Rotation : l'ancien est révoqué à chaque refresh                       |
-| Event        | id, organizerId, title, description, genre, venue, city, startsAt, endsAt, posterUrl, status, cancelledAt                        | status : DRAFT, PUBLISHED, CANCELLED ; « à venir / passé » est calculé |
-| TicketType   | id, eventId, name, priceXof (Int), quantityTotal, quantitySold, salesEndAt                                                       | Contrainte : quantitySold ≤ quantityTotal                              |
-| Order        | id, participantId, ticketTypeId, quantity (1–5), unitPriceXof, totalXof, status, expiresAt, paidAt                               | Prix figé à la création                                                |
-| Payment      | id, orderId, provider, operator (MTN/MOOV), phoneMasked, amountXof, status, providerTransactionId (unique), rawStatus, createdAt | Une commande peut avoir plusieurs tentatives                           |
-| Ticket       | id, orderId, ticketTypeId, eventId, holderName, qrTokenHash (unique), status, usedAt                                             | Créé uniquement à la confirmation du paiement                          |
-| ScannerLink  | id, eventId, createdById, jti (unique), expiresAt, revokedAt                                                                     | Le JWT lui-même n'est pas stocké                                       |
-| ScanLog      | id, scannerLinkId, ticketId (nullable), result, scannedAt                                                                        | Journal de toutes les tentatives                                       |
-| PushToken    | id, userId, token (unique), platform, updatedAt                                                                                  | NOISE-028                                                              |
+| Table        | Champs principaux                                                                                                                 | Notes                                                                  |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| User         | id (uuid), name, phone (unique, E.164 : +229 puis 10 chiffres commençant par 01), passwordHash, roles (enum[]), status, createdAt | `roles` : PARTICIPANT, ORGANIZER, ADMIN                                |
+| RefreshToken | id, userId, tokenHash (unique), expiresAt, revokedAt, replacedById                                                                | Rotation : l'ancien est révoqué à chaque refresh                       |
+| Event        | id, organizerId, title, description, genre, venue, city, startsAt, endsAt, posterUrl, status, cancelledAt                         | status : DRAFT, PUBLISHED, CANCELLED ; « à venir / passé » est calculé |
+| TicketType   | id, eventId, name, priceXof (Int), quantityTotal, quantitySold, salesEndAt                                                        | Contrainte : quantitySold ≤ quantityTotal                              |
+| Order        | id, participantId, ticketTypeId, quantity (1–5), unitPriceXof, totalXof, status, expiresAt, paidAt                                | Prix figé à la création                                                |
+| Payment      | id, orderId, provider, operator (MTN/MOOV), phoneMasked, amountXof, status, providerTransactionId (unique), rawStatus, createdAt  | Une commande peut avoir plusieurs tentatives                           |
+| Ticket       | id, orderId, ticketTypeId, eventId, holderName, qrTokenHash (unique), status, usedAt                                              | Créé uniquement à la confirmation du paiement                          |
+| ScannerLink  | id, eventId, createdById, jti (unique), expiresAt, revokedAt                                                                      | Le JWT lui-même n'est pas stocké                                       |
+| ScanLog      | id, scannerLinkId, ticketId (nullable), result, scannedAt                                                                         | Journal de toutes les tentatives                                       |
+| PushToken    | id, userId, token (unique), platform, updatedAt                                                                                   | NOISE-028                                                              |
 
 Conventions : noms Prisma en PascalCase / camelCase, tables et colonnes mappées en snake_case (`@@map`, `@map`). Identifiants UUID. Toutes les dates en `timestamptz` UTC. Montants en `Int` (FCFA).
 
