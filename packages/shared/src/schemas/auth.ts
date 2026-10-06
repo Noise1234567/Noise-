@@ -47,6 +47,24 @@ export const refreshSchema = z.object({
   refreshToken: z.string().min(1),
 });
 
+/** PATCH /api/v1/me/roles : activer le second rôle (CDC 3.1, NOISE-015). */
+export const activateRoleSchema = z.object({ role: signupRoleSchema });
+
+/** Utilisateur renvoyé par l'API : jamais le hash du mot de passe. */
+export interface PublicUser {
+  id: string;
+  name: string;
+  phone: string;
+  roles: ('PARTICIPANT' | 'ORGANIZER' | 'ADMIN')[];
+}
+
+/** Réponse de register, login et refresh. */
+export interface AuthSession {
+  accessToken: string;
+  refreshToken: string;
+  user: PublicUser;
+}
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RefreshInput = z.infer<typeof refreshSchema>;

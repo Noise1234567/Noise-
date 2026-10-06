@@ -7,19 +7,23 @@ import type { Logger } from 'pino';
 import type { Env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middlewares/error-handler.js';
 import { globalRateLimit } from './middlewares/rate-limit.js';
+import type { PrismaClient } from './lib/prisma.js';
+import { createAuthRouter, createMeRouter } from './modules/auth/auth.routes.js';
+import { AuthService } from './modules/auth/auth.service.js';
+
+export interface AppDependencies {
+  /** Vérifie que la base répond (lève une erreur sinon). Absent : /health/ready répond 503. */
+  checkDatabase?: () => Promise<void>;
+  /** Accès à la base : sans lui, les routes métier ne sont pas montées. */
+  prisma?: PrismaClient;
+}
 
 /**
  * Construit l'application Express sans la démarrer : les tests l'utilisent
  * directement avec supertest, server.ts la démarre.
  *
- * Les modules métier (src/modules/<domaine>) seront montés ici sous /api/v1
- * au fil des tâches NOISE-007 et suivantes.
+ * Les modules métier (src/modules/<domaine>) sont montés sous /api/v1.
  */
-export interface AppDependencies {
-  /** Vérifie que la base répond (lève une erreur sinon). Absent : /health/ready répond 503. */
-  checkDatabase?: () => Promise<void>;
-}
-
 export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) {
   const app = express();
 
@@ -46,6 +50,12 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
       res.status(503).json({ status: 'unavailable', checks: { database: 'down' } });
     }
   });
+
+  if (deps.prisma && env.JWT_ACCESS_SECRET) {
+    const auth = new AuthService(deps.prisma, env.JWT_ACCESS_SECRET);
+    app.use('/api/v1/auth', createAuthRouter(auth, env.JWT_ACCESS_SECRET));
+    app.use('/api/v1/me', createMeRouter(auth, env.JWT_ACCESS_SECRET));
+  }
 
   app.use(notFoundHandler);
   app.use(errorHandler);
