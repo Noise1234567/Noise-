@@ -60,3 +60,6 @@ jobs:
       - run: pnpm test
       - run: pnpm --filter @noise/api build
       - run: pnpm --filter @noise/scanner build
+      # Tests de bout en bout du scanner (NOISE-026) : Chromium au format Android, API simulée.
+      - run: pnpm --filter @noise/scanner exec playwright install --with-deps chromium
+      - run: pnpm --filter @noise/scanner test:e2e

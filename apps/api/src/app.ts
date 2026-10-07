@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -14,9 +16,14 @@ import { AuthService } from './modules/auth/auth.service.js';
 export interface AppDependencies {
   /** Vérifie que la base répond (lève une erreur sinon). Absent : /health/ready répond 503. */
   checkDatabase?: () => Promise<void>;
+  /** Dossier du build du scanner (tests) ; par défaut apps/scanner/dist. */
+  scannerDir?: string;
   /** Accès à la base : sans lui, les routes métier ne sont pas montées. */
   prisma?: PrismaClient;
 }
+
+/** Build du scanner web (apps/scanner/dist), au même niveau depuis src/ et dist/. */
+const DEFAULT_SCANNER_DIR = fileURLToPath(new URL('../../scanner/dist', import.meta.url));
 
 /**
  * Construit l'application Express sans la démarrer : les tests l'utilisent
@@ -26,6 +33,7 @@ export interface AppDependencies {
  */
 export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) {
   const app = express();
+  const scannerDir = deps.scannerDir ?? DEFAULT_SCANNER_DIR;
 
   app.disable('x-powered-by');
   app.set('trust proxy', 1); // derrière le proxy Railway : IP client correcte pour le rate limiting
@@ -38,6 +46,12 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', env: env.NODE_ENV });
   });
+
+  // Scanner du staff (NOISE-026), servi s'il a été construit (pnpm --filter @noise/scanner build).
+  // Le jeton du lien est après le « # » : il n'est jamais reçu ni journalisé par le serveur.
+  if (existsSync(scannerDir)) {
+    app.use('/scan', express.static(scannerDir, { index: 'index.html', fallthrough: true }));
+  }
 
   // Prêt à servir : la base répond. Utilisé par Railway et UptimeRobot (NOISE-016, NOISE-030).
   app.get('/health/ready', async (req, res) => {
