@@ -87,12 +87,12 @@ Payment : INITIATED ─► PENDING ─► SUCCEEDED
 
 ## 4. Environnements
 
-| Environnement | Fournisseur                                      | Clés                                    | Webhook                                      |
-| ------------- | ------------------------------------------------ | --------------------------------------- | -------------------------------------------- |
-| Local         | FakeProvider par défaut ; sandbox ponctuellement | Sandbox dans `.env`                     | Tunnel (ngrok ou cloudflared) vers localhost |
-| Test (CI)     | FakeProvider uniquement                          | Aucune                                  | Simulé dans les tests                        |
-| Staging       | Sandbox du fournisseur                           | Sandbox dans Railway staging            | URL staging                                  |
-| Production    | Live                                             | Live dans Railway production uniquement | URL production                               |
+| Environnement | Fournisseur                                      | Clés                           | Webhook                                      |
+| ------------- | ------------------------------------------------ | ------------------------------ | -------------------------------------------- |
+| Local         | FakeProvider par défaut ; sandbox ponctuellement | Sandbox dans `.env`            | Tunnel (ngrok ou cloudflared) vers localhost |
+| Test (CI)     | FakeProvider uniquement                          | Aucune                         | Simulé dans les tests                        |
+| Staging       | Sandbox du fournisseur                           | Sandbox sur le serveur staging | URL staging                                  |
+| Production    | Live                                             | Live en production uniquement  | URL production                               |
 
 ## 5. Implémentation (NOISE-017, NOISE-019)
 
@@ -130,6 +130,6 @@ Implémenté dans NOISE-017 : `apps/api/src/modules/payments/providers/`.
 
 - [ ] Titulaire du compte marchand décidé (DEC-016) et KYC validé
 - [ ] Taux de commission fixé
-- [ ] Clés live uniquement dans Railway production
+- [ ] Clés live uniquement dans l'environnement de production
 - [ ] URL de webhook production enregistrée chez le fournisseur
 - [ ] Transaction réelle de faible montant réussie, puis remboursée

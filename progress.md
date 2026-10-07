@@ -46,6 +46,7 @@ Dernière mise à jour : 2026-10-07 (Claude).
 
 ## Décisions récentes
 
+- 2026-10-07 — DEC-024 proposée par Orias : hébergement sur son serveur Hetzner à la place de Railway (DEC-004 remplacée) ; à valider par Yannis via la PR ; points ouverts listés dans la décision.
 - 2026-10-06 — DEC-021 acceptée : revue de PR par IA, consultative, validation humaine obligatoire.
 - 2026-10-06 — DEC-022 proposée (PR #5) : parts Noise / partageur / organisateur sur la commande, affiliation optionnelle sur l'événement.
 - 2026-10-01 — DEC-005 complétée : FedaPay choisi comme fournisseur (proposé par Yannis, validé par Orias) ; consignée dans decisions.md par la PR #2, en revue.

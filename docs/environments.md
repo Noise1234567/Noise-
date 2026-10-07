@@ -7,8 +7,8 @@
 |            | Local                               | Test (CI)                              | Staging                                     | Production                                           |
 | ---------- | ----------------------------------- | -------------------------------------- | ------------------------------------------- | ---------------------------------------------------- |
 | But        | Développer                          | Vérifier chaque PR                     | Intégration et recette                      | Utilisateurs réels                                   |
-| API        | `pnpm dev:api` (localhost:3000)     | Démarrée dans les tests                | Railway, déployée à chaque merge sur `main` | Railway, déployée sur tag `vX.Y.Z` après approbation |
-| Base       | Docker `noise_dev`                  | Service Postgres éphémère `noise_test` | Postgres Railway staging                    | Postgres Railway production, sauvegardes             |
+| API        | `pnpm dev:api` (localhost:3000)     | Démarrée dans les tests                | Hetzner, déployée à chaque merge sur `main` | Hetzner, déployée sur tag `vX.Y.Z` après approbation |
+| Base       | Docker `noise_dev`                  | Service Postgres éphémère `noise_test` | Postgres Hetzner staging                    | Postgres Hetzner production, sauvegardes             |
 | Paiement   | FakeProvider ou sandbox             | FakeProvider                           | Sandbox                                     | Live                                                 |
 | Mobile     | Dev build (EAS development) + Metro | —                                      | APK profil `preview`                        | APK puis AAB profil `production`                     |
 | Scanner    | `pnpm dev:scanner`                  | Build vérifié                          | Servi par l'API staging `/scan`             | Servi par l'API production `/scan`                   |
@@ -23,9 +23,9 @@ Un environnement « test » séparé en ligne n'est pas nécessaire : la CI couv
 | Variable                                                             | Local                   | Staging / Production                                 | Introduite par |
 | -------------------------------------------------------------------- | ----------------------- | ---------------------------------------------------- | -------------- |
 | `NODE_ENV`                                                           | development             | staging / production                                 | NOISE-000      |
-| `PORT`                                                               | 3000                    | fourni par Railway                                   | NOISE-000      |
+| `PORT`                                                               | 3000                    | fichier d'environnement du serveur                   | NOISE-000      |
 | `LOG_LEVEL`                                                          | debug                   | info                                                 | NOISE-000      |
-| `DATABASE_URL`                                                       | Docker                  | fourni par Railway                                   | NOISE-000      |
+| `DATABASE_URL`                                                       | Docker                  | fichier d'environnement du serveur                   | NOISE-000      |
 | `CORS_ORIGINS`                                                       | http://localhost:5173   | URL du scanner                                       | NOISE-000      |
 | `JWT_ACCESS_SECRET` (32 caractères minimum ; obligatoire hors tests) | valeur locale aléatoire | secret distinct par environnement                    | NOISE-007      |
 | `CLOUDINARY_URL`                                                     | compte de dev           | compte Noise                                         | NOISE-012      |
@@ -42,7 +42,7 @@ Mobile : `EXPO_PUBLIC_API_URL` (public, embarqué dans l'APK). Par profil EAS : 
 
 ## 3. Déploiement (cible)
 
-Staging (NOISE-016) : merge sur `main` → CI verte → Railway déploie → `prisma migrate deploy` → smoke test `/health/ready`.
+Staging (NOISE-016) : merge sur `main` → CI verte → GitHub Actions déploie sur le serveur Hetzner → `prisma migrate deploy` → smoke test `/health/ready`.
 
 Production (NOISE-035) :
 

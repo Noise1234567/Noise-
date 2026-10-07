@@ -121,9 +121,9 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Statut : À faire
 - Fichiers concernés : docs/environments.md
 - Critères d'acceptation :
-  - [ ] Comptes sandbox FedaPay et KKiaPay créés
+  - [ ] Compte sandbox FedaPay confirmé (KKiaPay écarté, DEC-005)
   - [ ] Démarche KYC production lancée (dépend de DEC-016)
-  - [ ] Comptes Expo, Railway, Cloudinary, Firebase, Sentry créés et partagés entre les deux développeurs
+  - [ ] Comptes Expo, Cloudinary, Firebase, Sentry créés au moment de leur tâche (NOISE-009, 012, 028, 030) et partagés entre les deux développeurs ; Railway remplacé par le serveur Hetzner (DEC-024)
   - [ ] Base Notion « Services & accès » renseignée (sans aucun secret)
 - Tests :
   - Sans objet
@@ -343,7 +343,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Tests :
   - Test UI du sélecteur ; test API d'activation
 
-#### NOISE-016 — Environnement staging sur Railway
+#### NOISE-016 — Environnement staging sur le serveur Hetzner
 
 - Objectif : Déployer automatiquement main sur staging (binôme).
 - Responsable : Commun · Reviewer : revue mutuelle (binôme)
@@ -352,9 +352,12 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Statut : À faire
 - Fichiers concernés : docs/environments.md, apps/mobile/eas.json
 - Critères d'acceptation :
-  - [ ] Service API + Postgres staging ; migrations appliquées au déploiement (prisma migrate deploy)
-  - [ ] Variables d'environnement staging renseignées dans Railway (aucune dans Git)
-  - [ ] URL HTTPS staging ; /health/ready OK
+  - [ ] Serveur sécurisé (accès SSH par clés pour les deux développeurs, pare-feu, mises à jour de sécurité)
+  - [ ] API + Postgres staging via Docker Compose ; migrations appliquées au déploiement (prisma migrate deploy)
+  - [ ] Variables d'environnement staging définies sur le serveur (aucune dans Git)
+  - [ ] URL HTTPS staging (reverse proxy et nom de domaine) ; /health/ready OK
+  - [ ] Déploiement automatique depuis GitHub Actions après CI verte
+  - [ ] Sauvegardes Postgres automatiques et restauration testée
   - [ ] Profil EAS preview pointant vers staging
   - [ ] docs/environments.md complété
 - Tests :
@@ -645,7 +648,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Statut : Bloqué
 - Fichiers concernés : docs/payments.md
 - Critères d'acceptation :
-  - [ ] KYC validé (DEC-016), clés live dans Railway production uniquement
+  - [ ] KYC validé (DEC-016), clés live uniquement dans l'environnement de production
   - [ ] Taux de commission fixé (DEC-009)
   - [ ] Transaction réelle de faible montant réussie puis remboursée
 - Tests :
@@ -660,7 +663,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Statut : À faire
 - Fichiers concernés : .github/workflows/deploy.yml, docs/environments.md
 - Critères d'acceptation :
-  - [ ] Environnement Railway production, base séparée, sauvegardes activées
+  - [ ] Environnement de production sur Hetzner, base séparée, sauvegardes activées
   - [ ] Workflow : tag vX.Y.Z → approbation manuelle → déploiement → smoke test
   - [ ] Rollback documenté
 - Tests :

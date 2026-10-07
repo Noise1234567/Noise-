@@ -38,13 +38,13 @@ Secrets :
 | Où                                      | Quoi                                                            |
 | --------------------------------------- | --------------------------------------------------------------- |
 | `apps/api/.env` (local, ignoré par Git) | Secrets de développement uniquement                             |
-| Railway (staging, production)           | Secrets serveur, distincts par environnement                    |
+| Serveur Hetzner (staging, production)   | Secrets serveur, distincts par environnement                    |
 | EAS (secrets de build)                  | Variables de build mobile ; aucun secret serveur                |
 | GitHub Secrets                          | Jetons de déploiement CI                                        |
 | Notion                                  | Uniquement le nom du secret, son emplacement et son responsable |
 
 - Un secret exposé (commit, capture, message) est considéré compromis : rotation immédiate.
-- Les clés de paiement live n'existent que dans Railway production.
+- Les clés de paiement live n'existent que dans l'environnement de production du serveur Hetzner.
 
 Limitation de débit (valeurs initiales) :
 

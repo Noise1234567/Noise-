@@ -81,7 +81,7 @@ Découpage d'un module API : `routes` (HTTP, auth, validation d'entrée) → `co
 | Scanner        | Vite + TypeScript sans framework, BarcodeDetector + repli jsQR                                                 |
 | Tests          | Vitest + Supertest (API), jest-expo + RN Testing Library (mobile), Maestro (E2E Android), Playwright (scanner) |
 | Paiement       | Agrégateur béninois, FedaPay ou KKiaPay (choix final dans NOISE-010)                                           |
-| Hébergement    | Railway (API + Postgres), environnements staging et production                                                 |
+| Hébergement    | Serveur Hetzner (API + Postgres, Docker Compose), staging et production                                        |
 | Builds Android | EAS Build (APK preview, AAB production)                                                                        |
 | Monitoring     | Sentry, UptimeRobot                                                                                            |
 
@@ -134,7 +134,7 @@ Règles :
 Détails : `docs/security.md`.
 
 - Aucun secret dans Git, dans Notion, dans les captures d'écran ou dans les variables `EXPO_PUBLIC_*` (elles sont embarquées dans l'APK).
-- Secrets stockés dans : `.env` local (ignoré), Railway (API), EAS secrets (mobile), GitHub Secrets (CI).
+- Secrets stockés dans : `.env` local (ignoré), serveur Hetzner (API), EAS secrets (mobile), GitHub Secrets (CI).
 - Mots de passe hachés (argon2id). Refresh tokens stockés hachés et révocables. Tokens mobiles dans SecureStore.
 - Autorisation vérifiée côté serveur sur chaque route (rôle ET propriété de la ressource : un organisateur ne modifie que ses événements).
 - Rate limiting sur auth, paiement et scanner.
@@ -210,7 +210,7 @@ Pour Claude, à chaque intervention :
 
 - Lire d'abord `progress.md`, puis uniquement les fichiers nécessaires à la tâche. Ne pas relire tout le repository.
 - Ne jamais affirmer qu'une chose est faite, testée, validée ou déployée sans l'avoir vérifiée (exécution des tests, sortie de commande, URL). Distinguer toujours : prévu, en cours, implémenté, testé, validé, déployé.
-- Ne jamais prétendre avoir modifié un service externe (Notion, GitHub, Railway, Play Console) sans y avoir réellement accès.
+- Ne jamais prétendre avoir modifié un service externe (Notion, GitHub, Hetzner, Play Console) sans y avoir réellement accès.
 - Réponses courtes : ce qui a été fait, ce qui reste, les blocages, la prochaine tâche. Pas de résumé du projet, pas de fichier recopié.
 - Mettre à jour `progress.md` (et `roadmap.md` / `decisions.md` si besoin) à la fin de chaque intervention.
 - Proposer des options et demander une validation uniquement pour les décisions qui l'exigent (section 11). Pour le reste, décider et le consigner.

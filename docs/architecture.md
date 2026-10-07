@@ -22,7 +22,7 @@
                │ Prisma       │ HTTPS        │ HTTPS
                ▼              ▼              ▼
         PostgreSQL 17   Agrégateur MM   Cloudinary · Expo Push/FCM
-        (Railway)       (MTN, Moov)
+        (Hetzner)       (MTN, Moov)
                         └─► webhook signé vers /api/v1/payments/webhook
 ```
 

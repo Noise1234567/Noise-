@@ -11,7 +11,7 @@ Statuts : Proposée · Acceptée · En attente (bloquée par une information ou 
 | DEC-001 | Monorepo pnpm workspaces                                                                      | Acceptée                            | 2026-09-24 |
 | DEC-002 | Conserver la stack du cahier des charges (Express/TS, Prisma, PostgreSQL, React Native)       | Acceptée                            | 2026-09-24 |
 | DEC-003 | Expo (CNG) + EAS Build plutôt que React Native bare                                           | Acceptée                            | 2026-09-24 |
-| DEC-004 | Hébergement Railway (API + Postgres), staging et production                                   | Acceptée                            | 2026-09-24 |
+| DEC-004 | Hébergement Railway (API + Postgres), staging et production                                   | Remplacée par DEC-024 (si validée)  | 2026-09-24 |
 | DEC-005 | Paiement via un agrégateur béninois (FedaPay) plutôt que MTN et Moov en direct                | Acceptée (FedaPay)                  | 2026-10-01 |
 | DEC-006 | Google Play après le MVP ; AAB préparé dès la S4                                              | Acceptée                            | 2026-09-24 |
 | DEC-007 | Réservation du stock à la création de la commande                                             | Acceptée (écart au CDC)             | 2026-09-24 |
@@ -29,6 +29,7 @@ Statuts : Proposée · Acceptée · En attente (bloquée par une information ou 
 | DEC-019 | Disponibilité hebdomadaire de Yannis et Orias                                                 | En attente                          | —          |
 | DEC-020 | Administration minimale : rôle ADMIN + endpoints internes, pas d'interface dédiée             | Acceptée                            | 2026-09-24 |
 | DEC-021 | Revue de PR par IA (Claude Code GitHub Actions), consultative, validation humaine obligatoire | Acceptée                            | 2026-10-06 |
+| DEC-024 | Hébergement sur le serveur Hetzner d'Orias à la place de Railway                              | Acceptée (principe)                 | 2026-10-07 |
 
 ---
 
@@ -56,7 +57,7 @@ Statuts : Proposée · Acceptée · En attente (bloquée par une information ou 
 - Raison : signature et keystore gérés, profils APK/AAB, moins de configuration native à maintenir. Repli possible : `npx expo prebuild` + Gradle local si EAS est indisponible.
 - Personnes : Yannis, Orias.
 
-## DEC-004 — Railway
+## DEC-004 — Railway (remplacée par DEC-024)
 
 - Alternatives : Render (offre gratuite en veille : latence au réveil, risque sur les webhooks), VPS.
 - Choix : Railway, un projet avec deux environnements (staging, production), Postgres managé.
@@ -167,3 +168,13 @@ Choix du fournisseur (NOISE-010, 2026-10-01) — statut : Acceptée (proposée p
 - Authentification : token lié à l'abonnement Claude d'Orias (`CLAUDE_CODE_OAUTH_TOKEN`, généré par `claude setup-token`), stocké en secret GitHub. À revoir si le token personnel bloque l'équipe (ex. en cas d'absence) : bascule possible vers une clé API de la Claude Console.
 - Écarté : le service « Code Review » géré par Anthropic (claude.ai/admin-settings/claude-code), réservé aux abonnements Team/Enterprise et facturé 15 à 25 $ par revue — hors budget et hors périmètre d'un abonnement personnel.
 - Suivi : si le coût ou le bruit des commentaires devient gênant, ajouter un fichier `REVIEW.md` pour recalibrer ce que Claude signale.
+
+## DEC-024 — Hébergement sur un serveur Hetzner (remplace DEC-004)
+
+- Statut : proposée par Orias, devient acceptée à l'approbation de Yannis sur cette PR.
+- Contexte : Orias dispose déjà d'un serveur Hetzner Cloud (modèle cx23 : 2 vCPU, 4 Go de RAM, 40 Go de disque, Nuremberg, Allemagne ; image Ubuntu d'après son nom, à confirmer). Coût indiqué par la console : environ 6,59 par mois.
+- Choix : héberger l'API et PostgreSQL sur ce serveur, avec Docker Compose, à la place de Railway. Le serveur appartient à Orias ; Yannis y accède par sa propre clé SSH.
+- Raison : coût fixe faible, serveur déjà disponible, aucune dépendance à une plateforme tierce supplémentaire.
+- Conséquences, à la charge de l'équipe (Railway les fournissait) : reverse proxy et HTTPS avec un nom de domaine, accès SSH par clés uniquement, pare-feu, mises à jour de sécurité, sauvegardes Postgres automatiques avec restauration testée, déploiement depuis GitHub Actions, supervision.
+- Points à trancher dans NOISE-016 : isolation staging / production (deux stacks Compose et deux bases sur ce serveur, ou un second serveur pour la production avant l'ouverture au public) ; nom de domaine ; outil de reverse proxy ; latence Nuremberg vers Cotonou à mesurer ; option de sauvegarde Hetzner à évaluer en plus des sauvegardes Postgres.
+- Personnes : Orias (propriétaire du serveur), Yannis.
