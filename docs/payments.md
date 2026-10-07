@@ -113,6 +113,14 @@ Implémenté dans NOISE-017 : `apps/api/src/modules/payments/providers/`.
 - Toutes les transitions sont journalisées (sans numéro complet).
 - Paiement reçu sur une commande expirée : Payment SUCCEEDED, Order reste EXPIRED, alerte admin, remboursement manuel.
 
+NOISE-019 (`apps/api/src/modules/payments/payments.service.ts`) :
+
+- Initiation : contrôle du propriétaire, commande PENDING non expirée, pas de tentative en cours de moins de 2 min ; tentative créée (numéro masqué) puis demande au fournisseur ; en cas d'échec du fournisseur, tentative FAILED et 502 générique.
+- Webhook : monté avant le décodage JSON (corps brut) ; signature vérifiée ; le contenu n'est qu'un signal, la décision vient de `getStatus`. Issues : en attente (rien), refusé (tentative FAILED, commande toujours payable), montant ou devise incohérents (pas de confirmation, alerte `PAYMENT_AMOUNT_MISMATCH`), réussi.
+- Confirmation, dans une transaction : tentative SUCCEEDED (mise à jour conditionnelle), commande PAID avec la répartition DEC-022 (mise à jour conditionnelle sur status = PENDING : une seule confirmation même en cas de webhooks simultanés), `quantitySold` incrémenté, billets créés par le point d'extension `TicketIssuer` (branché par NOISE-020). Si la création des billets échoue, tout est annulé.
+- Cas particuliers : paiement sur une commande expirée (commande EXPIRED, tentative SUCCEEDED, alerte `PAYMENT_ON_EXPIRED_ORDER`, remboursement manuel) ; commande déjà payée par une autre tentative (alerte `PAYMENT_DUPLICATE`, remboursement manuel). Les alertes sont des journaux de niveau error (Sentry avec NOISE-030).
+- Vérifié le 2026-10-07 avec la vraie sandbox FedaPay à travers l'API : commande de 6 000 FCFA payée (momo_test), confirmée par le suivi sans webhook (16 s), répartition 600 / 5 400 enregistrée, stock vendu 0 → 2.
+
 ## 6. Tests obligatoires
 
 - Signature invalide → rejet, aucune modification.

@@ -103,3 +103,13 @@ Format des numéros : toute écriture béninoise est acceptée (`01 97 45 45 47`
 | `GET /api/v1/admin/events/:eventId/sales.csv` | 200 `text/csv; charset=utf-8`, fichier `ventes-<titre>-<date>.csv` (voir docs/payments.md section 7.1)                                                          | idem                                                                                                                       |
 
 Seules les commandes PAID sont comptées, à partir de la répartition enregistrée à la confirmation du paiement (DEC-022). Chaque appel est journalisé (identifiant de l'administrateur, événement, action).
+
+### Paiement et suivi de commande (NOISE-019)
+
+| Endpoint                         | Accès                    | Corps / réponse                                                                    | Erreurs                                                                                                                                                                                   |
+| -------------------------------- | ------------------------ | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/v1/payments/initiate` | participant propriétaire | `{ orderId, operator: MTN \| MOOV, phone }` → 201 `{ paymentId, status: PENDING }` | 400 ; 401 ; 404 commande introuvable ou d'un autre ; 409 commande expirée, déjà réglée ou paiement en cours (moins de 2 min) ; 429 (5 / 10 min par compte) ; 502 fournisseur indisponible |
+| `POST /api/v1/payments/webhook`  | fournisseur (signature)  | corps brut du fournisseur → 200 `{ received: true }`                               | 401 signature invalide ; 400 corps illisible                                                                                                                                              |
+| `GET /api/v1/orders/:id/status`  | participant propriétaire | 200 `{ orderId, status, expiresAt, paidAt, payment: { status } \| null }`          | 400 ; 401 ; 404                                                                                                                                                                           |
+
+Le mobile interroge `GET /orders/:id/status` (backoff 2 → 5 s). Si une tentative est en attente depuis plus de 15 s, l'API redemande le statut au fournisseur : un webhook perdu ne bloque pas le client. Contrats partagés : `packages/shared/src/schemas/payments.ts`.
