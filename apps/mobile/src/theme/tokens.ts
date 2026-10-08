@@ -13,6 +13,8 @@ export const colors = {
   border: 'rgba(255,255,255,0.1)',
   /** Erreurs et états uniquement. */
   error: '#FF5A5F',
+  /** Message d'erreur sous un champ (rouge adouci, lisible sur fond sombre). */
+  errorText: '#FF8A8E',
   /** Attente et états uniquement. */
   warning: '#FFB547',
   /** Élévation au-dessus des cartes (toasts). */
