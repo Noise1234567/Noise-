@@ -36,6 +36,7 @@ describe('jetons de design', () => {
     ['texte sur vert', colors.onAccent, colors.accent],
     ['cyan sur fond', colors.secondary, colors.background],
     ['erreur sur surface', colors.error, colors.surface],
+    ['message d’erreur sur fond', colors.errorText, colors.background],
     ['attente sur surface', colors.warning, colors.surface],
   ])('contraste AA (>= 4,5) : %s', (_name, fg, bg) => {
     expect(contrast(fg, bg)).toBeGreaterThanOrEqual(4.5);
