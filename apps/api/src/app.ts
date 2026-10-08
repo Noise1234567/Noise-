@@ -8,14 +8,26 @@ import type { Env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middlewares/error-handler.js';
 import { globalRateLimit } from './middlewares/rate-limit.js';
 import type { PrismaClient } from './lib/prisma.js';
+import { createAdminRouter } from './modules/admin/admin.routes.js';
 import { createAuthRouter, createMeRouter } from './modules/auth/auth.routes.js';
 import { AuthService } from './modules/auth/auth.service.js';
+import { createPaymentProvider, type PaymentProvider } from './modules/payments/providers/index.js';
+import {
+  createOrderStatusRouter,
+  createPaymentWebhookRouter,
+  createPaymentsRouter,
+} from './modules/payments/payments.routes.js';
+import { PaymentsService, type TicketIssuer } from './modules/payments/payments.service.js';
 
 export interface AppDependencies {
   /** Vérifie que la base répond (lève une erreur sinon). Absent : /health/ready répond 503. */
   checkDatabase?: () => Promise<void>;
   /** Accès à la base : sans lui, les routes métier ne sont pas montées. */
   prisma?: PrismaClient;
+  /** Fournisseur de paiement ; par défaut celui de PAYMENT_PROVIDER (FakeProvider en local). */
+  paymentProvider?: PaymentProvider;
+  /** Création des billets à la confirmation du paiement (NOISE-020). */
+  issueTickets?: TicketIssuer;
 }
 
 /**
@@ -32,8 +44,20 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
   app.use(helmet());
   app.use(cors({ origin: env.CORS_ORIGINS }));
   app.use(globalRateLimit());
-  app.use(express.json({ limit: '100kb' }));
   app.use(pinoHttp({ logger, genReqId: () => randomUUID() }));
+
+  const payments =
+    deps.prisma &&
+    new PaymentsService(
+      deps.prisma,
+      deps.paymentProvider ?? createPaymentProvider(env),
+      logger,
+      deps.issueTickets,
+    );
+  // Avant express.json() : le webhook a besoin du corps brut pour vérifier la signature.
+  if (payments) app.use('/api/v1/payments/webhook', createPaymentWebhookRouter(payments));
+
+  app.use(express.json({ limit: '100kb' }));
 
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', env: env.NODE_ENV });
@@ -55,6 +79,11 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
     const auth = new AuthService(deps.prisma, env.JWT_ACCESS_SECRET);
     app.use('/api/v1/auth', createAuthRouter(auth, env.JWT_ACCESS_SECRET));
     app.use('/api/v1/me', createMeRouter(auth, env.JWT_ACCESS_SECRET));
+    app.use('/api/v1/admin', createAdminRouter(deps.prisma, env.JWT_ACCESS_SECRET));
+    if (payments) {
+      app.use('/api/v1/payments', createPaymentsRouter(payments, env.JWT_ACCESS_SECRET));
+      app.use('/api/v1/orders', createOrderStatusRouter(payments, env.JWT_ACCESS_SECRET));
+    }
   }
 
   app.use(notFoundHandler);

@@ -2,3 +2,5 @@ export * from './domain.js';
 export * from './errors.js';
 export * from './phone.js';
 export * from './schemas/auth.js';
+export * from './revenue-split.js';
+export * from './schemas/payments.js';
