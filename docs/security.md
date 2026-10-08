@@ -57,7 +57,7 @@ Limitation de débit (valeurs initiales) :
 
 Implémentation : `apps/api/src/middlewares/rate-limit.ts` (express-rate-limit). Sur `/auth`, le compteur est par IP et numéro normalisé, et les connexions réussies ne sont pas comptées. Limite globale active sur toute l'API depuis NOISE-007. Compteurs en mémoire : valables pour une seule instance de l'API ; prévoir un stockage partagé avant de passer à plusieurs instances. Erreur renvoyée : 429 `RATE_LIMITED`.
 
-Données personnelles : collecte minimale (nom, téléphone). Numéro masqué dans les paiements (`97****12`). Pas de donnée personnelle dans Sentry. Suppression de compte à prévoir avant Google Play (Data safety).
+Données personnelles : collecte minimale (nom, téléphone, e-mail, DEC-026) ; pièce d'identité des organisateurs pour la vérification (DEC-018), stockée hors accès public et consultable par les seuls administrateurs ; e-mail masqué dans les journaux. Numéro masqué dans les paiements (`97****12`). Pas de donnée personnelle dans Sentry. Suppression de compte à prévoir avant Google Play (Data safety).
 
 ## 3. Checklist avant release (NOISE-030)
 
