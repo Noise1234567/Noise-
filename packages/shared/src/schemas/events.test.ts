@@ -16,6 +16,7 @@ const validEvent = {
   city: 'Cotonou',
   startsAt: inDays(5),
   endsAt: inDays(6),
+  capacity: 120,
 };
 
 describe('createEventSchema', () => {
@@ -40,6 +41,17 @@ describe('createEventSchema', () => {
   });
 });
 
+describe('capacité', () => {
+  it('est obligatoire, entière et positive à la création', () => {
+    const without: Record<string, unknown> = { ...validEvent };
+    delete without.capacity;
+    expect(createEventSchema.safeParse(without).success).toBe(false);
+    expect(createEventSchema.safeParse({ ...validEvent, capacity: 0 }).success).toBe(false);
+    expect(createEventSchema.safeParse({ ...validEvent, capacity: 10.5 }).success).toBe(false);
+    expect(createEventSchema.safeParse({ ...validEvent, capacity: 100_001 }).success).toBe(false);
+  });
+});
+
 describe('updateEventSchema', () => {
   it('accepte une mise à jour partielle, refuse un corps vide ou un statut autre que PUBLISHED', () => {
     expect(updateEventSchema.safeParse({ city: 'Porto-Novo' }).success).toBe(true);
@@ -53,12 +65,14 @@ describe('updateEventSchema', () => {
 describe('createTicketTypeSchema', () => {
   const valid = { name: 'Standard', priceXof: 5000, quantityTotal: 100 };
 
-  it('accepte un type valide', () => {
+  it('accepte un type valide, y compris un billet gratuit', () => {
     expect(createTicketTypeSchema.safeParse(valid).success).toBe(true);
+    expect(createTicketTypeSchema.safeParse({ ...valid, priceXof: 0 }).success).toBe(true);
+    expect(createTicketTypeSchema.safeParse({ ...valid, priceXof: 1_000_000 }).success).toBe(true);
   });
 
   it.each([
-    { priceXof: 0 },
+    { priceXof: 1_000_001 },
     { priceXof: -1 },
     { priceXof: 10.5 },
     { priceXof: '5000' },

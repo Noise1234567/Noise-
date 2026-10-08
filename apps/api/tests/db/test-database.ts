@@ -57,6 +57,7 @@ export const factories = {
         genre: 'Afrobeats',
         venue: 'Club',
         city: 'Cotonou',
+        capacity: 100,
         startsAt: new Date('2026-11-01T21:00:00Z'),
         endsAt: new Date('2026-11-02T03:00:00Z'),
       },

@@ -114,9 +114,15 @@ La liste ne contient que les événements `PUBLISHED` qui ne sont pas terminés,
 ### Détail, création, modification
 
 - `GET /events/:id` : un événement `PUBLISHED` ou `CANCELLED` est lisible par tout utilisateur connecté (les détenteurs de billets doivent voir une annulation) ; un brouillon n'est visible que de son organisateur (404 pour les autres).
-- `POST /events` : crée l'événement en `DRAFT`. Début dans le futur, fin après le début.
-- `PUT /events/:id` : mise à jour partielle (au moins un champ). `status: "PUBLISHED"` publie le brouillon, à condition qu'il ait au moins un type de billet et qu'il ne soit pas terminé (409 sinon). Aucune autre valeur de statut n'est acceptée : l'annulation aura sa propre route (NOISE-029). Un événement annulé ne se modifie plus (409).
-- `POST /events/:id/ticket-types` : `name` (unique par événement, 409 sinon), `priceXof` (entier de 1 à 10 000 000), `quantityTotal` (entier de 1 à 100 000), `salesEndAt` facultatif (au plus tard la fin de l'événement).
+- `POST /events` : crée l'événement en `DRAFT`. Début dans le futur, fin après le début, `capacity` obligatoire (nombre de participants attendus, entier de 1 à 100 000).
+- `PUT /events/:id` : mise à jour partielle (au moins un champ). `status: "PUBLISHED"` publie le brouillon, à condition qu'il ait au moins un type de billet et qu'il ne soit pas terminé (409 sinon). Aucune autre valeur de statut n'est acceptée : l'annulation aura sa propre route (NOISE-029). Un événement annulé ne se modifie plus (409). `capacity` peut être modifiée, sans descendre sous la somme des billets déjà créés (400). Dès qu'un billet est vendu, `startsAt` et `venue` ne changent plus (409).
+- `POST /events/:id/ticket-types` : `name` (unique par événement, 409 sinon), `priceXof` (entier de 0 à 1 000 000, 0 = billet gratuit), `quantityTotal` (entier de 1 à 100 000), `salesEndAt` facultatif (au plus tard la fin de l'événement). La somme des `quantityTotal` des types de billets ne peut pas dépasser la `capacity` de l'événement (409, le message indique combien de places restent).
+
+### Capacité et frais d'organisation
+
+L'organisateur déclare la capacité à la création et peut l'augmenter ensuite. Les frais d'organisation suivent une règle de trois à 40 FCFA par participant déclaré : 0 FCFA jusqu'à 50 participants inclus, puis 40 FCFA × capacité (51 → 2 040, 60 → 2 400, 100 → 4 000). Ils ne dépendent pas du prix des billets. À chaque augmentation, le reste dû est le total du nouveau niveau moins ce qui est déjà payé (40 → 60 : 2 400 ; 50 → 100 : 4 000). Baisser la capacité ne rembourse rien. La règle vit dans `packages/shared/src/organizer-fee.ts`, partagée avec le mobile.
+
+Le propriétaire reçoit `capacity` et `organizerFee: { totalXof, paidXof, dueXof }` dans l'événement ; les autres utilisateurs ne les voient pas. Le paiement des frais et le blocage de la publication tant qu'ils ne sont pas réglés arrivent avec NOISE-044 : pour l'instant l'API calcule et expose le montant.
 
 ### Disponibilité
 
