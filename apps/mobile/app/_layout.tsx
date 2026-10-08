@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { hydrateSession } from '../src/auth/session-service';
 import { useSession } from '../src/state/session';
 import { colors, fontAssets } from '../src/theme';
 
@@ -19,11 +20,10 @@ export default function RootLayout() {
   const [fontsLoaded] = useFonts(fontAssets);
   const status = useSession((s) => s.status);
   const activeRole = useSession((s) => s.activeRole);
-  const hydrate = useSession((s) => s.hydrate);
 
   useEffect(() => {
-    if (fontsLoaded) hydrate();
-  }, [fontsLoaded, hydrate]);
+    if (fontsLoaded) void hydrateSession();
+  }, [fontsLoaded]);
 
   useEffect(() => {
     if (fontsLoaded && status !== 'loading') void SplashScreen.hideAsync();
