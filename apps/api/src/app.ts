@@ -8,6 +8,7 @@ import type { Env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middlewares/error-handler.js';
 import { globalRateLimit } from './middlewares/rate-limit.js';
 import type { PrismaClient } from './lib/prisma.js';
+import { createAdminRouter } from './modules/admin/admin.routes.js';
 import { createAuthRouter, createMeRouter } from './modules/auth/auth.routes.js';
 import { AuthService } from './modules/auth/auth.service.js';
 
@@ -55,6 +56,7 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
     const auth = new AuthService(deps.prisma, env.JWT_ACCESS_SECRET);
     app.use('/api/v1/auth', createAuthRouter(auth, env.JWT_ACCESS_SECRET));
     app.use('/api/v1/me', createMeRouter(auth, env.JWT_ACCESS_SECRET));
+    app.use('/api/v1/admin', createAdminRouter(deps.prisma, env.JWT_ACCESS_SECRET));
   }
 
   app.use(notFoundHandler);
