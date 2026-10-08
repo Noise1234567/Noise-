@@ -23,7 +23,7 @@ Référence fonctionnelle : cahier des charges v1.0 (projet Claude « NOISE », 
 | -------------- | --------------------------------------------------- | ----------------------------- |
 | `CLAUDE.md`    | Règles permanentes                                  | PR commune uniquement         |
 | `roadmap.md`   | Toutes les tâches NOISE-xxx, dépendances, critères  | Claude, validé par vous       |
-| `progress.md`  | État factuel à l'instant T                          | Auteur de chaque PR           |
+| `progress.md`  | État factuel à l'instant T                          | PR de suivi (voir section 10) |
 | `decisions.md` | Décisions (format ADR)                              | Celui qui porte la décision   |
 | `CHANGELOG.md` | Changements par version                             | Release manager de la version |
 | `docs/`        | Documentation technique versionnée                  | Avec le code concerné         |
@@ -144,7 +144,7 @@ Détails : `docs/security.md`.
 
 ## 10. Workflow d'une tâche
 
-1. Prendre une tâche « À faire » dont les dépendances sont terminées (`roadmap.md` / Notion), la passer « En cours » dans Notion et `progress.md`.
+1. Prendre une tâche « À faire » dont les dépendances sont terminées (`roadmap.md` / Notion), la passer « En cours » dans Notion (`progress.md` est mis à jour par la PR de suivi).
 2. Créer la branche `type/NOISE-xxx-description`.
 3. Développer avec les tests. Mettre à jour la documentation concernée.
 4. `pnpm check` en local.
@@ -200,7 +200,9 @@ Une tâche est terminée (statut Validé) seulement si :
 - [ ] le comportement est vérifié sur staging lorsque la tâche touche l'API ou le mobile (à partir de NOISE-016) ;
 - [ ] la documentation concernée est à jour ;
 - [ ] aucune dette introduite sans ticket « Dette technique » associé ;
-- [ ] `progress.md` et Notion sont à jour.
+- [ ] Notion est à jour, et `progress.md` l'est via la PR de suivi.
+
+`progress.md` n'est pas modifié par les PR de fonctionnalité (sources de conflits à chaque fusion) : une PR de suivi groupée le met à jour après les fusions, une ligne par tâche.
 
 Une fonctionnalité n'est « Déployée » que lorsqu'elle tourne en production et a été vérifiée après déploiement.
 

@@ -23,6 +23,8 @@
       },
       "predictiveBackGestureEnabled": false
     },
-    "platforms": ["android"]
+    "platforms": ["android"],
+    "scheme": "noise",
+    "plugins": ["expo-router", "expo-font"]
   }
 }
