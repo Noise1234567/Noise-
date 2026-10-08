@@ -1,5 +1,7 @@
 import {
   BENIN_UTC_OFFSET,
+  organizerFeeDueXof,
+  organizerFeeXof,
   type CreateEventInput,
   type CreateTicketTypeInput,
   type EventDto,
@@ -21,6 +23,11 @@ import type { AuthContext } from '../../middlewares/auth.js';
  * Visibilité : la liste ne contient que les événements PUBLISHED à venir. Un événement
  * PUBLISHED ou CANCELLED se lit par son identifiant ; un brouillon n'est visible que de son
  * organisateur (404 pour les autres). Seul l'organisateur propriétaire modifie (403).
+ *
+ * Capacité (NOISE-044) : l'organisateur déclare le nombre de participants attendus. La somme des
+ * quantités de ses types de billets ne peut pas la dépasser, et les frais d'organisation
+ * (organizerFeeXof) se calculent dessus. Le paiement de ces frais arrive avec NOISE-044 :
+ * pour l'instant l'API calcule et expose le montant, sans bloquer la publication.
  */
 
 type EventWithTypes = Event & { ticketTypes: TicketType[] };
@@ -120,6 +127,7 @@ export class EventsService {
         city: input.city,
         startsAt: new Date(input.startsAt),
         endsAt: new Date(input.endsAt),
+        capacity: input.capacity,
       },
       include: { ticketTypes: true },
     });
@@ -142,16 +150,26 @@ export class EventsService {
       throw invalid('startsAt', 'La date de début doit être dans le futur');
     }
     // Les acheteurs ne sont pas prévenus d'un changement (notifications : NOISE-028) : tant
-    // que des billets sont vendus, les dates sont figées.
-    if (startsAtChanged || endsAtChanged) {
+    // que des billets sont vendus, les dates et le lieu sont figés.
+    const venueChanged = input.venue !== undefined && input.venue !== event.venue;
+    if (startsAtChanged || endsAtChanged || venueChanged) {
       const sold = event.ticketTypes.reduce((total, type) => total + type.quantitySold, 0);
       if (sold > 0) {
         throw new HttpError(
           409,
           'CONFLICT',
-          'Des billets ont déjà été vendus : les dates ne peuvent plus être modifiées',
+          'Des billets ont déjà été vendus : les dates et le lieu ne peuvent plus être modifiés',
         );
       }
+    }
+
+    const capacity = input.capacity ?? event.capacity;
+    const declared = event.ticketTypes.reduce((sum, type) => sum + type.quantityTotal, 0);
+    if (capacity < declared) {
+      throw invalid(
+        'capacity',
+        `La capacité ne peut pas être inférieure aux billets déjà créés (${declared})`,
+      );
     }
 
     if (input.status === 'PUBLISHED' && event.status !== 'PUBLISHED') {
@@ -172,6 +190,7 @@ export class EventsService {
         venue: input.venue,
         city: input.city,
         status: input.status,
+        capacity,
         startsAt,
         endsAt,
       },
@@ -189,6 +208,14 @@ export class EventsService {
     const event = await this.findOwned(auth, eventId);
     if (event.status === 'CANCELLED') {
       throw new HttpError(409, 'CONFLICT', 'Un événement annulé ne peut plus être modifié');
+    }
+    const declared = event.ticketTypes.reduce((sum, type) => sum + type.quantityTotal, 0);
+    if (declared + input.quantityTotal > event.capacity) {
+      throw new HttpError(
+        409,
+        'CONFLICT',
+        `La somme des billets dépasse la capacité déclarée (${event.capacity}). Il reste ${Math.max(0, event.capacity - declared)} place(s) à répartir.`,
+      );
     }
     const salesEndAt = input.salesEndAt ? new Date(input.salesEndAt) : null;
     if (salesEndAt && salesEndAt > event.endsAt) {
@@ -271,6 +298,16 @@ export class EventsService {
       ticketTypes: event.ticketTypes.map((type) =>
         this.toTicketTypeDto(type, event.status, reserved.get(type.id) ?? 0, isOwner, now),
       ),
+      ...(isOwner
+        ? {
+            capacity: event.capacity,
+            organizerFee: {
+              totalXof: organizerFeeXof(event.capacity),
+              paidXof: event.feePaidXof,
+              dueXof: organizerFeeDueXof(event.capacity, event.feePaidXof),
+            },
+          }
+        : {}),
     };
   }
 
