@@ -54,11 +54,11 @@ Base : CDC section 7, complétée par les décisions.
 | POST    | `/auth/logout`              | Auth                      | NOISE-007            |
 | GET     | `/me`                       | Auth                      | NOISE-007            |
 | PATCH   | `/me/roles`                 | Auth                      | NOISE-015            |
-| GET     | `/events`                   | Auth                      | NOISE-011            |
-| GET     | `/events/:id`               | Auth                      | NOISE-011            |
-| POST    | `/events`                   | Organisateur              | NOISE-011            |
-| PUT     | `/events/:id`               | Organisateur propriétaire | NOISE-011            |
-| POST    | `/events/:id/ticket-types`  | Organisateur propriétaire | NOISE-011            |
+| GET     | `/events`                   | Auth                      | NOISE-011 (existe)   |
+| GET     | `/events/:id`               | Auth                      | NOISE-011 (existe)   |
+| POST    | `/events`                   | Organisateur              | NOISE-011 (existe)   |
+| PUT     | `/events/:id`               | Organisateur propriétaire | NOISE-011 (existe)   |
+| POST    | `/events/:id/ticket-types`  | Organisateur propriétaire | NOISE-011 (existe)   |
 | POST    | `/events/:id/poster`        | Organisateur propriétaire | NOISE-012            |
 | POST    | `/events/:id/cancel`        | Organisateur propriétaire | NOISE-029            |
 | GET     | `/organizer/events`         | Organisateur              | NOISE-013            |
@@ -94,3 +94,30 @@ Format des numéros : toute écriture béninoise est acceptée (`01 97 45 45 47`
 | `PATCH /api/v1/me/roles`     | `role` (`PARTICIPANT` ou `ORGANIZER`)                                        | 200 `{ accessToken, user }` : nouvel access token contenant le rôle ajouté | 400 (ADMIN refusé) ; 401                                                                                             |
 
 À l'attention du mobile (NOISE-008) : ne jamais lancer deux `refresh` en parallèle avec le même jeton. Le second est traité comme une réutilisation et déconnecte l'utilisateur partout. L'intercepteur Axios doit mettre les requêtes en attente pendant un rafraîchissement.
+
+## 4. Événements et types de billets (NOISE-011)
+
+Tous les endpoints exigent un access token. Création, modification et ajout de types de billets exigent en plus le rôle `ORGANIZER`, et la propriété de l'événement pour la modification (403 sinon).
+
+### Liste : `GET /api/v1/events`
+
+| Paramètre | Règle                                                                               |
+| --------- | ----------------------------------------------------------------------------------- |
+| `genre`   | Égalité, sans tenir compte de la casse                                              |
+| `city`    | Égalité, sans tenir compte de la casse                                              |
+| `date`    | `AAAA-MM-JJ`, jour en heure du Bénin (UTC+1) : événements qui commencent ce jour-là |
+| `cursor`  | Identifiant du dernier événement de la page précédente (`nextCursor`)               |
+| `limit`   | 1 à 50, 20 par défaut                                                               |
+
+La liste ne contient que les événements `PUBLISHED` qui ne sont pas terminés, triés par date de début croissante. Réponse : `{ data: EventDto[], nextCursor: string | null }`.
+
+### Détail, création, modification
+
+- `GET /events/:id` : un événement `PUBLISHED` ou `CANCELLED` est lisible par tout utilisateur connecté (les détenteurs de billets doivent voir une annulation) ; un brouillon n'est visible que de son organisateur (404 pour les autres).
+- `POST /events` : crée l'événement en `DRAFT`. Début dans le futur, fin après le début.
+- `PUT /events/:id` : mise à jour partielle (au moins un champ). `status: "PUBLISHED"` publie le brouillon, à condition qu'il ait au moins un type de billet et qu'il ne soit pas terminé (409 sinon). Aucune autre valeur de statut n'est acceptée : l'annulation aura sa propre route (NOISE-029). Un événement annulé ne se modifie plus (409).
+- `POST /events/:id/ticket-types` : `name` (unique par événement, 409 sinon), `priceXof` (entier de 1 à 10 000 000), `quantityTotal` (entier de 1 à 100 000), `salesEndAt` facultatif (au plus tard la fin de l'événement).
+
+### Disponibilité
+
+Chaque type de billet renvoie `available` = quantité totale − billets vendus − billets réservés par des commandes `PENDING` non expirées (DEC-007), jamais négatif. `onSale` indique que l'événement est publié et que la date de fin de vente n'est pas dépassée. `quantityTotal` et `quantitySold` ne sont renvoyés qu'à l'organisateur propriétaire.

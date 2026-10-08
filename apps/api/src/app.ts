@@ -10,6 +10,8 @@ import { globalRateLimit } from './middlewares/rate-limit.js';
 import type { PrismaClient } from './lib/prisma.js';
 import { createAuthRouter, createMeRouter } from './modules/auth/auth.routes.js';
 import { AuthService } from './modules/auth/auth.service.js';
+import { createEventsRouter } from './modules/events/events.routes.js';
+import { EventsService } from './modules/events/events.service.js';
 
 export interface AppDependencies {
   /** Vérifie que la base répond (lève une erreur sinon). Absent : /health/ready répond 503. */
@@ -55,6 +57,10 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
     const auth = new AuthService(deps.prisma, env.JWT_ACCESS_SECRET);
     app.use('/api/v1/auth', createAuthRouter(auth, env.JWT_ACCESS_SECRET));
     app.use('/api/v1/me', createMeRouter(auth, env.JWT_ACCESS_SECRET));
+    app.use(
+      '/api/v1/events',
+      createEventsRouter(new EventsService(deps.prisma), env.JWT_ACCESS_SECRET),
+    );
   }
 
   app.use(notFoundHandler);
