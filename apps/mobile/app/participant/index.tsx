@@ -1,12 +1,19 @@
-import { Placeholder } from '../../src/components/Placeholder';
+import { Greeting } from '../../src/components/Greeting';
+import { RoleHeader } from '../../src/components/RoleHeader';
+import { Screen } from '../../src/components/Screen';
+import { StateView } from '../../src/components/StateView';
 
-/** Écran 6 : Accueil Événements (NOISE-014). */
+/** Écran 6 : Accueil Événements. Vide tant que la liste des soirées n'existe pas (NOISE-014). */
 export default function Home() {
   return (
-    <Placeholder
-      withRoleSwitcher
-      title="Événements"
-      note="La liste des soirées de Cotonou arrive avec l'accueil participant."
-    />
+    <Screen>
+      <RoleHeader />
+      <Greeting />
+      <StateView
+        kind="empty"
+        title="Aucune soirée pour le moment"
+        message="Les prochains événements de Cotonou apparaîtront ici."
+      />
+    </Screen>
   );
 }
