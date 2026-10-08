@@ -44,15 +44,15 @@ Tout retard sur NOISE-002, NOISE-006 ou NOISE-019 décale directement la release
 
 ## 4. Vue par catégorie
 
-| Catégorie                      | Tâches                                                                                                                                                                                                                                                                                                                                                                               |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Réalisables immédiatement      | NOISE-001, NOISE-002, NOISE-003                                                                                                                                                                                                                                                                                                                                                      |
-| Dépendantes d'une autre tâche  | NOISE-005, NOISE-006, NOISE-007, NOISE-008, NOISE-009, NOISE-010, NOISE-011, NOISE-012, NOISE-013, NOISE-014, NOISE-015, NOISE-016, NOISE-017, NOISE-018, NOISE-019, NOISE-020, NOISE-021, NOISE-022, NOISE-023, NOISE-024, NOISE-025, NOISE-026, NOISE-027, NOISE-028, NOISE-029, NOISE-030, NOISE-031, NOISE-032, NOISE-033, NOISE-035, NOISE-036, NOISE-037, NOISE-038, NOISE-039 |
-| Bloquées (décision ou externe) | NOISE-034, NOISE-040 — NOISE-034 : KYC (DEC-016) ; NOISE-040 : DEC-017                                                                                                                                                                                                                                                                                                               |
-| Yannis                         | NOISE-003, NOISE-005, NOISE-007, NOISE-010, NOISE-012, NOISE-013, NOISE-017, NOISE-021, NOISE-022, NOISE-025, NOISE-026, NOISE-029, NOISE-033, NOISE-035, NOISE-039, NOISE-040                                                                                                                                                                                                       |
-| Orias                          | NOISE-008, NOISE-009, NOISE-011, NOISE-014, NOISE-015, NOISE-018, NOISE-020, NOISE-024, NOISE-027, NOISE-028, NOISE-031, NOISE-037                                                                                                                                                                                                                                                   |
-| Les deux (binôme / décision)   | NOISE-001, NOISE-002, NOISE-006, NOISE-016, NOISE-019, NOISE-023, NOISE-030, NOISE-032, NOISE-034, NOISE-036, NOISE-038                                                                                                                                                                                                                                                              |
-| Intervention externe           | NOISE-002, NOISE-005, NOISE-009, NOISE-010, NOISE-016, NOISE-023, NOISE-028, NOISE-030, NOISE-034, NOISE-035, NOISE-036, NOISE-038                                                                                                                                                                                                                                                   |
+| Catégorie                      | Tâches                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Réalisables immédiatement      | NOISE-001, NOISE-002, NOISE-003                                                                                                                                                                                                                                                                                                                                                                                                  |
+| Dépendantes d'une autre tâche  | NOISE-005, NOISE-006, NOISE-007, NOISE-008, NOISE-009, NOISE-010, NOISE-011, NOISE-012, NOISE-013, NOISE-014, NOISE-015, NOISE-016, NOISE-017, NOISE-018, NOISE-019, NOISE-020, NOISE-021, NOISE-022, NOISE-023, NOISE-024, NOISE-025, NOISE-026, NOISE-027, NOISE-028, NOISE-029, NOISE-030, NOISE-031, NOISE-032, NOISE-033, NOISE-035, NOISE-036, NOISE-037, NOISE-038, NOISE-039, NOISE-043, NOISE-044, NOISE-045, NOISE-046 |
+| Bloquées (décision ou externe) | NOISE-034, NOISE-040 — NOISE-034 : KYC (DEC-016) ; NOISE-040 : DEC-017                                                                                                                                                                                                                                                                                                                                                           |
+| Yannis                         | NOISE-003, NOISE-005, NOISE-007, NOISE-010, NOISE-012, NOISE-013, NOISE-017, NOISE-021, NOISE-022, NOISE-025, NOISE-026, NOISE-029, NOISE-033, NOISE-035, NOISE-039, NOISE-040                                                                                                                                                                                                                                                   |
+| Orias                          | NOISE-008, NOISE-009, NOISE-011, NOISE-014, NOISE-015, NOISE-018, NOISE-020, NOISE-024, NOISE-027, NOISE-028, NOISE-031, NOISE-037                                                                                                                                                                                                                                                                                               |
+| Les deux (binôme / décision)   | NOISE-001, NOISE-002, NOISE-006, NOISE-016, NOISE-019, NOISE-023, NOISE-030, NOISE-032, NOISE-034, NOISE-036, NOISE-038                                                                                                                                                                                                                                                                                                          |
+| Intervention externe           | NOISE-002, NOISE-005, NOISE-009, NOISE-010, NOISE-016, NOISE-023, NOISE-028, NOISE-030, NOISE-034, NOISE-035, NOISE-036, NOISE-038                                                                                                                                                                                                                                                                                               |
 
 NOISE-000 a été réalisée par Claude ; sa revue est NOISE-003.
 
@@ -559,7 +559,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 
 #### NOISE-029 — Annulation d'un événement
 
-- Objectif : Annuler proprement : billets invalidés, acheteurs prévenus, remboursement manuel tracé.
+- Objectif : Annuler proprement : billets invalidés, acheteurs prévenus, frais d'annulation et remboursements tracés (DEC-025).
 - Responsable : Yannis · Reviewer : Orias
 - Sprint : S4 · Type : Feature · Domaine : Full stack · Priorité : P1 · Estimation : 5 h
 - Dépendances : NOISE-020, NOISE-028
@@ -568,9 +568,12 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Critères d'acceptation :
   - [ ] POST /events/:id/cancel (organisateur propriétaire)
   - [ ] Billets → CANCELLED, commandes → CANCELLED, liens scanner révoqués
-  - [ ] Push aux acheteurs ; liste des remboursements à effectuer (DEC-010)
+  - [ ] Push aux acheteurs ; liste des remboursements à effectuer : 100 % du prix des billets, hors frais de paiement (DEC-025)
+  - [ ] Calcul affiché à l'organisateur avant confirmation : frais d'annulation (10 % des ventes), sommes déjà reversées à renvoyer sous 10 jours, part retenue
+  - [ ] Échéance de retour (annulation + 10 jours) enregistrée et visible par l'admin
 - Tests :
   - Intégration : scan d'un billet annulé → CANCELLED
+  - Unitaires : frais d'annulation et montant à renvoyer (aucun reversement, reversement partiel, tout reversé)
 
 #### NOISE-030 — Revue de sécurité, Sentry et monitoring
 
@@ -691,24 +694,25 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Fichiers concernés : apps/api/src/modules/admin/*
 - Critères d'acceptation :
   - [ ] Rôle ADMIN ; suspendre un organisateur ou un événement ; lister paiements et commandes
-  - [ ] Validation des organisateurs si DEC-018 l'exige
+  - [ ] Pas de validation des organisateurs (DEC-018) ; suspension d'un organisateur qui ne respecte pas les CGU
   - [ ] Chaque action admin journalisée
 - Tests :
   - Intégration : accès refusé aux non-admins
 
 #### NOISE-039 — Export des ventes et procédure de reversement
 
-- Objectif : Permettre les reversements manuels (DEC-009).
+- Objectif : Reverser 90 % des ventes à l'organisateur le lendemain de chaque journée de vente (DEC-024).
 - Responsable : Yannis · Reviewer : Orias
 - Sprint : S5 · Type : Feature · Domaine : Backend · Priorité : P1 · Estimation : 3 h
 - Dépendances : NOISE-027
 - Statut : À faire
 - Fichiers concernés : apps/api/src/modules/admin/*
 - Critères d'acceptation :
-  - [ ] Export CSV par événement : ventes, commission, net organisateur
+  - [ ] Export quotidien par organisateur et par événement : ventes de la veille, commission 10 %, net à reverser, déjà reversé
+  - [ ] Reversement tracé (date, montant, preuve) pour que l'annulation sache ce qui a déjà été reversé (DEC-025)
   - [ ] Procédure de reversement et de remboursement dans docs/payments.md
 - Tests :
-  - Unitaires : calcul de commission (arrondis en FCFA entiers)
+  - Unitaires : calcul de commission (arrondis en FCFA entiers), découpage par journée de vente en heure de Cotonou
 
 #### NOISE-040 — Vérification du téléphone et mot de passe oublié (OTP SMS)
 
@@ -723,6 +727,103 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
   - [ ] Écrans mobiles associés
 - Tests :
   - Intégration : OTP expiré, essais épuisés, rejeu
+
+#### NOISE-043 — CGU et politique de confidentialité
+
+- Objectif : Encadrer le risque de fuite des organisateurs payés chaque jour (DEC-018, DEC-024, DEC-025).
+- Responsable : Commun · Reviewer : revue mutuelle (binôme)
+- Sprint : S5 · Type : Documentation · Domaine : Produit / légal · Priorité : P0 · Estimation : 4 h
+- Dépendances : DEC-016 (entité qui signe les CGU) · Relecture juridique externe recommandée
+- Statut : À faire
+- Fichiers concernés : docs/legal/ (texte source), écran d'acceptation mobile
+- Critères d'acceptation :
+  - [ ] CGU organisateur : commission, frais d'organisation, reversement quotidien, annulation (frais de 10 %, retour sous 10 jours), sanctions et recouvrement
+  - [ ] CGU acheteur : remboursement du prix du billet hors frais de paiement en cas d'annulation
+  - [ ] Politique de confidentialité (nom et téléphone uniquement), aussi requise par Google Play (NOISE-038)
+  - [ ] Acceptation enregistrée (version et date) à l'inscription et à la création du premier événement
+- Tests :
+  - Intégration : création d'événement refusée sans acceptation de la version en vigueur
+
+#### NOISE-044 — Frais d'organisation d'un événement
+
+- Objectif : Calculer et faire payer les frais d'organisation (DEC-023).
+- Responsable : à attribuer · Reviewer : l'autre développeur
+- Sprint : S5 · Type : Feature · Domaine : Full stack · Priorité : P1 · Estimation : 5 h
+- Dépendances : NOISE-011, NOISE-012, NOISE-019 ; points ouverts de DEC-023
+- Statut : À faire
+- Fichiers concernés : packages/shared (constantes et calcul), apps/api/src/modules/events/*, écran de création d'événement
+- Critères d'acceptation :
+  - [ ] Constantes partagées : 50 billets = 2 000 FCFA, seuil de gratuité 50
+  - [ ] Montant affiché à l'organisateur dès qu'il saisit les quantités de billets
+  - [ ] Exonération possible par un administrateur (gratuité de lancement)
+  - [ ] Paiement avant publication par Mobile Money via FedaPay, même parcours que l'achat d'un billet (webhook signé, revérification, idempotence)
+  - [ ] Événement non publiable tant que les frais ne sont pas confirmés (sauf exonération)
+- Tests :
+  - Unitaires : 0, 49, 50, 51, 300 billets ; somme sur plusieurs types de billets
+  - Intégration : publication refusée sans paiement confirmé ; webhook rejoué
+
+#### NOISE-045 — Transferts automatiques FedaPay (reversements et remboursements)
+
+- Objectif : Vérifier en sandbox puis utiliser l'API de transfert de FedaPay pour les reversements quotidiens (DEC-024) et les remboursements d'annulation (DEC-025).
+- Responsable : Commun · Reviewer : revue mutuelle (binôme)
+- Sprint : S5 · Type : Feature · Domaine : Backend · Priorité : P1 · Estimation : 8 h
+- Dépendances : NOISE-017, NOISE-039 · Dépend d'un service externe
+- Statut : À faire
+- Fichiers concernés : apps/api/src/modules/payments/*, docs/payments.md
+- Critères d'acceptation :
+  - [ ] Payouts activés par le support FedaPay ; gratuité vers Mobile Money confirmée par écrit
+  - [ ] API de transfert vérifiée en sandbox : délais, statuts, webhooks
+  - [ ] Reversement automatique quotidien (DEC-024) et remboursements après annulation (DEC-025)
+  - [ ] Transfert idempotent, rejouable sans double paiement
+- Tests :
+  - Intégration avec le fake provider : transfert rejoué, échec puis nouvelle tentative
+
+#### NOISE-046 — Défaut de paiement d'un organisateur après annulation
+
+- Objectif : Appliquer la procédure de DEC-025 quand l'organisateur ne renvoie pas les fonds sous 10 jours.
+- Responsable : à attribuer · Reviewer : l'autre développeur
+- Sprint : S5 · Type : Feature · Domaine : Backend · Priorité : P2 · Estimation : 5 h
+- Dépendances : NOISE-029, NOISE-037, NOISE-043, NOISE-047, NOISE-048 ; fournisseur SMS (DEC-017)
+- Statut : À faire
+- Fichiers concernés : apps/api/src/modules/admin/_, apps/api/src/modules/events/_
+- Critères d'acceptation :
+  - [ ] Alerte admin à l'échéance de 10 jours
+  - [ ] Envoi e-mail et SMS, puis relance après deux à trois jours avec un délai de 48 à 72 h, chaque envoi tracé
+  - [ ] Bannissement définitif de l'organisateur par un administrateur
+  - [ ] Message aux acheteurs : enquête de 7 jours au plus, remboursement sous 10 jours si elle est concluante
+- Tests :
+  - Intégration : échéance dépassée → alerte ; organisateur banni ne peut plus se connecter ni publier
+
+#### NOISE-047 — E-mail demandé à l'inscription
+
+- Objectif : Collecter l'e-mail de chaque compte à l'inscription (DEC-026), notamment pour contacter un organisateur (DEC-025).
+- Responsable : à attribuer · Reviewer : l'autre développeur
+- Sprint : S3 · Type : Feature · Domaine : Full stack · Priorité : P1 · Estimation : 3 h
+- Dépendances : NOISE-007, NOISE-008
+- Statut : À faire
+- Fichiers concernés : apps/api/prisma/_, apps/api/src/modules/auth/_, packages/shared/src/schemas/auth.ts, apps/mobile/src/features/auth/*
+- Critères d'acceptation :
+  - [ ] Colonne `email` sur User (unique, normalisée en minuscules) ; migration pour les comptes existants
+  - [ ] Champ e-mail obligatoire dans le schéma d'inscription partagé et l'écran d'inscription
+  - [ ] E-mail renvoyé dans le profil, masqué dans les journaux
+- Tests :
+  - Intégration : inscription sans e-mail refusée, e-mail déjà utilisé refusé (409), e-mail invalide (400)
+
+#### NOISE-048 — Vérification d'identité des organisateurs
+
+- Objectif : Empêcher un organisateur non identifié de créer ou publier un événement (DEC-018).
+- Responsable : à attribuer · Reviewer : l'autre développeur
+- Sprint : S4 · Type : Feature · Domaine : Full stack · Priorité : P0 · Estimation : 8 h
+- Dépendances : NOISE-011, NOISE-037
+- Statut : À faire
+- Fichiers concernés : apps/api/prisma/_, apps/api/src/modules/events/_, apps/api/src/modules/admin/_, apps/mobile/src/features/organizer/_
+- Critères d'acceptation :
+  - [ ] Statut d'identité de l'organisateur : non soumis, en attente, vérifié, refusé (avec motif)
+  - [ ] Envoi d'une photo de pièce d'identité depuis le mobile ; stockage non public, consultable par les seuls administrateurs
+  - [ ] Validation ou refus par un administrateur (action journalisée)
+  - [ ] Création et publication d'événement refusées (403) tant que l'identité n'est pas vérifiée ; message clair dans l'app
+- Tests :
+  - Intégration : organisateur non vérifié → 403 à la création ; vérifié → 201 ; un non-administrateur ne peut ni voir les pièces ni valider
 
 ### M5 — Google Play
 
@@ -743,4 +844,4 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 
 ## 7. Hors MVP (idées, à ne pas démarrer)
 
-iOS, remboursements automatisés, revente de billets, analytics avancés, multi-langue, recommandation, abonnement Pro, mise en avant payante, extension Lomé / Dakar / Abidjan, mode scanner hors ligne. Suivi dans la base Notion « Ideas ».
+iOS, revente de billets, analytics avancés, multi-langue, recommandation, abonnement Pro, mise en avant payante, extension Lomé / Dakar / Abidjan, mode scanner hors ligne. Suivi dans la base Notion « Ideas ».

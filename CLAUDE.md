@@ -140,7 +140,7 @@ Détails : `docs/security.md`.
 - Rate limiting sur auth, paiement et scanner.
 - Webhooks : signature vérifiée, idempotence, revérification du statut auprès du fournisseur.
 - Logs : jamais de mot de passe, token, QR token ou numéro de téléphone complet (masquage configuré dans `apps/api/src/lib/logger.ts`).
-- Données personnelles minimales : nom et téléphone.
+- Données personnelles minimales : nom, téléphone et e-mail (DEC-026) ; pour les organisateurs, pièce d'identité pour la vérification (DEC-018), accès restreint aux administrateurs.
 
 ## 10. Workflow d'une tâche
 
