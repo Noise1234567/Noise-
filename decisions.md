@@ -29,6 +29,7 @@ Statuts : Proposée · Acceptée · En attente (bloquée par une information ou 
 | DEC-019 | Disponibilité hebdomadaire de Yannis et Orias                                                 | En attente              | —          |
 | DEC-020 | Administration minimale : rôle ADMIN + endpoints internes, pas d'interface dédiée             | Acceptée                | 2026-09-24 |
 | DEC-021 | Revue de PR par IA (Claude Code GitHub Actions), consultative, validation humaine obligatoire | Acceptée                | 2026-10-06 |
+| DEC-022 | Répartition de chaque vente, commission Noise 10 %, affiliation après le MVP                  | Acceptée                | 2026-10-06 |
 | DEC-023 | Frais d'organisation : 40 FCFA par billet mis en vente, gratuit en dessous de 50 billets      | Acceptée                | 2026-10-08 |
 | DEC-024 | Commission de 10 % et reversement à l'organisateur le lendemain de chaque journée de vente    | Acceptée                | 2026-10-08 |
 | DEC-025 | Annulation par l'organisateur : frais de 10 %, retour des sommes reversées sous 10 jours      | Acceptée                | 2026-10-08 |
@@ -173,6 +174,21 @@ Choix du fournisseur (NOISE-010, 2026-10-01) — statut : Acceptée (proposée p
 - Authentification : token lié à l'abonnement Claude d'Orias (`CLAUDE_CODE_OAUTH_TOKEN`, généré par `claude setup-token`), stocké en secret GitHub. À revoir si le token personnel bloque l'équipe (ex. en cas d'absence) : bascule possible vers une clé API de la Claude Console.
 - Écarté : le service « Code Review » géré par Anthropic (claude.ai/admin-settings/claude-code), réservé aux abonnements Team/Enterprise et facturé 15 à 25 $ par revue — hors budget et hors périmètre d'un abonnement personnel.
 - Suivi : si le coût ou le bruit des commentaires devient gênant, ajouter un fichier `REVIEW.md` pour recalibrer ce que Claude signale.
+
+## DEC-022 — Répartition de chaque vente et affiliation
+
+- Contexte : DEC-009 laissait le taux de commission en attente. Yannis et Orias ajoutent une affiliation : une personne qui partage l'événement touche une part des billets vendus grâce à son lien.
+- Alternatives étudiées : sous-comptes FedaPay (répartition automatique à chaque paiement) ; virements par l'API FedaPay (payouts) ; reversements manuels.
+- Choix :
+  - Commission Noise : 10 % du prix du billet, obligatoire. L'organisateur en est informé au moment de fixer son prix (montant qu'il recevra par billet affiché à la création de l'événement, NOISE-013).
+  - Frais de l'agrégateur (environ 1,8 %, taux exact à confirmer) : payés par le client, en plus du prix du billet (réglage du compte FedaPay).
+  - Affiliation (option choisie par l'organisateur) : 1 % du prix du billet pour le partageur, pris sur la part de l'organisateur. Implémentée après le MVP ; les données sont préparées dès le MVP (voir conséquences).
+  - Organisateur : le reste. Arrondis : chaque commission est arrondie au FCFA inférieur, l'organisateur reçoit le reste, la somme des parts est toujours égale au prix payé.
+  - La répartition de chaque commande est calculée et enregistrée par l'API à la confirmation du paiement (registre), jamais saisie à la main.
+  - Reversement à l'organisateur : remplacé par DEC-024 (reversement automatique de 90 % le lendemain de chaque journée de vente, 2026-10-08).
+- Écartés : les sous-comptes FedaPay, qui versent l'argent à l'organisateur dès la vente (impossible de rembourser les clients si l'événement est annulé, risque de fraude) et exigent un compte FedaPay vérifié pour chaque bénéficiaire.
+- Conséquences : NOISE-006 prévoit sur la commande les parts calculées (Noise, partageur, organisateur) et un partageur facultatif ; NOISE-019 enregistre la répartition à la confirmation ; NOISE-039 produit l'export à partir du registre. À vérifier avant la production : le cadre réglementaire de la détention des fonds des organisateurs entre la vente et le reversement (BCEAO), auprès de FedaPay ou d'un juriste.
+- Personnes : Yannis, Orias (accord du 2026-10-06).
 
 ## DEC-023 — Frais d'organisation
 

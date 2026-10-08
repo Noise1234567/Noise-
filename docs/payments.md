@@ -159,7 +159,7 @@ Règles décidées en réunion d'équipe le 2026-10-08. Montants en FCFA entiers
 
 Exemple d'annulation : 200 billets à 5 000 FCFA (1 000 000 FCFA de ventes), 700 000 FCFA déjà reversés. L'organisateur paie 100 000 FCFA de frais et renvoie 700 000 FCFA ; Noise retient 200 000 FCFA, rembourse 1 000 000 FCFA aux acheteurs et conserve sa commission de 100 000 FCFA.
 
-Points ouverts (voir decisions.md) : complément de frais d'organisation, seuil de reversement, collecte de l'e-mail et vérification d'identité de l'organisateur, critères de l'enquête.
+Points ouverts (voir decisions.md) : complément de frais d'organisation si l'organisateur ajoute des billets, seuil minimum de reversement, critères d'une enquête « concluante », montant maximal avancé par la trésorerie. Réglés le 2026-10-08 : e-mail demandé à l'inscription (DEC-026), identité de l'organisateur vérifiée avant d'organiser (DEC-018).
 
 ## 8. Mise en production (NOISE-034)
 
