@@ -24,7 +24,7 @@ describe('jetons de design', () => {
     expect(colors).toMatchObject({
       background: '#0A0A0A',
       surface: '#1A1A1A',
-      accent: '#00FF87',
+      accent: '#9026FF',
       secondary: '#00C4FF',
       text: '#E8E8E8',
     });
@@ -33,7 +33,7 @@ describe('jetons de design', () => {
   it.each([
     ['texte sur fond', colors.text, colors.background],
     ['texte sur surface', colors.text, colors.surface],
-    ['texte sur vert', colors.onAccent, colors.accent],
+    ['texte sur violet', colors.onAccent, colors.accent],
     ['cyan sur fond', colors.secondary, colors.background],
     ['erreur sur surface', colors.error, colors.surface],
     ['attente sur surface', colors.warning, colors.surface],
