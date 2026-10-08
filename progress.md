@@ -1,49 +1,49 @@
 # Progress — Noise
 
-Fichier factuel : il décrit uniquement ce qui a été vérifié. Mis à jour dans chaque PR et à la fin de chaque intervention de Claude. Statuts : À faire · En cours · En revue · Implémenté · Testé · Validé · Déployé · Bloqué (CLAUDE.md section 10).
+Fichier factuel : il décrit uniquement ce qui a été vérifié. Statuts : À faire · En cours · En revue · Implémenté · Testé · Validé · Déployé · Bloqué (CLAUDE.md section 10).
+
+Mise à jour : par la PR de suivi (une seule PR groupée, après les fusions), pas par chaque PR de fonctionnalité. Une ligne par tâche, sans tableau, pour que Git fusionne sans conflit. Chaque PR de fonctionnalité porte son statut dans sa propre description.
 
 Dernière mise à jour : 2026-10-07 (Claude).
 
 ## Synthèse
 
-| Indicateur               | Valeur                                                    |
-| ------------------------ | --------------------------------------------------------- |
-| Tâches mergées dans main | 5 (NOISE-000, NOISE-006, NOISE-007, NOISE-017, NOISE-041) |
-| PR ouvertes              | 1 (NOISE-010 PR #2)                                       |
-| Environnements en ligne  | aucun (local uniquement)                                  |
-| Dernière release         | aucune                                                    |
+- Tâches mergées dans main : NOISE-000, NOISE-006, NOISE-007, NOISE-010, NOISE-017, NOISE-041, NOISE-042.
+- PR ouvertes : #9 (NOISE-039), #11 (NOISE-012), #12 (NOISE-026), #13 (NOISE-019), #15 (NOISE-011).
+- Environnements en ligne : aucun (local uniquement).
+- Dernière release : aucune.
 
 ## Terminé
 
-| Tâche                                                     | Statut     | Preuve                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| --------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| NOISE-000 Socle du repository et documentation            | Validé     | PR #1 mergée dans main (commit 96e662c)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| NOISE-004 Espace Notion                                   | Implémenté | Créé par Claude le 2026-09-24 ; partage et invitation de Yannis non reconfirmés                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| NOISE-017 Interface PaymentProvider (FedaPay + Fake)      | Validé     | PR #3 mergée dans main (commit 0975075) par ORiVS ; 47 tests API ; FedaPayProvider vérifié contre la vraie sandbox (MTN 0166000001 → SUCCEEDED, Moov 0164000000 → FAILED)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| NOISE-041 Revue de PR par IA (Claude Code GitHub Actions) | Validé     | PR #4 mergée dans main ; DEC-021 ; app GitHub Claude installée, CODEOWNERS actif ; protection de main activée le 2026-10-06 (1 approbation, dismiss stale, Code Owners, checks CI obligatoires, règle appliquée aux admins) ; Revue Claude volontairement non requise                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| NOISE-006 Schéma Prisma v1, migration initiale, seed      | Implémenté | PR #5 mergée dans main (commit 008b61d) après revue d'Orias ; vérifiée par Yannis (port 55432) et Orias (port 55433) : migration sur noise_dev et noise_test, seed, 66 tests dont 16 d'intégration, checks CI requis verts                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| NOISE-007 Authentification API                            | Implémenté | PR #6 mergée dans main (commit a6407e5, 2026-10-07) après revue d'Orias ; routes POST /api/v1/auth/register, /login, /refresh (rotation ; réutilisation d'un ancien jeton = révocation de toutes les sessions), /logout, GET /api/v1/me, PATCH /api/v1/me/roles ; argon2id, access token JWT 15 min, refresh token opaque haché, limitation 5 essais / 15 min par IP et numéro, JWT_ACCESS_SECRET obligatoire hors tests. Vérifiée par Yannis le 2026-10-06 puis par Orias en local (Windows, Postgres 17, port 55433) : pnpm check vert, 109 tests API dont 16 d'authentification sur noise_test, 26 tests shared ; checks CI requis verts. Pas encore vérifiée sur staging (inexistant). |
+- NOISE-000 Socle du repository et documentation : Validé. PR #1 mergée (commit 96e662c).
+- NOISE-004 Espace Notion : Implémenté. Créé par Claude le 2026-09-24 ; partage et invitation de Yannis non reconfirmés.
+- NOISE-006 Schéma Prisma v1, migration initiale, seed : Implémenté. PR #5 mergée (commit 008b61d) ; vérifiée par Yannis et Orias (migration sur noise_dev et noise_test, seed, 66 tests dont 16 d'intégration).
+- NOISE-007 Authentification API : Implémenté. PR #6 mergée (commit a6407e5) ; routes register, login, refresh (rotation, réutilisation = révocation de toutes les sessions), logout, GET /api/v1/me, PATCH /api/v1/me/roles ; argon2id, access token JWT 15 min, refresh token opaque haché, limitation 5 essais / 15 min. Vérifiée par Yannis puis par Orias en local (109 tests API, 26 tests shared). Pas encore vérifiée sur staging (inexistant).
+- NOISE-010 Choix du fournisseur de paiement : Validé. FedaPay retenu (DEC-005), mergée (commit 8b0f79e).
+- NOISE-017 Interface PaymentProvider (FedaPay + Fake) : Validé. PR #3 mergée ; 47 tests API ; FedaPayProvider vérifié contre la vraie sandbox.
+- NOISE-041 Revue de PR par IA : Validé. PR #4 mergée ; DEC-021 ; protection de main activée le 2026-10-06 (1 approbation, Code Owners, checks CI requis) ; Revue Claude non requise.
+- NOISE-042 Évaluation de FeexPay : Validé. PR #10 mergée (commit 7416a92) ; FedaPay conservé (FeexPay : webhooks non signés, aucun paiement validé en sandbox).
 
-## En cours / en revue
+## En revue
 
-| Tâche                                                                                        | Statut                                               | Détail                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| -------------------------------------------------------------------------------------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NOISE-010 Choix du fournisseur de paiement (FedaPay)                                         | En revue (PR #2, Orias reviewer)                     | DEC-005 complétée (FedaPay retenu, proposé par Yannis, validé par Orias le 2026-10-01), consignée dans decisions.md et docs/payments.md par cette PR (docs et deux scripts d'exploration jetables hors src/, sans clé dans le code : relus par Orias le 2026-10-07). Conflit progress.md résolu le 2026-10-07 ; approbation formelle d'Orias à soumettre, puis merge. decisions.md sur main n'a pas encore la mise à jour FedaPay tant que cette PR n'est pas mergée. |
-| NOISE-042 Évaluer FeexPay en sandbox (tâche hors Notion : limite de blocs gratuits atteinte) | Close (étude terminée, FedaPay conservé, 2026-10-07) | Branche `chore/NOISE-042-feexpay-spike`. Paiement déclenché par le serveur vérifié (HTTP 202 puis statut relu), mais sur l'API de production (la sandbox est sandbox-api.feexpay.me) ; aucun paiement réussi en sandbox, clé `fp_` valide non obtenue. Doc officielle : webhooks non signés. DEC-005 (FedaPay) inchangée. Détails : `docs/payments.md` section 2.2 bis.                                                                                               |
+- NOISE-039 Export des ventes et répartition (DEC-022) : PR #9 (Yannis). Revue d'Orias en cours ; conflit de fusion à résoudre par Yannis.
+- NOISE-019 Paiement, webhook signé, statut de commande : PR #13 (Yannis, construite sur #9). À lancer en local par le reviewer (CLAUDE.md section 12).
+- NOISE-011 API événements : PR #15 (Orias). 148 tests API confirmés par Orias sur Postgres 17 ; revue de Yannis à demander.
+- NOISE-012 Upload d'affiche : PR #11 (Yannis, dépend de NOISE-011).
+- NOISE-026 Scanner : PR #12 (Yannis ; test manuel sur téléphone requis).
 
 ## Bloqué
 
-| Élément                       | Raison                                                                                  | Débloqué par |
-| ----------------------------- | --------------------------------------------------------------------------------------- | ------------ |
-| NOISE-034 Paiement production | KYC du fournisseur impossible tant que le titulaire du compte marchand n'est pas décidé | DEC-016      |
-| NOISE-040 OTP SMS             | Périmètre non décidé                                                                    | DEC-017      |
+- NOISE-034 Paiement production : KYC impossible tant que le titulaire du compte marchand n'est pas décidé (DEC-016).
+- NOISE-040 OTP SMS : périmètre non décidé (DEC-017).
+- NOISE-008 Application mobile (socle) : choix de navigation à confirmer (DEC-011).
 
 ## Prochaines tâches
 
-1. Approuver et merger la PR #2 (NOISE-010) une fois la CI verte.
-2. Enchaîner sur NOISE-008 (écrans d'auth mobile) : ne jamais lancer deux refresh en parallèle (docs/api.md). Trancher avec Yannis les deux questions de la revue NOISE-007 (délai de grâce sur le refresh simultané ; 403 compte suspendu).
-3. Revoir le taux de commission (DEC-009) et DEC-016 à DEC-019.
-4. Si le check "Revue Claude" continue d'échouer sur de prochaines PR, vérifier le jeton/quota de l'abonnement Claude d'Orias.
+- Relire et fusionner #9, puis #13, #11 (après #15), #12.
+- NOISE-008 : ne jamais lancer deux refresh en parallèle (docs/api.md).
+- Décisions en attente : DEC-011, DEC-016 à DEC-019, écart des frais FedaPay (1,8 % annoncé, environ 4 % observé en sandbox).
+- Si le check « Revue Claude » échoue encore, vérifier le jeton de l'abonnement Claude d'Orias.
 
 ## Décisions récentes
 
@@ -55,6 +55,7 @@ Dernière mise à jour : 2026-10-07 (Claude).
 
 ## Journal
 
+- 2026-10-07 — NOISE-042 mergée (PR #10, commit 7416a92) ; NOISE-010 mergée (commit 8b0f79e). Revue de #9 (NOISE-039) en cours, #13 (NOISE-019) attend #9. Passage de progress.md en listes pour éviter les conflits de fusion.
 - 2026-10-07 — NOISE-007 mergée (PR #6, commit a6407e5) après vérification locale d'Orias (109 tests API, 26 tests shared). Conflit progress.md de la PR #2 résolu sur la dernière main.
 - 2026-10-06 — NOISE-006 mergée (PR #5, commit 008b61d). Branche NOISE-007 mise à jour avec main (conflits app.ts, server.ts et progress.md résolus).
 - 2026-10-06 — Incident : un commit direct sur main (b20ee61, "Revise progress document...") a remplacé le contenu de progress.md par celui de decisions.md par erreur de copier-coller. decisions.md lui-même n'a pas été touché. Corrigé par Claude via une nouvelle PR après constat.
