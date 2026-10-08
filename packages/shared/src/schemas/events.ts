@@ -10,8 +10,9 @@ export const EVENT_LIST_DEFAULT_LIMIT = 20;
 export const EVENT_LIST_MAX_LIMIT = 50;
 
 /** Plafonds de bon sens : évitent les prix ou stocks absurdes (fautes de frappe, abus). */
-export const MAX_TICKET_PRICE_XOF = 10_000_000;
+export const MAX_TICKET_PRICE_XOF = 1_000_000;
 export const MAX_TICKET_QUANTITY = 100_000;
+export const MAX_EVENT_CAPACITY = 100_000;
 
 /** Fuseau du Bénin (UTC+1, pas d'heure d'été) : sert au filtre « date » de la liste. */
 export const BENIN_UTC_OFFSET = '+01:00';
@@ -27,6 +28,12 @@ const eventFieldsSchema = z.object({
   city: z.string().trim().min(2, 'Ville trop courte').max(60, 'Ville trop longue'),
   startsAt: dateTimeSchema,
   endsAt: dateTimeSchema,
+  /** Nombre de participants attendus : base des frais d'organisation et plafond des billets. */
+  capacity: z
+    .number()
+    .int('La capacité doit être un entier')
+    .min(1, 'Au moins 1 participant')
+    .max(MAX_EVENT_CAPACITY, 'Capacité trop élevée'),
 });
 
 /**
@@ -61,7 +68,7 @@ export const createTicketTypeSchema = z.object({
   priceXof: z
     .number()
     .int('Le prix doit être un entier (FCFA)')
-    .min(1, 'Le prix doit être positif')
+    .min(0, 'Le prix ne peut pas être négatif (0 = billet gratuit)')
     .max(MAX_TICKET_PRICE_XOF, 'Prix trop élevé'),
   quantityTotal: z
     .number()
@@ -120,6 +127,16 @@ export interface EventDto {
   createdAt: string;
   updatedAt: string;
   ticketTypes: TicketTypeDto[];
+  /** Capacité déclarée et frais d'organisation : visibles du seul organisateur propriétaire. */
+  capacity?: number;
+  organizerFee?: OrganizerFeeDto;
+}
+
+/** Frais d'organisation (NOISE-044) : total pour la capacité, déjà payé, reste dû. */
+export interface OrganizerFeeDto {
+  totalXof: number;
+  paidXof: number;
+  dueXof: number;
 }
 
 export interface EventListResponse {

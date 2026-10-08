@@ -43,6 +43,7 @@ const validEvent = (overrides: object = {}) => ({
   city: 'Cotonou',
   startsAt: inDays(10).toISOString(),
   endsAt: inDays(11).toISOString(),
+  capacity: 200,
   ...overrides,
 });
 
@@ -54,6 +55,8 @@ const seedEvent = (
     genre: string;
     city: string;
     status: 'DRAFT' | 'PUBLISHED' | 'CANCELLED';
+    capacity: number;
+    feePaidXof: number;
     startsAt: Date;
     endsAt: Date;
   }> = {},
@@ -66,6 +69,7 @@ const seedEvent = (
       genre: 'Afrobeats',
       venue: 'Salle',
       city: 'Cotonou',
+      capacity: 500,
       status: 'PUBLISHED',
       startsAt: inDays(5),
       endsAt: inDays(6),
@@ -293,9 +297,8 @@ describe('types de billets (POST /events/:id/ticket-types)', () => {
 
   it.each([
     ['prix décimal', { priceXof: 1500.5 }, 'priceXof'],
-    ['prix nul', { priceXof: 0 }, 'priceXof'],
     ['prix négatif', { priceXof: -100 }, 'priceXof'],
-    ['prix trop élevé', { priceXof: 999_999_999 }, 'priceXof'],
+    ['prix trop élevé', { priceXof: 1_000_001 }, 'priceXof'],
     ['quantité nulle', { quantityTotal: 0 }, 'quantityTotal'],
     ['quantité décimale', { quantityTotal: 2.5 }, 'quantityTotal'],
     ['nom trop court', { name: 'a' }, 'name'],
@@ -329,6 +332,129 @@ describe('types de billets (POST /events/:id/ticket-types)', () => {
       .set(headers)
       .send(validType());
     expect(res.status).toBe(409);
+  });
+});
+
+describe("capacité et frais d'organisation (NOISE-044)", () => {
+  const createWithCapacity = async (capacity: number) => {
+    const { user, headers } = await organizer();
+    const res = await request(app)
+      .post('/api/v1/events')
+      .set(headers)
+      .send(validEvent({ capacity }));
+    return { user, headers, res };
+  };
+
+  it('exige la capacité à la création', async () => {
+    const { headers } = await organizer();
+    const withoutCapacity: Record<string, unknown> = validEvent();
+    delete withoutCapacity.capacity;
+    const res = await request(app).post('/api/v1/events').set(headers).send(withoutCapacity);
+    expect(res.status).toBe(400);
+    expect(res.body.error.details.map((d: { path: string }) => d.path)).toContain('capacity');
+  });
+
+  it.each([
+    [30, 0],
+    [50, 0],
+    [60, 2400],
+    [100, 4000],
+  ])('capacité %i : frais de %i FCFA', async (capacity, due) => {
+    const { res } = await createWithCapacity(capacity);
+    expect(res.status).toBe(201);
+    expect(res.body.event.capacity).toBe(capacity);
+    expect(res.body.event.organizerFee).toEqual({ totalXof: due, paidXof: 0, dueXof: due });
+  });
+
+  it('accepte un billet gratuit (prix 0)', async () => {
+    const { user, headers } = await organizer();
+    const event = await seedEvent(user.id);
+    const res = await request(app)
+      .post(`/api/v1/events/${event.id}/ticket-types`)
+      .set(headers)
+      .send({ name: 'Invitation', priceXof: 0, quantityTotal: 10 });
+    expect(res.status).toBe(201);
+    expect(res.body.ticketType.priceXof).toBe(0);
+  });
+
+  it('refuse des billets au-delà de la capacité déclarée (409) et dit combien il reste', async () => {
+    const { user, headers } = await organizer();
+    const event = await seedEvent(user.id, { capacity: 20 });
+    const post = (body: object) =>
+      request(app).post(`/api/v1/events/${event.id}/ticket-types`).set(headers).send(body);
+
+    expect((await post({ name: 'Standard', priceXof: 2000, quantityTotal: 10 })).status).toBe(201);
+    expect((await post({ name: 'Pro', priceXof: 5000, quantityTotal: 10 })).status).toBe(201);
+    const over = await post({ name: 'VIP', priceXof: 10000, quantityTotal: 1 });
+    expect(over.status).toBe(409);
+    expect(over.body.error.code).toBe('CONFLICT');
+    expect(over.body.error.message).toContain('Il reste 0 place');
+  });
+
+  it('augmenter la capacité : frais du nouveau total moins ce qui est payé', async () => {
+    const { user, headers } = await organizer();
+    const event = await seedEvent(user.id, { capacity: 40, status: 'DRAFT' });
+    const put = (capacity: number) =>
+      request(app).put(`/api/v1/events/${event.id}`).set(headers).send({ capacity });
+
+    expect((await put(45)).body.event.organizerFee.dueXof).toBe(0);
+    expect((await put(60)).body.event.organizerFee.dueXof).toBe(2400);
+    expect((await put(100)).body.event.organizerFee.dueXof).toBe(4000);
+  });
+
+  it('un montant déjà payé est déduit, et baisser la capacité ne rembourse rien', async () => {
+    const { user, headers } = await organizer();
+    const event = await seedEvent(user.id, { capacity: 100, feePaidXof: 4000 });
+    const put = (capacity: number) =>
+      request(app).put(`/api/v1/events/${event.id}`).set(headers).send({ capacity });
+
+    expect((await put(80)).body.event.organizerFee).toEqual({
+      totalXof: 3200,
+      paidXof: 4000,
+      dueXof: 0,
+    });
+    expect((await put(110)).body.event.organizerFee.dueXof).toBe(400); // 4 400 - 4 000
+  });
+
+  it('refuse de descendre sous la somme des billets déjà créés', async () => {
+    const { user, headers } = await organizer();
+    const event = await seedEvent(user.id, { capacity: 100 });
+    await factories.ticketType(prisma, event.id, 60);
+    const res = await request(app)
+      .put(`/api/v1/events/${event.id}`)
+      .set(headers)
+      .send({ capacity: 50 });
+    expect(res.status).toBe(400);
+    expect(res.body.error.details[0].path).toBe('capacity');
+  });
+
+  it('seul le propriétaire voit la capacité et les frais', async () => {
+    const owner = await organizer();
+    const { headers } = await participant();
+    const event = await seedEvent(owner.user.id);
+    const asOwner = await request(app).get(`/api/v1/events/${event.id}`).set(owner.headers);
+    const asOther = await request(app).get(`/api/v1/events/${event.id}`).set(headers);
+    expect(asOwner.body.event).toHaveProperty('organizerFee');
+    expect(asOther.body.event).not.toHaveProperty('organizerFee');
+    expect(asOther.body.event).not.toHaveProperty('capacity');
+  });
+
+  it('une fois des billets vendus, la date de début et le lieu sont figés (409)', async () => {
+    const { user, headers } = await organizer();
+    const event = await seedEvent(user.id);
+    const type = await factories.ticketType(prisma, event.id, 10);
+    await prisma.ticketType.update({ where: { id: type.id }, data: { quantitySold: 1 } });
+    const put = (body: object) =>
+      request(app).put(`/api/v1/events/${event.id}`).set(headers).send(body);
+
+    expect((await put({ venue: 'Autre salle' })).status).toBe(409);
+    expect(
+      (await put({ startsAt: inDays(7).toISOString(), endsAt: inDays(8).toISOString() })).status,
+    ).toBe(409);
+    // Les autres champs restent modifiables.
+    expect(
+      (await put({ title: 'Nouveau titre', description: 'Nouvelle description' })).status,
+    ).toBe(200);
   });
 });
 

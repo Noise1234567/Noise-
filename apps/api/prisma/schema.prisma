@@ -117,6 +117,10 @@ model Event {
   endsAt             DateTime    @map("ends_at") @db.Timestamptz(3)
   posterUrl          String?     @map("poster_url")
   status             EventStatus @default(DRAFT)
+  /// Participants attendus, déclarés par l'organisateur : plafond de la somme des billets et base des frais d'organisation (DEC-023).
+  capacity           Int
+  /// Frais d'organisation déjà réglés (FCFA). Le reste dû = frais de la capacité - ce montant.
+  feePaidXof         Int         @default(0) @map("fee_paid_xof")
   /// Affiliation (DEC-022, après le MVP) : 1 % pour le partageur si l'organisateur l'accepte.
   affiliationEnabled Boolean     @default(false) @map("affiliation_enabled")
   cancelledAt        DateTime?   @map("cancelled_at") @db.Timestamptz(3)
