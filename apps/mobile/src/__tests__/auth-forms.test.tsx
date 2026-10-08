@@ -22,6 +22,9 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: async (k: string) => void mockStore.delete(k),
 }));
 
+// Le premier rendu charge Zod et les écrans : sur une machine chargée (tests en parallèle), il dépasse 5 s.
+jest.setTimeout(30_000);
+
 const mock = new MockAdapter(api);
 
 const authSession = {
