@@ -13,6 +13,8 @@ type SessionState = {
   roles: AppRole[];
   /** Vue affichée. Seule la pile racine change quand on bascule, le jeton reste le même. */
   activeRole: AppRole | null;
+  /** Vrai si la session a été fermée par le serveur (écran 4d) : message sur la connexion. */
+  sessionExpired: boolean;
   /** Rôle choisi sur l'écran de bienvenue, avant l'inscription. */
   pendingRole: AppRole | null;
 
@@ -20,7 +22,7 @@ type SessionState = {
   hydrate: () => void;
   setPendingRole: (role: AppRole) => void;
   signIn: (roles: AppRole[], preferredRole?: AppRole, user?: PublicUser) => void;
-  signOut: () => void;
+  signOut: (expired?: boolean) => void;
   /**
    * Bascule de vue sans reconnexion. Renvoie false si le rôle n'est pas activé :
    * l'écran doit alors proposer la feuille d'activation (une requête API, pas de reconnexion).
@@ -31,6 +33,7 @@ type SessionState = {
 export const useSession = create<SessionState>((set, get) => ({
   status: 'loading',
   user: null,
+  sessionExpired: false,
   roles: [],
   activeRole: null,
   pendingRole: null,
@@ -43,11 +46,25 @@ export const useSession = create<SessionState>((set, get) => ({
     const activeRole =
       preferredRole && roles.includes(preferredRole) ? preferredRole : (roles[0] ?? null);
     if (!activeRole) return;
-    set({ status: 'signedIn', user: user ?? null, roles, activeRole, pendingRole: null });
+    set({
+      status: 'signedIn',
+      user: user ?? null,
+      roles,
+      activeRole,
+      pendingRole: null,
+      sessionExpired: false,
+    });
   },
 
-  signOut: () =>
-    set({ status: 'signedOut', user: null, roles: [], activeRole: null, pendingRole: null }),
+  signOut: (expired = false) =>
+    set({
+      status: 'signedOut',
+      user: null,
+      roles: [],
+      activeRole: null,
+      pendingRole: null,
+      sessionExpired: expired,
+    }),
 
   switchRole: (role) => {
     if (!get().roles.includes(role)) return false;
