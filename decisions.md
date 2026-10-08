@@ -18,7 +18,7 @@ Statuts : Proposée · Acceptée · En attente (bloquée par une information ou 
 | DEC-008 | Maximum 5 billets par commande                                                                | Acceptée                            | 2026-09-24 |
 | DEC-009 | Reversements aux organisateurs manuels pour le MVP                                            | Acceptée ; taux et frais en attente | 2026-09-24 |
 | DEC-010 | Remboursements manuels en cas d'annulation d'événement                                        | Acceptée                            | 2026-09-24 |
-| DEC-011 | Navigation mobile : Expo Router (bâti sur React Navigation)                                   | Proposée                            | 2026-09-24 |
+| DEC-011 | Navigation mobile : Expo Router (bâti sur React Navigation)                                   | Acceptée                            | 2026-10-08 |
 | DEC-012 | Format des commits vérifié en CI (titre de PR), sans hook Git local                           | Acceptée                            | 2026-09-24 |
 | DEC-013 | Stratégie Git trunk-based : main protégée + branches courtes + squash                         | Acceptée                            | 2026-09-24 |
 | DEC-014 | Scanner en ligne uniquement pour le MVP                                                       | Acceptée                            | 2026-09-24 |
@@ -112,11 +112,12 @@ Choix du fournisseur (NOISE-010, 2026-10-01) — statut : Acceptée (proposée p
 
 - Choix : en cas d'annulation d'événement, les billets passent à CANCELLED, les acheteurs sont notifiés, le remboursement est effectué manuellement (procédure dans `docs/payments.md`).
 
-## DEC-011 — Navigation mobile (proposée)
+## DEC-011 — Navigation mobile
 
 - Contexte : le CDC cite React Navigation v6. En 2026, Expo recommande Expo Router, qui est bâti sur React Navigation.
 - Proposition : Expo Router (routes typées, structure par fichiers, liens profonds). Alternative : React Navigation utilisé directement (plus explicite pour apprendre).
-- À valider par Orias au début de NOISE-008.
+- Choix : Expo Router, validé par Orias le 2026-10-08 (NOISE-008), après explication des deux options. Pile racine à trois zones (authentification, Participant, Organisateur) choisies par la session et le rôle actif (`Stack.Protected`), barres d'onglets propres à chaque vue.
+- Conséquence : le CDC (React Navigation v6) est écarté sur ce point ; React Navigation reste utilisé en dessous, via Expo Router.
 
 ## DEC-012 — Format des commits vérifié en CI
 

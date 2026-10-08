@@ -1,27 +1,44 @@
 {
   "name": "@noise/mobile",
   "version": "0.1.0",
-  "main": "index.ts",
+  "main": "expo-router/entry",
   "dependencies": {
+    "@expo-google-fonts/inter": "^0.4.2",
+    "@expo-google-fonts/syne": "^0.4.2",
+    "@noise/shared": "workspace:*",
     "expo": "~57.0.25",
+    "expo-constants": "~57.0.19",
+    "expo-font": "~57.0.4",
+    "expo-linking": "~57.0.12",
+    "expo-router": "~57.0.25",
+    "expo-splash-screen": "~57.0.9",
     "expo-status-bar": "~57.0.1",
+    "expo-system-ui": "~57.0.4",
     "react": "19.2.3",
     "react-native": "0.86.3",
-    "@noise/shared": "workspace:*"
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.2",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@testing-library/react-native": "^14.1.0",
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.2.2",
+    "jest": "^30.5.2",
+    "jest-expo": "~57.0.5",
+    "react-test-renderer": "19.2.3",
     "typescript": "~6.0.3"
   },
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "typecheck": "tsc --noEmit",
-    "test": "node -e \"console.log('Tests mobiles : mis en place dans NOISE-008 (jest-expo + RN Testing Library)')\"",
+    "test": "jest",
     "doctor": "expo-doctor",
     "build:dev": "eas build --profile development --platform android",
     "build:preview": "eas build --profile preview --platform android",
-    "build:production": "eas build --profile production --platform android"
+    "build:production": "eas build --profile production --platform android",
+    "test:watch": "jest --watch"
   },
   "private": true,
   "description": "App mobile Noise (Expo / React Native) — vues participant et organisateur"
