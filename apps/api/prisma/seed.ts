@@ -34,6 +34,7 @@ async function main() {
     data: {
       name: 'Kofi Démo',
       phone: ORGANIZER_PHONE,
+      email: 'kofi.demo@noise.test',
       passwordHash: DEMO_PASSWORD_HASH,
       roles: ['ORGANIZER', 'PARTICIPANT'],
     },
@@ -42,6 +43,7 @@ async function main() {
     data: {
       name: 'Aminata Démo',
       phone: PARTICIPANT_PHONE,
+      email: 'aminata.demo@noise.test',
       passwordHash: DEMO_PASSWORD_HASH,
       roles: ['PARTICIPANT'],
     },

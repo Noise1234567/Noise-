@@ -17,6 +17,7 @@ export function createLogger(level: string) {
         '*.refreshToken',
         '*.qrToken',
         '*.phone',
+        '*.email',
       ],
       censor: '[REDACTED]',
     },
