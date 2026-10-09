@@ -6,3 +6,4 @@ export * from './revenue-split.js';
 export * from './schemas/scanner.js';
 export * from './schemas/events.js';
 export * from './schemas/orders.js';
+export * from './schemas/tickets.js';

@@ -2,6 +2,7 @@ import { ORDER_EXPIRATION_MINUTES, type CreateOrderInput, type OrderDto } from '
 import type { Prisma } from '../../generated/prisma/client.js';
 import { HttpError } from '../../lib/http-error.js';
 import type { PrismaClient } from '../../lib/prisma.js';
+import type { TicketIssuer } from '../tickets/ticket-issuer.js';
 
 /**
  * Commandes (NOISE-018, DEC-007, DEC-008). Une commande en attente (PENDING) réserve ses
@@ -19,6 +20,8 @@ export class OrdersService {
   constructor(
     private readonly prisma: PrismaClient,
     private readonly now: () => Date = () => new Date(),
+    /** Création des billets d'une commande gratuite, dans la même transaction (NOISE-020). */
+    private readonly issueTickets?: TicketIssuer,
   ) {}
 
   async create(userId: string, input: CreateOrderInput): Promise<OrderDto> {
@@ -87,6 +90,20 @@ export class OrdersService {
           where: { id: current.id },
           data: { quantitySold: { increment: input.quantity } },
         });
+        if (this.issueTickets) {
+          const holder = await tx.user.findUniqueOrThrow({
+            where: { id: userId },
+            select: { name: true },
+          });
+          await this.issueTickets(tx, {
+            orderId: created.id,
+            eventId: current.eventId,
+            ticketTypeId: current.id,
+            participantId: userId,
+            holderName: holder.name,
+            quantity: input.quantity,
+          });
+        }
       }
       return created;
     });
