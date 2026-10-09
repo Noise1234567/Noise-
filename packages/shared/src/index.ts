@@ -4,3 +4,4 @@ export * from './phone.js';
 export * from './schemas/auth.js';
 export * from './schemas/events.js';
 export * from './schemas/orders.js';
+export * from './schemas/tickets.js';
