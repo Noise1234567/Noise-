@@ -10,6 +10,8 @@ import { globalRateLimit } from './middlewares/rate-limit.js';
 import type { PrismaClient } from './lib/prisma.js';
 import { createAuthRouter, createMeRouter } from './modules/auth/auth.routes.js';
 import { AuthService } from './modules/auth/auth.service.js';
+import { ScannerLinksService } from './modules/scanner/scanner-links.service.js';
+import { createScannerLinksRouter } from './modules/scanner/scanner.routes.js';
 import { createEventsRouter } from './modules/events/events.routes.js';
 import { EventsService } from './modules/events/events.service.js';
 
@@ -61,6 +63,16 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
       '/api/v1/events',
       createEventsRouter(new EventsService(deps.prisma), env.JWT_ACCESS_SECRET),
     );
+    // Sans SCANNER_JWT_SECRET (tests seulement), les liens scanner ne sont pas montés.
+    if (env.SCANNER_JWT_SECRET) {
+      app.use(
+        '/api/v1',
+        createScannerLinksRouter(
+          new ScannerLinksService(deps.prisma, env.SCANNER_JWT_SECRET, env.SCANNER_URL ?? null),
+          env.JWT_ACCESS_SECRET,
+        ),
+      );
+    }
   }
 
   app.use(notFoundHandler);

@@ -24,6 +24,10 @@ const envSchema = z
       ),
     /** Signature des access tokens (HS256, NOISE-007) : au moins 32 caractères, un par environnement. */
     JWT_ACCESS_SECRET: z.string().min(32).optional(),
+    /** Signature des liens scanner (NOISE-024) : au moins 32 caractères, distinct de JWT_ACCESS_SECRET. */
+    SCANNER_JWT_SECRET: z.string().min(32).optional(),
+    /** Adresse de la page du scanner, sans le jeton (ex. https://api.noise.bj/scan/) : sert à fabriquer le lien à partager. */
+    SCANNER_URL: z.string().url().optional(),
     // Paiement (NOISE-017, DEC-005). `fake` : FakeProvider, aucun appel réseau.
     PAYMENT_PROVIDER: z.enum(['fake', 'fedapay']).default('fake'),
     PAYMENT_ENVIRONMENT: z.enum(['sandbox', 'live']).default('sandbox'),
@@ -33,6 +37,16 @@ const envSchema = z
   .superRefine((env, ctx) => {
     if (env.NODE_ENV !== 'test' && !env.JWT_ACCESS_SECRET) {
       ctx.addIssue({ code: 'custom', path: ['JWT_ACCESS_SECRET'], message: 'obligatoire' });
+    }
+    if (env.NODE_ENV !== 'test' && !env.SCANNER_JWT_SECRET) {
+      ctx.addIssue({ code: 'custom', path: ['SCANNER_JWT_SECRET'], message: 'obligatoire' });
+    }
+    if (env.SCANNER_JWT_SECRET && env.SCANNER_JWT_SECRET === env.JWT_ACCESS_SECRET) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['SCANNER_JWT_SECRET'],
+        message: 'doit différer de JWT_ACCESS_SECRET',
+      });
     }
     if (env.PAYMENT_PROVIDER === 'fake') {
       if (env.NODE_ENV === 'production') {

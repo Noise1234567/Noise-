@@ -14,10 +14,11 @@
 
 ## 2. Liens scanner (NOISE-024)
 
-- JWT signé avec `SCANNER_JWT_SECRET` (différent des secrets d'auth), contenant `eventId`, `jti`, `exp`.
-- Durée configurable par l'organisateur (par défaut : jusqu'à la fin de l'événement + 2 h, maximum 48 h).
-- Révocable : `ScannerLink.revokedAt`. Le serveur vérifie le `jti` en base à chaque validation.
-- URL partagée : `https://<api>/scan/#<jwt>` — le fragment n'est pas transmis au serveur ni journalisé.
+- JWT HS256 signé avec `SCANNER_JWT_SECRET` (différent de `JWT_ACCESS_SECRET`, le démarrage est refusé sinon), contenant `eventId` et `jti`, avec une expiration (`exp`) et une audience propre (`noise-scanner`) : un jeton scanner n'ouvre aucune route de l'application, et un access token n'ouvre pas le scanner.
+- Un lien par personne du staff (`label` facultatif, 60 caractères) : on sait qui a scanné.
+- Durée : choisie par l'organisateur de 1 à 48 h (`durationHours`) ; sinon jusqu'à la fin de l'événement + 2 h, plafonné à 48 h après la création. Refusé (409) pour un événement en brouillon, annulé ou terminé.
+- Révocable : `ScannerLink.revokedAt`. Seul le `jti` est conservé en base, jamais le jeton, qui n'est montré qu'à la création. `ScannerLinksService.authenticate(token)` vérifie la signature, l'expiration puis l'état en base (lien connu, non révoqué, non expiré, événement identique) ; la validation des billets l'appelle à chaque scan, via le garde `requireScannerLink` : une révocation agit donc aussitôt.
+- URL à partager : `<SCANNER_URL>#<jwt>` (par exemple `https://<hôte>/scan/#<jwt>`), fabriquée par l'API quand `SCANNER_URL` est configurée. Le fragment (après `#`) n'est pas transmis au serveur ni journalisé.
 
 ## 3. Validation (NOISE-025)
 
