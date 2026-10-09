@@ -22,6 +22,17 @@ export const phoneSchema = z
     return normalized;
   });
 
+/** Longueur maximale d'une adresse e-mail (RFC 5321). */
+export const EMAIL_MAX_LENGTH = 254;
+
+/** E-mail demandé à l'inscription (DEC-026) : espaces retirés, minuscules, un seul compte par adresse. */
+export const emailSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .max(EMAIL_MAX_LENGTH, 'Adresse e-mail trop longue')
+  .pipe(z.email('Adresse e-mail invalide'));
+
 export const passwordSchema = z
   .string()
   .min(PASSWORD_MIN_LENGTH, `Au moins ${PASSWORD_MIN_LENGTH} caractères`)
@@ -33,6 +44,7 @@ export const signupRoleSchema = z.enum(['PARTICIPANT', 'ORGANIZER']);
 export const registerSchema = z.object({
   name: z.string().trim().min(2, 'Nom trop court').max(80, 'Nom trop long'),
   phone: phoneSchema,
+  email: emailSchema,
   password: passwordSchema,
   role: signupRoleSchema,
 });
@@ -55,6 +67,8 @@ export interface PublicUser {
   id: string;
   name: string;
   phone: string;
+  /** null pour les comptes créés avant DEC-026 (e-mail à renseigner plus tard). */
+  email: string | null;
   roles: ('PARTICIPANT' | 'ORGANIZER' | 'ADMIN')[];
 }
 

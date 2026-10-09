@@ -71,6 +71,8 @@ model User {
   name         String     @db.VarChar(80)
   /// E.164 : +229 suivi de 10 chiffres, soit 14 caractères (normalisé par packages/shared/src/phone.ts).
   phone        String     @unique @db.VarChar(16)
+  /// Minuscules (CHECK en base). Nul pour les comptes créés avant DEC-026 ; obligatoire à l'inscription.
+  email        String?    @unique @db.VarChar(254)
   passwordHash String     @map("password_hash")
   roles        UserRole[]
   status       UserStatus @default(ACTIVE)
