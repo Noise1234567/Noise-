@@ -68,7 +68,7 @@ Base : CDC section 7, complétée par les décisions.
 | GET     | `/orders/:id/status`        | Participant propriétaire  | NOISE-019            |
 | POST    | `/payments/initiate`        | Participant propriétaire  | NOISE-019            |
 | POST    | `/payments/webhook`         | Fournisseur (signature)   | NOISE-019            |
-| GET     | `/tickets/mine`             | Participant               | NOISE-020            |
+| GET     | `/tickets/mine`             | Participant               | NOISE-020 (existe)   |
 | POST    | `/scanner/links`            | Organisateur propriétaire | NOISE-024            |
 | GET     | `/events/:id/scanner-links` | Organisateur propriétaire | NOISE-024            |
 | DELETE  | `/scanner/links/:id`        | Organisateur propriétaire | NOISE-024            |
@@ -133,7 +133,7 @@ Corps : `{ ticketTypeId, quantity }`, avec `quantity` entier de 1 à 5 (DEC-008)
 - Le prix est figé à la création : `totalXof` = `unitPriceXof` × `quantity`.
 - La commande est `PENDING` et `expiresAt` vaut la création + 15 minutes. Les places sont réservées, mais `quantitySold` n'augmente qu'à la confirmation du paiement (NOISE-019).
 - Contrôle du stock : disponible = total − vendus − réservés par des commandes `PENDING` non expirées (DEC-007). Il est fait dans une transaction qui verrouille le type de billet (`SELECT ... FOR UPDATE`) : si plusieurs personnes visent la dernière place en même temps, une seule réussit.
-- Billet gratuit (prix 0) : rien à payer, la commande est créée directement `PAID` (`paidAt` renseigné, répartition 0 / 0 / 0) et `quantitySold` augmente aussitôt. Les billets et leurs QR sont créés par NOISE-020, qui devra aussi traiter ces commandes gratuites.
+- Billet gratuit (prix 0) : rien à payer, la commande est créée directement `PAID` (`paidAt` renseigné, répartition 0 / 0 / 0) et `quantitySold` augmente aussitôt. Ses billets et leurs QR sont créés dans la même transaction (NOISE-020, section 6).
 - Erreurs : 400 (quantité hors de 1 à 5, identifiant invalide) ; 401 ; 403 (rôle participant manquant) ; 404 (type de billet inconnu ou événement en brouillon) ; 409 (événement annulé ou terminé, date limite de vente dépassée, « Ce billet est épuisé » ou « Il ne reste que N place(s) pour ce billet »).
 
 ### Suivi : `GET /api/v1/orders/:id`
@@ -145,3 +145,13 @@ Réponse 200 : `{ order }`. 404 si la commande n'existe pas ou appartient à un 
 Un job passe toutes les minutes (`startOrderExpiryJob`, lancé par `server.ts`) et met en `EXPIRED` les commandes `PENDING` dont `expiresAt` est passé. La réservation est libérée dès l'heure dépassée : le calcul de disponibilité ignore les commandes expirées, avant même le passage du job. Le job peut tourner sur plusieurs instances sans risque (mise à jour conditionnelle).
 
 Le suivi côté paiement (`GET /api/v1/orders/:id/status`, NOISE-019) reste distinct : il rattrape en plus un webhook perdu.
+
+## 6. Billets (NOISE-020)
+
+Un billet est créé pour chaque place d'une commande confirmée, au nom de l'acheteur, avec son QR signé (format et sécurité : `docs/qr-scanner.md`). Pour une commande gratuite, la création se fait dans la transaction de la commande. Pour une commande payée, elle se fait dans la transaction de confirmation du paiement, via le point d'accroche `issueTickets` de NOISE-019 (`createTicketIssuer` dans `modules/tickets/ticket-issuer.ts`).
+
+### Mes billets : `GET /api/v1/tickets/mine`
+
+Réservé au rôle `PARTICIPANT`. Réponse 200 : `{ tickets: TicketDto[] }` (`packages/shared/src/schemas/tickets.ts`), les événements les plus proches d'abord. Chaque billet porte `qrPayload`, le contenu exact du QR à afficher, qui reste le même à chaque appel. Un participant ne reçoit jamais les billets d'un autre. Erreurs : 401, 403.
+
+Configuration : `QR_SIGNING_SECRET` (32 caractères minimum, distinct des autres secrets) est obligatoire hors tests.

@@ -1,14 +1,15 @@
 # QR codes et scanner
 
-État : conception. Rien n'est implémenté.
+État : NOISE-020 (billets et QR) implémenté ; liens scanner (NOISE-024) et validation (NOISE-025) restent à faire.
 
 ## 1. QR token (NOISE-020)
 
-- Généré une seule fois, par le serveur, dans la transaction de confirmation du paiement.
+- Créé par le serveur, dans la transaction qui confirme la commande (paiement confirmé, ou commande gratuite créée directement `PAID`). Si la création échoue, la confirmation est annulée. Rejouer la confirmation (webhook reçu deux fois) ne crée pas de second jeu de billets.
 - Contenu encodé dans le QR : `NOISE1.<ticketId>.<random>.<signature>`
-  - `random` : 128 bits aléatoires (UUID v4, comme prévu par le CDC) ;
-  - `signature` : HMAC-SHA256 de `ticketId.random` avec `QR_SIGNING_SECRET`, tronqué et encodé en base64url.
-- En base : seul `sha256(token)` est stocké (`Ticket.qrTokenHash`). Une fuite de la base ne permet pas de reconstituer les QR.
+  - `random` : 128 bits, en hexadécimal, calculés par HMAC-SHA256 de `ticketId` avec `QR_SIGNING_SECRET` : imprévisibles sans le secret ;
+  - `signature` : HMAC-SHA256 de `ticketId.random` avec `QR_SIGNING_SECRET`, tronqué à 128 bits et encodé en base64url.
+- Écart avec la conception initiale (random tiré au hasard) : le QR se déduit de l'identifiant du billet et du secret. Un tirage aléatoire non conservé empêcherait de redonner son QR au participant qui change de téléphone, puisque la base ne garde que l'empreinte. La sécurité est la même : sans le secret, aucun QR valide ne peut être fabriqué. Changer le secret invalide tous les billets déjà émis.
+- En base : seul `sha256(token)` est stocké (`Ticket.qrTokenHash`). Une fuite de la base ne permet pas de reconstituer les QR, car le secret n'y est pas.
 - Le préfixe `NOISE1` permet de changer de format plus tard sans casser les anciens billets.
 - Côté mobile : le payload est reçu via `GET /tickets/mine`, stocké localement, affiché en plein écran hors ligne.
 

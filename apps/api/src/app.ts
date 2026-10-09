@@ -12,6 +12,9 @@ import { createAuthRouter, createMeRouter } from './modules/auth/auth.routes.js'
 import { AuthService } from './modules/auth/auth.service.js';
 import { createOrdersRouter } from './modules/orders/orders.routes.js';
 import { OrdersService } from './modules/orders/orders.service.js';
+import { createTicketIssuer } from './modules/tickets/ticket-issuer.js';
+import { createTicketsRouter } from './modules/tickets/tickets.routes.js';
+import { TicketsService } from './modules/tickets/tickets.service.js';
 import { createEventsRouter } from './modules/events/events.routes.js';
 import { EventsService } from './modules/events/events.service.js';
 
@@ -63,10 +66,26 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
       '/api/v1/events',
       createEventsRouter(new EventsService(deps.prisma), env.JWT_ACCESS_SECRET),
     );
+    // Sans QR_SIGNING_SECRET (tests seulement), aucun billet n'est créé et la route est absente.
+    const issueTickets = env.QR_SIGNING_SECRET
+      ? createTicketIssuer(env.QR_SIGNING_SECRET)
+      : undefined;
     app.use(
       '/api/v1/orders',
-      createOrdersRouter(new OrdersService(deps.prisma), env.JWT_ACCESS_SECRET),
+      createOrdersRouter(
+        new OrdersService(deps.prisma, undefined, issueTickets),
+        env.JWT_ACCESS_SECRET,
+      ),
     );
+    if (env.QR_SIGNING_SECRET) {
+      app.use(
+        '/api/v1/tickets',
+        createTicketsRouter(
+          new TicketsService(deps.prisma, env.QR_SIGNING_SECRET),
+          env.JWT_ACCESS_SECRET,
+        ),
+      );
+    }
   }
 
   app.use(notFoundHandler);
