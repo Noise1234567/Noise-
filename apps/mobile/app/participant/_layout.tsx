@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 
 import { colors, fontFamily } from '../../src/theme';
 
-// Vue Participant : barre d'onglets en bas. Onglet actif en cyan (le vert est réservé à l'action principale).
+// Vue Participant : barre d'onglets en bas. Onglet actif en cyan (le violet est réservé à l'action principale).
 export default function ParticipantLayout() {
   return (
     <Tabs
