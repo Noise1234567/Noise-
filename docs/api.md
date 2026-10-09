@@ -121,3 +121,27 @@ La liste ne contient que les événements `PUBLISHED` qui ne sont pas terminés,
 ### Disponibilité
 
 Chaque type de billet renvoie `available` = quantité totale − billets vendus − billets réservés par des commandes `PENDING` non expirées (DEC-007), jamais négatif. `onSale` indique que l'événement est publié et que la date de fin de vente n'est pas dépassée. `quantityTotal` et `quantitySold` ne sont renvoyés qu'à l'organisateur propriétaire.
+
+## 5. Commandes (NOISE-018)
+
+Une commande réserve des places d'un type de billet pour 15 minutes. Elle est réservée au rôle `PARTICIPANT`, et chaque participant ne voit que ses propres commandes.
+
+### Création : `POST /api/v1/orders`
+
+Corps : `{ ticketTypeId, quantity }`, avec `quantity` entier de 1 à 5 (DEC-008). Réponse 201 : `{ order }` (`OrderDto`, `packages/shared/src/schemas/orders.ts`).
+
+- Le prix est figé à la création : `totalXof` = `unitPriceXof` × `quantity`.
+- La commande est `PENDING` et `expiresAt` vaut la création + 15 minutes. Les places sont réservées, mais `quantitySold` n'augmente qu'à la confirmation du paiement (NOISE-019).
+- Contrôle du stock : disponible = total − vendus − réservés par des commandes `PENDING` non expirées (DEC-007). Il est fait dans une transaction qui verrouille le type de billet (`SELECT ... FOR UPDATE`) : si plusieurs personnes visent la dernière place en même temps, une seule réussit.
+- Billet gratuit (prix 0) : rien à payer, la commande est créée directement `PAID` (`paidAt` renseigné, répartition 0 / 0 / 0) et `quantitySold` augmente aussitôt. Les billets et leurs QR sont créés par NOISE-020, qui devra aussi traiter ces commandes gratuites.
+- Erreurs : 400 (quantité hors de 1 à 5, identifiant invalide) ; 401 ; 403 (rôle participant manquant) ; 404 (type de billet inconnu ou événement en brouillon) ; 409 (événement annulé ou terminé, date limite de vente dépassée, « Ce billet est épuisé » ou « Il ne reste que N place(s) pour ce billet »).
+
+### Suivi : `GET /api/v1/orders/:id`
+
+Réponse 200 : `{ order }`. 404 si la commande n'existe pas ou appartient à un autre participant. Une commande `PENDING` dont l'heure est passée est renvoyée `EXPIRED` (et enregistrée comme telle) sans attendre le job.
+
+### Expiration
+
+Un job passe toutes les minutes (`startOrderExpiryJob`, lancé par `server.ts`) et met en `EXPIRED` les commandes `PENDING` dont `expiresAt` est passé. La réservation est libérée dès l'heure dépassée : le calcul de disponibilité ignore les commandes expirées, avant même le passage du job. Le job peut tourner sur plusieurs instances sans risque (mise à jour conditionnelle).
+
+Le suivi côté paiement (`GET /api/v1/orders/:id/status`, NOISE-019) reste distinct : il rattrape en plus un webhook perdu.

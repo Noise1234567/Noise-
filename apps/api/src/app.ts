@@ -10,6 +10,8 @@ import { globalRateLimit } from './middlewares/rate-limit.js';
 import type { PrismaClient } from './lib/prisma.js';
 import { createAuthRouter, createMeRouter } from './modules/auth/auth.routes.js';
 import { AuthService } from './modules/auth/auth.service.js';
+import { createOrdersRouter } from './modules/orders/orders.routes.js';
+import { OrdersService } from './modules/orders/orders.service.js';
 import { createEventsRouter } from './modules/events/events.routes.js';
 import { EventsService } from './modules/events/events.service.js';
 
@@ -60,6 +62,10 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
     app.use(
       '/api/v1/events',
       createEventsRouter(new EventsService(deps.prisma), env.JWT_ACCESS_SECRET),
+    );
+    app.use(
+      '/api/v1/orders',
+      createOrdersRouter(new OrdersService(deps.prisma), env.JWT_ACCESS_SECRET),
     );
   }
 
