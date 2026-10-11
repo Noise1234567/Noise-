@@ -13,7 +13,7 @@ type Props = {
   loading?: boolean;
 };
 
-/** Bouton principal (vert plein, un seul par écran), secondaire (contour) ou texte (cyan). */
+/** Bouton principal (violet plein, un seul par écran), secondaire (contour) ou texte (cyan). */
 export function Button({
   label,
   onPress,

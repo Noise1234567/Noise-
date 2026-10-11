@@ -4,8 +4,8 @@
 export const colors = {
   background: '#0A0A0A',
   surface: '#1A1A1A',
-  /** Une seule action principale par écran, et les validations. */
-  accent: '#00FF87',
+  /** Violet de la marque (point du logo). Une seule action principale par écran, et les validations. */
+  accent: '#9026FF',
   /** Liens, informations, éléments actifs (onglet, minuteur, jauge). */
   secondary: '#00C4FF',
   text: '#E8E8E8',
@@ -17,8 +17,8 @@ export const colors = {
   warning: '#FFB547',
   /** Élévation au-dessus des cartes (toasts). */
   toast: '#262626',
-  /** Texte posé sur un fond vert. */
-  onAccent: '#0A0A0A',
+  /** Texte posé sur un fond violet. */
+  onAccent: '#FFFFFF',
 } as const;
 
 export const spacing = {

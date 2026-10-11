@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import { colors, fontFamily } from '../theme';
 import { Text } from './Text';
 
-/** Logotype : « noise » en Syne 800 minuscule suivi d'un point vert. */
+/** Logotype : « noise » en Syne 800 minuscule suivi d'un point violet. */
 export function Logo({ size = 28 }: { size?: number }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>

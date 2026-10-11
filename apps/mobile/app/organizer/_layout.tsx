@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 
 import { colors, fontFamily } from '../../src/theme';
 
-// Vue Organisateur : barre d'onglets en bas. Onglet actif en cyan (le vert est réservé à l'action principale).
+// Vue Organisateur : barre d'onglets en bas. Onglet actif en cyan (le violet est réservé à l'action principale).
 export default function OrganizerLayout() {
   return (
     <Tabs
