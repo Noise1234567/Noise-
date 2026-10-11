@@ -7,6 +7,7 @@ import { MAX_POSTER_BYTES } from '../src/modules/uploads/poster-file.js';
 import { posterUpload } from '../src/modules/uploads/poster-upload.js';
 
 const JPEG = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
+const EVENT_ID = '00000000-0000-4000-8000-000000000001';
 const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]);
 
 /** Application de test : la route définitive (auth, propriété) arrive avec NOISE-011. */
@@ -23,17 +24,17 @@ describe('envoi d’une affiche', () => {
   it('accepte un JPEG et renvoie l’URL optimisée', async () => {
     const storage = new FakeImageStorage();
     const res = await request(buildApp(storage))
-      .post('/events/event-1/poster')
+      .post(`/events/${EVENT_ID}/poster`)
       .attach('poster', JPEG, { filename: 'affiche.jpg', contentType: 'image/jpeg' });
 
     expect(res.status).toBe(201);
     expect(res.body.posterUrl).toContain('w_1080');
-    expect(storage.uploads).toEqual([{ eventId: 'event-1', size: JPEG.length }]);
+    expect(storage.uploads).toEqual([{ eventId: EVENT_ID, size: JPEG.length }]);
   });
 
   it('se fie au contenu, pas au nom : un PNG nommé .jpg est accepté', async () => {
     const res = await request(buildApp())
-      .post('/events/event-1/poster')
+      .post(`/events/${EVENT_ID}/poster`)
       .attach('poster', PNG, { filename: 'affiche.jpg', contentType: 'image/jpeg' });
     expect(res.status).toBe(201);
   });
@@ -41,7 +42,7 @@ describe('envoi d’une affiche', () => {
   it('refuse un fichier qui n’est pas une image, même nommé .jpg', async () => {
     const storage = new FakeImageStorage();
     const res = await request(buildApp(storage))
-      .post('/events/event-1/poster')
+      .post(`/events/${EVENT_ID}/poster`)
       .attach('poster', Buffer.from('<?php echo 1; ?>'), {
         filename: 'affiche.jpg',
         contentType: 'image/jpeg',
@@ -56,7 +57,7 @@ describe('envoi d’une affiche', () => {
   it('refuse un fichier de plus de 5 Mo', async () => {
     const tooBig = Buffer.concat([JPEG, Buffer.alloc(MAX_POSTER_BYTES)]);
     const res = await request(buildApp())
-      .post('/events/event-1/poster')
+      .post(`/events/${EVENT_ID}/poster`)
       .attach('poster', tooBig, { filename: 'grosse.jpg', contentType: 'image/jpeg' });
 
     expect(res.status).toBe(400);
@@ -64,16 +65,27 @@ describe('envoi d’une affiche', () => {
   });
 
   it('refuse une requête sans fichier', async () => {
-    const res = await request(buildApp()).post('/events/event-1/poster').field('titre', 'x');
+    const res = await request(buildApp()).post(`/events/${EVENT_ID}/poster`).field('titre', 'x');
     expect(res.status).toBe(400);
     expect(res.body.error.message).toMatch(/Aucune affiche/);
   });
 
   it('refuse un fichier envoyé sous un autre nom de champ', async () => {
     const res = await request(buildApp())
-      .post('/events/event-1/poster')
+      .post(`/events/${EVENT_ID}/poster`)
       .attach('image', JPEG, { filename: 'affiche.jpg', contentType: 'image/jpeg' });
     expect(res.status).toBe(400);
+  });
+
+  it('refuse un identifiant d’événement qui n’est pas un UUID, sans rien envoyer', async () => {
+    const storage = new FakeImageStorage();
+    const res = await request(buildApp(storage))
+      .post('/events/..%2Fautre/poster')
+      .attach('poster', JPEG, { filename: 'affiche.jpg', contentType: 'image/jpeg' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error.message).toMatch(/Identifiant/);
+    expect(storage.uploads).toHaveLength(0);
   });
 
   it('renvoie une erreur interne générique si le stockage échoue', async () => {
@@ -83,7 +95,7 @@ describe('envoi d’une affiche', () => {
       },
     };
     const res = await request(buildApp(failing))
-      .post('/events/event-1/poster')
+      .post(`/events/${EVENT_ID}/poster`)
       .attach('poster', JPEG, { filename: 'affiche.jpg', contentType: 'image/jpeg' });
 
     expect(res.status).toBe(500);
