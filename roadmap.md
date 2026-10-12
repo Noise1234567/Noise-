@@ -753,13 +753,14 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Statut : À faire
 - Fichiers concernés : packages/shared (constantes et calcul), apps/api/src/modules/events/*, écran de création d'événement
 - Critères d'acceptation :
-  - [ ] Constantes partagées : 50 billets = 2 000 FCFA, seuil de gratuité 50
+  - [ ] Constantes partagées : 40 FCFA par participant déclaré, gratuit jusqu'à 50 participants (ORGANIZER_FREE_CAPACITY, ORGANIZER_FEE_PER_SEAT_XOF)
+  - [ ] Capacité déclarée par l'organisateur ; somme des places des types de billets ≤ capacité ; augmentation = paiement de la différence
   - [ ] Montant affiché à l'organisateur dès qu'il saisit les quantités de billets
   - [ ] Exonération possible par un administrateur (gratuité de lancement)
   - [ ] Paiement avant publication par Mobile Money via FedaPay, même parcours que l'achat d'un billet (webhook signé, revérification, idempotence)
   - [ ] Événement non publiable tant que les frais ne sont pas confirmés (sauf exonération)
 - Tests :
-  - Unitaires : 0, 49, 50, 51, 300 billets ; somme sur plusieurs types de billets
+  - Unitaires : capacités 0, 50, 51, 60, 100, 300 ; augmentations 30 → 40 (0), 40 → 60 (2 400), 50 → 100 (4 000), 60 → 85 (1 000)
   - Intégration : publication refusée sans paiement confirmé ; webhook rejoué
 
 #### NOISE-045 — Transferts automatiques FedaPay (reversements et remboursements)
