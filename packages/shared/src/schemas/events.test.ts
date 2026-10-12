@@ -3,6 +3,7 @@ import {
   createEventSchema,
   createTicketTypeSchema,
   listEventsQuerySchema,
+  listMyEventsQuerySchema,
   updateEventSchema,
 } from './events.js';
 
@@ -67,6 +68,32 @@ describe('createTicketTypeSchema', () => {
     { quantityTotal: 1_000_000 },
   ])('refuse %o', (overrides) => {
     expect(createTicketTypeSchema.safeParse({ ...valid, ...overrides }).success).toBe(false);
+  });
+});
+
+describe('createTicketTypeSchema : fin des ventes', () => {
+  const valid = { name: 'Standard', priceXof: 5000, quantityTotal: 100 };
+
+  it('accepte une fin des ventes dans le futur ou absente', () => {
+    expect(createTicketTypeSchema.safeParse({ ...valid, salesEndAt: inDays(3) }).success).toBe(
+      true,
+    );
+    expect(createTicketTypeSchema.safeParse(valid).success).toBe(true);
+  });
+
+  it('refuse une fin des ventes passée', () => {
+    const result = createTicketTypeSchema.safeParse({ ...valid, salesEndAt: inDays(-1) });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toEqual(['salesEndAt']);
+  });
+});
+
+describe('listMyEventsQuerySchema', () => {
+  it('applique la limite par défaut et refuse les valeurs hors bornes', () => {
+    expect(listMyEventsQuerySchema.parse({}).limit).toBe(20);
+    expect(listMyEventsQuerySchema.safeParse({ limit: '0' }).success).toBe(false);
+    expect(listMyEventsQuerySchema.safeParse({ limit: '51' }).success).toBe(false);
+    expect(listMyEventsQuerySchema.safeParse({ cursor: 'abc' }).success).toBe(false);
   });
 });
 

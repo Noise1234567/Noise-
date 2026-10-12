@@ -68,7 +68,12 @@ export const createTicketTypeSchema = z.object({
     .int('La quantité doit être un entier')
     .min(1, 'Au moins 1 billet')
     .max(MAX_TICKET_QUANTITY, 'Quantité trop élevée'),
-  salesEndAt: dateTimeSchema.optional(),
+  /** Fin des ventes : dans le futur (sinon le billet naîtrait invendable) et avant la fin de l'événement. */
+  salesEndAt: dateTimeSchema
+    .refine((value) => new Date(value) > new Date(), {
+      message: 'La fin des ventes doit être dans le futur',
+    })
+    .optional(),
 });
 
 /** GET /api/v1/events : filtres facultatifs et pagination par curseur (docs/api.md). */
@@ -81,12 +86,19 @@ export const listEventsQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(EVENT_LIST_MAX_LIMIT).default(EVENT_LIST_DEFAULT_LIMIT),
 });
 
+/** GET /api/v1/events/mine : événements de l'organisateur connecté, pagination par curseur. */
+export const listMyEventsQuerySchema = z.object({
+  cursor: z.uuid().optional(),
+  limit: z.coerce.number().int().min(1).max(EVENT_LIST_MAX_LIMIT).default(EVENT_LIST_DEFAULT_LIMIT),
+});
+
 export const eventIdParamSchema = z.object({ id: z.uuid({ error: 'Identifiant invalide' }) });
 
 export type CreateEventInput = z.infer<typeof createEventSchema>;
 export type UpdateEventInput = z.infer<typeof updateEventSchema>;
 export type CreateTicketTypeInput = z.infer<typeof createTicketTypeSchema>;
 export type ListEventsQuery = z.infer<typeof listEventsQuerySchema>;
+export type ListMyEventsQuery = z.infer<typeof listMyEventsQuerySchema>;
 
 /**
  * Type de billet renvoyé par l'API. `available` suit DEC-007 : total − vendus − réservés par

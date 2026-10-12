@@ -231,6 +231,57 @@ describe('mise à jour et publication (PUT /events/:id)', () => {
   });
 });
 
+describe('dates figées une fois des billets vendus (PUT /events/:id)', () => {
+  async function publishedWithSales(sold: number) {
+    const { user, headers } = await organizer();
+    const event = await seedEvent(user.id, { startsAt: inDays(5), endsAt: inDays(6) });
+    await prisma.ticketType.create({
+      data: {
+        eventId: event.id,
+        name: 'Standard',
+        priceXof: 5000,
+        quantityTotal: 50,
+        quantitySold: sold,
+      },
+    });
+    return { event, headers };
+  }
+  const put = (headers: Record<string, string>, id: string, body: object) =>
+    request(app).put(`/api/v1/events/${id}`).set(headers).send(body);
+
+  it.each([
+    ['la date de début', () => ({ startsAt: inDays(5.5).toISOString() })],
+    ['la date de fin', () => ({ endsAt: inDays(8).toISOString() })],
+  ])('refuse de changer %s quand des billets sont vendus (409)', async (_label, body) => {
+    const { event, headers } = await publishedWithSales(3);
+    const res = await put(headers, event.id, body());
+    expect(res.status).toBe(409);
+    const stored = await prisma.event.findUniqueOrThrow({ where: { id: event.id } });
+    expect(stored.startsAt.getTime()).toBe(event.startsAt.getTime());
+    expect(stored.endsAt.getTime()).toBe(event.endsAt.getTime());
+  });
+
+  it('laisse changer les autres champs, et renvoyer les mêmes dates', async () => {
+    const { event, headers } = await publishedWithSales(3);
+    const res = await put(headers, event.id, {
+      title: 'Nouveau titre',
+      startsAt: event.startsAt.toISOString(),
+      endsAt: event.endsAt.toISOString(),
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.event.title).toBe('Nouveau titre');
+  });
+
+  it('laisse changer les dates tant qu’aucun billet n’est vendu', async () => {
+    const { event, headers } = await publishedWithSales(0);
+    const res = await put(headers, event.id, {
+      startsAt: inDays(7).toISOString(),
+      endsAt: inDays(8).toISOString(),
+    });
+    expect(res.status).toBe(200);
+  });
+});
+
 describe('types de billets (POST /events/:id/ticket-types)', () => {
   const validType = (overrides: object = {}) => ({
     name: 'Early bird',
@@ -319,6 +370,18 @@ describe('types de billets (POST /events/:id/ticket-types)', () => {
       .send(validType({ salesEndAt: inDays(7).toISOString() }));
     expect(res.status).toBe(400);
     expect(res.body.error.details[0].path).toBe('salesEndAt');
+  });
+
+  it('400 si la fin des ventes est déjà passée', async () => {
+    const { user, headers } = await organizer();
+    const event = await seedEvent(user.id, { startsAt: inDays(5), endsAt: inDays(6) });
+    const res = await request(app)
+      .post(`/api/v1/events/${event.id}/ticket-types`)
+      .set(headers)
+      .send(validType({ salesEndAt: inDays(-1).toISOString() }));
+    expect(res.status).toBe(400);
+    expect(res.body.error.details[0].path).toBe('salesEndAt');
+    expect(await prisma.ticketType.count()).toBe(0);
   });
 
   it('409 sur un événement annulé', async () => {
@@ -454,6 +517,124 @@ describe('liste (GET /events)', () => {
 
     const asOwner = await request(app).get('/api/v1/events').set(owner.headers);
     expect(asOwner.body.data[0].ticketTypes[0]).toMatchObject({ quantityTotal: 10 });
+  });
+});
+
+describe('mes événements (GET /events/mine)', () => {
+  const mine = (headers: Record<string, string>, query = '') =>
+    request(app).get(`/api/v1/events/mine${query}`).set(headers);
+
+  it('renvoie tous les statuts de l’organisateur connecté, par date de début', async () => {
+    const owner = await organizer();
+    const other = await organizer();
+    await seedEvent(owner.user.id, {
+      title: 'Publié',
+      status: 'PUBLISHED',
+      startsAt: inDays(10),
+      endsAt: inDays(11),
+    });
+    await seedEvent(owner.user.id, {
+      title: 'Brouillon',
+      status: 'DRAFT',
+      startsAt: inDays(3),
+      endsAt: inDays(4),
+    });
+    await seedEvent(owner.user.id, {
+      title: 'Annulé',
+      status: 'CANCELLED',
+      startsAt: inDays(20),
+      endsAt: inDays(21),
+    });
+    await seedEvent(owner.user.id, {
+      title: 'Terminé',
+      status: 'PUBLISHED',
+      startsAt: inDays(-5),
+      endsAt: inDays(-4),
+    });
+    await seedEvent(other.user.id, { title: 'Celui d’un autre' });
+
+    const res = await mine(owner.headers);
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.map((e: { title: string }) => e.title)).toEqual([
+      'Terminé',
+      'Brouillon',
+      'Publié',
+      'Annulé',
+    ]);
+    expect(res.body.data.map((e: { status: string }) => e.status)).toEqual([
+      'PUBLISHED',
+      'DRAFT',
+      'PUBLISHED',
+      'CANCELLED',
+    ]);
+    expect(res.body.nextCursor).toBeNull();
+  });
+
+  it('montre à l’organisateur le total et les vendus de ses types de billets', async () => {
+    const owner = await organizer();
+    const event = await seedEvent(owner.user.id);
+    await prisma.ticketType.create({
+      data: {
+        eventId: event.id,
+        name: 'Standard',
+        priceXof: 5000,
+        quantityTotal: 50,
+        quantitySold: 4,
+      },
+    });
+    const res = await mine(owner.headers);
+    expect(res.body.data[0].ticketTypes[0]).toMatchObject({
+      quantityTotal: 50,
+      quantitySold: 4,
+      available: 46,
+    });
+  });
+
+  it('pagine par curseur sans répéter ni oublier d’événement', async () => {
+    const owner = await organizer();
+    for (let day = 1; day <= 5; day++) {
+      await seedEvent(owner.user.id, {
+        title: `Jour ${day}`,
+        startsAt: inDays(day),
+        endsAt: inDays(day + 0.5),
+      });
+    }
+    const first = await mine(owner.headers, '?limit=2');
+    expect(first.body.data.map((e: { title: string }) => e.title)).toEqual(['Jour 1', 'Jour 2']);
+    expect(first.body.nextCursor).not.toBeNull();
+    const second = await mine(owner.headers, `?limit=2&cursor=${first.body.nextCursor}`);
+    expect(second.body.data.map((e: { title: string }) => e.title)).toEqual(['Jour 3', 'Jour 4']);
+    const third = await mine(owner.headers, `?limit=2&cursor=${second.body.nextCursor}`);
+    expect(third.body.data.map((e: { title: string }) => e.title)).toEqual(['Jour 5']);
+    expect(third.body.nextCursor).toBeNull();
+  });
+
+  it('renvoie une liste vide pour un nouvel organisateur', async () => {
+    const owner = await organizer();
+    const res = await mine(owner.headers);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ data: [], nextCursor: null });
+  });
+
+  it('400 sur une limite ou un curseur invalide', async () => {
+    const owner = await organizer();
+    expect((await mine(owner.headers, '?limit=0')).status).toBe(400);
+    expect((await mine(owner.headers, '?limit=51')).status).toBe(400);
+    expect((await mine(owner.headers, '?cursor=abc')).status).toBe(400);
+  });
+
+  it('401 sans connexion, 403 pour un participant', async () => {
+    expect((await request(app).get('/api/v1/events/mine')).status).toBe(401);
+    const { headers } = await participant();
+    expect((await mine(headers)).status).toBe(403);
+  });
+
+  it('« mine » n’est pas pris pour un identifiant d’événement', async () => {
+    const owner = await organizer();
+    const res = await mine(owner.headers);
+    expect(res.status).toBe(200);
+    expect(res.body.error).toBeUndefined();
   });
 });
 

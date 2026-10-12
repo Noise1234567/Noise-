@@ -3,6 +3,7 @@ import {
   createTicketTypeSchema,
   eventIdParamSchema,
   listEventsQuerySchema,
+  listMyEventsQuerySchema,
   updateEventSchema,
 } from '@noise/shared';
 import { Router } from 'express';
@@ -21,6 +22,13 @@ export function createEventsRouter(service: EventsService, accessTokenSecret: st
   router.use(requireAuth(accessTokenSecret));
 
   router.get('/', validateQuery(listEventsQuerySchema), controller.list);
+  // Avant /:id, sinon « mine » serait pris pour un identifiant.
+  router.get(
+    '/mine',
+    requireRole('ORGANIZER'),
+    validateQuery(listMyEventsQuerySchema),
+    controller.listMine,
+  );
   router.get('/:id', validateParams(eventIdParamSchema), controller.get);
   router.post('/', requireRole('ORGANIZER'), validateBody(createEventSchema), controller.create);
   router.put(

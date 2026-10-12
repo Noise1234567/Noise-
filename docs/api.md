@@ -120,12 +120,16 @@ Tous les endpoints exigent un access token. Création, modification et ajout de 
 
 La liste ne contient que les événements `PUBLISHED` qui ne sont pas terminés, triés par date de début croissante. Réponse : `{ data: EventDto[], nextCursor: string | null }`.
 
+### Mes événements : `GET /api/v1/events/mine`
+
+Réservé au rôle `ORGANIZER`. Renvoie les événements de l'organisateur connecté, tous statuts confondus (brouillon, publié, annulé, terminé), triés par date de début croissante. Paramètres : `cursor` et `limit` (1 à 50, 20 par défaut), comme la liste publique. Réponse : `{ data: EventDto[], nextCursor: string | null }`, avec `quantityTotal` et `quantitySold` sur chaque type de billet. Le classement « à venir / passés / annulés » se fait côté mobile à partir de `status` et `endsAt`.
+
 ### Détail, création, modification
 
 - `GET /events/:id` : un événement `PUBLISHED` ou `CANCELLED` est lisible par tout utilisateur connecté (les détenteurs de billets doivent voir une annulation) ; un brouillon n'est visible que de son organisateur (404 pour les autres).
 - `POST /events` : crée l'événement en `DRAFT`. Début dans le futur, fin après le début.
-- `PUT /events/:id` : mise à jour partielle (au moins un champ). `status: "PUBLISHED"` publie le brouillon, à condition qu'il ait au moins un type de billet et qu'il ne soit pas terminé (409 sinon). Aucune autre valeur de statut n'est acceptée : l'annulation aura sa propre route (NOISE-029). Un événement annulé ne se modifie plus (409).
-- `POST /events/:id/ticket-types` : `name` (unique par événement, 409 sinon), `priceXof` (entier de 1 à 10 000 000), `quantityTotal` (entier de 1 à 100 000), `salesEndAt` facultatif (au plus tard la fin de l'événement).
+- `PUT /events/:id` : mise à jour partielle (au moins un champ). `status: "PUBLISHED"` publie le brouillon, à condition qu'il ait au moins un type de billet et qu'il ne soit pas terminé (409 sinon). Aucune autre valeur de statut n'est acceptée : l'annulation aura sa propre route (NOISE-029). Un événement annulé ne se modifie plus (409). Dès qu'un billet est vendu, `startsAt` et `endsAt` ne peuvent plus changer (409) : les acheteurs ne seraient pas prévenus tant que les notifications (NOISE-028) n'existent pas. Les autres champs restent modifiables.
+- `POST /events/:id/ticket-types` : `name` (unique par événement, 409 sinon), `priceXof` (entier de 1 à 10 000 000), `quantityTotal` (entier de 1 à 100 000), `salesEndAt` facultatif (dans le futur, et au plus tard la fin de l'événement).
 
 ### Disponibilité
 

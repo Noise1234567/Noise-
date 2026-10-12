@@ -5,6 +5,7 @@ import {
   type EventDto,
   type EventListResponse,
   type ListEventsQuery,
+  type ListMyEventsQuery,
   type TicketTypeDto,
   type UpdateEventInput,
 } from '@noise/shared';
@@ -68,6 +69,32 @@ export class EventsService {
     };
   }
 
+  /**
+   * Événements de l'organisateur connecté, tous statuts (brouillon, publié, annulé, terminé),
+   * par date de début croissante. Alimente l'écran « Mes événements » (NOISE-013).
+   */
+  async listMine(auth: AuthContext, query: ListMyEventsQuery): Promise<EventListResponse> {
+    const now = new Date();
+    const rows = await this.prisma.event.findMany({
+      where: { organizerId: auth.userId },
+      include: { ticketTypes: { orderBy: [...ticketTypesOrder] } },
+      orderBy: [{ startsAt: 'asc' }, { id: 'asc' }],
+      take: query.limit + 1,
+      ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
+    });
+    const hasMore = rows.length > query.limit;
+    const page = hasMore ? rows.slice(0, query.limit) : rows;
+
+    const reserved = await this.reservedByTicketType(
+      page.flatMap((e) => e.ticketTypes),
+      now,
+    );
+    return {
+      data: page.map((event) => this.toDto(event, reserved, auth.userId, now)),
+      nextCursor: hasMore ? (page.at(-1)?.id ?? null) : null,
+    };
+  }
+
   async get(auth: AuthContext, id: string): Promise<EventDto> {
     const event = await this.prisma.event.findUnique({
       where: { id },
@@ -109,8 +136,22 @@ export class EventsService {
     const startsAt = input.startsAt ? new Date(input.startsAt) : event.startsAt;
     const endsAt = input.endsAt ? new Date(input.endsAt) : event.endsAt;
     if (endsAt <= startsAt) throw invalid('endsAt', 'La fin doit être après le début');
-    if (input.startsAt && startsAt.getTime() !== event.startsAt.getTime() && startsAt <= now) {
+    const startsAtChanged = startsAt.getTime() !== event.startsAt.getTime();
+    const endsAtChanged = endsAt.getTime() !== event.endsAt.getTime();
+    if (input.startsAt && startsAtChanged && startsAt <= now) {
       throw invalid('startsAt', 'La date de début doit être dans le futur');
+    }
+    // Les acheteurs ne sont pas prévenus d'un changement (notifications : NOISE-028) : tant
+    // que des billets sont vendus, les dates sont figées.
+    if (startsAtChanged || endsAtChanged) {
+      const sold = event.ticketTypes.reduce((total, type) => total + type.quantitySold, 0);
+      if (sold > 0) {
+        throw new HttpError(
+          409,
+          'CONFLICT',
+          'Des billets ont déjà été vendus : les dates ne peuvent plus être modifiées',
+        );
+      }
     }
 
     if (input.status === 'PUBLISHED' && event.status !== 'PUBLISHED') {

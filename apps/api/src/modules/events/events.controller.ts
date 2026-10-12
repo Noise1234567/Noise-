@@ -2,6 +2,7 @@ import type {
   CreateEventInput,
   CreateTicketTypeInput,
   ListEventsQuery,
+  ListMyEventsQuery,
   UpdateEventInput,
 } from '@noise/shared';
 import type { Request, Response } from 'express';
@@ -21,6 +22,9 @@ export function createEventsController(service: EventsService) {
   return {
     list: async (req: Request, res: Response) => {
       res.json(await service.list(auth(req), res.locals.query as ListEventsQuery));
+    },
+    listMine: async (req: Request, res: Response) => {
+      res.json(await service.listMine(auth(req), res.locals.query as ListMyEventsQuery));
     },
     get: async (req: Request, res: Response) => {
       res.json({ event: await service.get(auth(req), eventId(res)) });
