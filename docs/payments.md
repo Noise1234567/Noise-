@@ -147,7 +147,7 @@ Implémenté dans NOISE-017 : `apps/api/src/modules/payments/providers/`.
 
 Règles décidées en réunion d'équipe le 2026-10-08. Montants en FCFA entiers.
 
-- Frais d'organisation (DEC-023) : billets mis en vente × 2 000 / 50, soit 40 FCFA par billet ; gratuit en dessous de 50 billets ; offerts aux premiers organisateurs prospectés. Ils s'ajoutent à la commission.
+- Frais d'organisation (DEC-023) : 40 FCFA par participant déclaré (capacité de l'événement) si la capacité dépasse 50, gratuit jusqu'à 50 ; en cas d'augmentation, l'organisateur paie la différence entre les frais du nouveau total et ce qu'il a déjà payé ; offerts aux premiers organisateurs prospectés. Ils s'ajoutent à la commission.
 - Commission (DEC-024) : 10 % du prix de chaque billet vendu. Les frais du fournisseur sont payés par l'acheteur en plus du billet et n'entrent pas dans ce calcul.
 - Paiement des frais d'organisation (DEC-023) : avant publication, par Mobile Money via FedaPay, même parcours que l'achat d'un billet.
 - Reversement (DEC-024) : automatique, par transfert FedaPay vers le Mobile Money de l'organisateur ; 90 % des ventes, versés le lendemain de chaque journée de vente (journée en heure de Cotonou). Transferts vers Mobile Money annoncés gratuits par FedaPay, fonction activée sur demande au support (à confirmer, NOISE-045). Chaque reversement est tracé (date, montant, identifiant de transfert) : l'annulation en dépend.
@@ -159,7 +159,7 @@ Règles décidées en réunion d'équipe le 2026-10-08. Montants en FCFA entiers
 
 Exemple d'annulation : 200 billets à 5 000 FCFA (1 000 000 FCFA de ventes), 700 000 FCFA déjà reversés. L'organisateur paie 100 000 FCFA de frais et renvoie 700 000 FCFA ; Noise retient 200 000 FCFA, rembourse 1 000 000 FCFA aux acheteurs et conserve sa commission de 100 000 FCFA.
 
-Points ouverts (voir decisions.md) : complément de frais d'organisation si l'organisateur ajoute des billets, seuil minimum de reversement, critères d'une enquête « concluante », montant maximal avancé par la trésorerie. Réglés le 2026-10-08 : e-mail demandé à l'inscription (DEC-026), identité de l'organisateur vérifiée avant d'organiser (DEC-018).
+Points ouverts (voir decisions.md) : remboursement des frais d'organisation en cas d'annulation ou de baisse de capacité, seuil minimum de reversement, critères d'une enquête « concluante », montant maximal avancé par la trésorerie. Réglés le 2026-10-08 : e-mail demandé à l'inscription (DEC-026), identité de l'organisateur vérifiée avant d'organiser (DEC-018).
 
 ## 8. Mise en production (NOISE-034)
 

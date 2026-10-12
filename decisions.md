@@ -30,7 +30,7 @@ Statuts : Proposée · Acceptée · En attente (bloquée par une information ou 
 | DEC-020 | Administration minimale : rôle ADMIN + endpoints internes, pas d'interface dédiée             | Acceptée                | 2026-09-24 |
 | DEC-021 | Revue de PR par IA (Claude Code GitHub Actions), consultative, validation humaine obligatoire | Acceptée                | 2026-10-06 |
 | DEC-022 | Répartition de chaque vente, commission Noise 10 %, affiliation après le MVP                  | Acceptée                | 2026-10-06 |
-| DEC-023 | Frais d'organisation : 40 FCFA par billet mis en vente, gratuit en dessous de 50 billets      | Acceptée                | 2026-10-08 |
+| DEC-023 | Frais d'organisation : 40 FCFA par participant déclaré, gratuit jusqu'à 50 participants       | Acceptée                | 2026-10-08 |
 | DEC-024 | Commission de 10 % et reversement à l'organisateur le lendemain de chaque journée de vente    | Acceptée                | 2026-10-08 |
 | DEC-025 | Annulation par l'organisateur : frais de 10 %, retour des sommes reversées sous 10 jours      | Acceptée                | 2026-10-08 |
 | DEC-026 | E-mail demandé à l'inscription (tous les comptes)                                             | Acceptée                | 2026-10-08 |
@@ -193,13 +193,15 @@ Choix du fournisseur (NOISE-010, 2026-10-01) — statut : Acceptée (proposée p
 
 ## DEC-023 — Frais d'organisation
 
-- Choix (réunion d'équipe du 2026-10-08) : pas de grille tarifaire. Les frais d'organisation sont proportionnels au nombre de billets mis en vente, avec la constante 50 billets = 2 000 FCFA, soit 40 FCFA par billet : frais = billets mis en vente × 2 000 / 50.
-- En dessous de 50 billets mis en vente, l'événement est gratuit (à 50 billets, 2 000 FCFA). Le calcul donne toujours un entier en FCFA, aucun arrondi n'est nécessaire.
-- Le montant est affiché à l'organisateur dès qu'il fixe les quantités de billets. Il s'ajoute à la commission de 10 % sur les ventes (DEC-024).
+- Choix (réunion d'équipe du 2026-10-08) : pas de grille tarifaire. Les frais d'organisation sont proportionnels au nombre de participants, avec la constante 50 participants = 2 000 FCFA, soit 40 FCFA par participant.
+- Précisé le 2026-10-09 (Orias, à confirmer par Yannis à la relecture) : la base est la capacité que l'organisateur déclare pour l'événement (nombre de participants attendus). La somme des places des types de billets ne peut pas dépasser cette capacité. Frais = 40 FCFA × capacité si la capacité dépasse 50, sinon 0 : jusqu'à 50 participants l'événement est gratuit, et au-delà le calcul porte sur le total déclaré, pas sur l'excédent seulement. Le calcul donne toujours un entier en FCFA, aucun arrondi n'est nécessaire.
+- Augmentation de la capacité (règle de trois sur le total) : l'organisateur paie la différence entre les frais du nouveau total et ce qu'il a déjà payé. Exemples : 30 → 40 participants : 0 FCFA ; 40 → 60 : 2 400 FCFA ; 50 → 100 : 4 000 FCFA ; 60 → 85 : 1 000 FCFA.
+- Billets gratuits autorisés (prix 0) ; prix maximal d'un billet : 1 000 000 FCFA.
+- Le montant est affiché à l'organisateur dès qu'il fixe la capacité de son événement. Il s'ajoute à la commission de 10 % sur les ventes (DEC-024).
 - Lancement : les frais d'organisation sont offerts aux premiers organisateurs prospectés.
-- Exemple : 300 billets mis en vente → 12 000 FCFA ; 49 billets → 0 FCFA.
+- Exemple : 300 participants → 12 000 FCFA ; 50 participants → 0 FCFA ; 51 participants → 2 040 FCFA.
 - Paiement (précisé le 2026-10-08) : avant la publication de l'événement, par Mobile Money via FedaPay, avec le même parcours que l'achat d'un billet (paiement déclenché par le serveur, confirmé par webhook signé et revérification).
-- Points ouverts : complément si l'organisateur ajoute des billets après publication ; remboursement ou non des frais en cas d'annulation ; mécanisme de la gratuité de lancement (nombre d'organisateurs ou date de fin, exonération par un administrateur).
+- Points ouverts : remboursement ou non des frais en cas d'annulation ou de baisse de la capacité ; mécanisme de la gratuité de lancement (nombre d'organisateurs ou date de fin, exonération par un administrateur).
 - Personnes : Yannis, Orias (et l'équipe).
 
 ## DEC-024 — Commission et reversement quotidien
