@@ -1,10 +1,17 @@
-import { PASSWORD_MIN_LENGTH, loginSchema, passwordSchema, registerSchema } from '@noise/shared';
+import {
+  PASSWORD_MIN_LENGTH,
+  emailSchema,
+  loginSchema,
+  passwordSchema,
+  registerSchema,
+} from '@noise/shared';
 
 /** Validation des formulaires : mêmes schémas Zod que l'API (CLAUDE.md section 6). */
 
 export type FieldErrors<K extends string> = Partial<Record<K, string>>;
 
 const PHONE_HINT = '10 chiffres, commençant par 01';
+const EMAIL_HINT = 'Adresse e-mail invalide (exemple : awa@mail.com)';
 
 /** Chiffres saisis, mis en forme « 01 97 45 21 38 » au fil de la frappe. */
 export function formatLocalPhone(input: string): string {
@@ -17,7 +24,7 @@ export const toApiPhone = (local: string): string => `+229${local.replace(/\D/g,
 
 export const passwordHint = `${PASSWORD_MIN_LENGTH} caractères minimum`;
 
-export type SignupValues = { name: string; phone: string; password: string };
+export type SignupValues = { name: string; phone: string; email: string; password: string };
 export type SignupField = keyof SignupValues;
 
 export function validateSignup(values: SignupValues): FieldErrors<SignupField> {
@@ -26,6 +33,8 @@ export function validateSignup(values: SignupValues): FieldErrors<SignupField> {
   if (!name.success) errors.name = 'Entrez votre nom complet (2 caractères minimum)';
   if (!registerSchema.shape.phone.safeParse(toApiPhone(values.phone)).success)
     errors.phone = PHONE_HINT;
+  if (!emailSchema.safeParse(values.email).success)
+    errors.email = values.email.trim() === '' ? 'Entrez votre adresse e-mail' : EMAIL_HINT;
   const password = passwordSchema.safeParse(values.password);
   if (!password.success)
     errors.password = values.password.length > 128 ? 'Mot de passe trop long' : passwordHint;

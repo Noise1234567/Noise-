@@ -30,7 +30,13 @@ const mock = new MockAdapter(api);
 const authSession = {
   accessToken: 'a',
   refreshToken: 'r',
-  user: { id: 'u', name: 'Awa Dossou', phone: '+2290197452138', roles: ['ORGANIZER'] },
+  user: {
+    id: 'u',
+    name: 'Awa Dossou',
+    phone: '+2290197452138',
+    email: 'awa@mail.com',
+    roles: ['ORGANIZER'],
+  },
 };
 
 async function fill(label: string, value: string) {
@@ -56,6 +62,7 @@ async function submitSignup() {
   await render(<Signup />);
   await fill('Nom complet', 'Awa Dossou');
   await fill('Numéro de téléphone', '0197452138');
+  await fill('Adresse e-mail', ' Awa@Mail.com ');
   await fill('Mot de passe', 'motdepasse1');
   await fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
 }
@@ -70,13 +77,14 @@ describe('inscription', () => {
     ).toBeTruthy();
   });
 
-  it('envoie le téléphone en +229 et le rôle choisi, puis ouvre la session', async () => {
+  it('envoie le téléphone en +229, l’e-mail et le rôle choisi, puis ouvre la session', async () => {
     mock.onPost('/auth/register').reply(201, authSession);
     await submitSignup();
     await act(async () => {});
     expect(JSON.parse(mock.history.post[0]!.data as string)).toEqual({
       name: 'Awa Dossou',
       phone: '+2290197452138',
+      email: 'Awa@Mail.com',
       password: 'motdepasse1',
       role: 'ORGANIZER',
     });
@@ -94,6 +102,31 @@ describe('inscription', () => {
     await fireEvent.press(screen.getByText('Se connecter'));
     expect(mockReplace).toHaveBeenCalledWith('/login');
     expect(useSession.getState().status).toBe('signedOut');
+  });
+});
+
+describe('inscription : e-mail', () => {
+  it('e-mail déjà utilisé : message sous le champ e-mail, pas sous le téléphone', async () => {
+    mock.onPost('/auth/register').reply(409, {
+      error: {
+        code: 'CONFLICT',
+        message: 'Un compte existe déjà avec cette adresse e-mail',
+        requestId: 'r1',
+      },
+    });
+    await submitSignup();
+    expect(await screen.findByText('Cette adresse e-mail a déjà un compte.')).toBeTruthy();
+    expect(screen.queryByText('Ce numéro a déjà un compte.')).toBeNull();
+  });
+
+  it("n'appelle pas l'API sans e-mail", async () => {
+    await render(<Signup />);
+    await fill('Nom complet', 'Awa Dossou');
+    await fill('Numéro de téléphone', '0197452138');
+    await fill('Mot de passe', 'motdepasse1');
+    await fireEvent.press(screen.getByRole('button', { name: 'Créer mon compte' }));
+    expect(mock.history.post).toHaveLength(0);
+    expect(await screen.findByText('Entrez votre adresse e-mail')).toBeTruthy();
   });
 });
 

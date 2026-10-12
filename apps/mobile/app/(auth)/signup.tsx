@@ -33,6 +33,7 @@ export default function Signup() {
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<FieldErrors<SignupField>>({});
   const [banner, setBanner] = useState<string | null>(null);
@@ -44,7 +45,7 @@ export default function Signup() {
   async function submit() {
     setBanner(null);
     setPhoneTaken(false);
-    const found = validateSignup({ name, phone, password });
+    const found = validateSignup({ name, phone, email, password });
     setErrors(found);
     if (Object.keys(found).length > 0) return;
 
@@ -53,13 +54,16 @@ export default function Signup() {
       const session = await authApi.register({
         name: name.trim(),
         phone: toApiPhone(phone),
+        email: email.trim(),
         password,
         role,
       });
       await completeSignIn(session, role);
     } catch (e) {
       const error = toApiError(e);
-      if (error.status === 409) {
+      if (error.status === 409 && /e-mail/i.test(error.message)) {
+        setErrors({ email: 'Cette adresse e-mail a déjà un compte.' });
+      } else if (error.status === 409) {
         setPhoneTaken(true);
         setErrors({ phone: 'Ce numéro a déjà un compte.' });
       } else if (error.status === 429) {
@@ -133,6 +137,18 @@ export default function Signup() {
                 </Text>
               ) : null}
             </View>
+            <TextField
+              label="Adresse e-mail"
+              value={email}
+              onChangeText={setEmail}
+              error={errors.email}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="email"
+              textContentType="emailAddress"
+              placeholder="awa@mail.com"
+            />
             <TextField
               label="Mot de passe"
               secret
