@@ -13,15 +13,15 @@ Les tests d'intégration de l'API utilisent `DATABASE_URL` pointant vers `noise_
 
 ## 2. Pyramide
 
-| Niveau           | Outil                          | Où                              | État                                                         |
-| ---------------- | ------------------------------ | ------------------------------- | ------------------------------------------------------------ |
-| Unitaire API     | Vitest                         | `apps/api/src/**/*.test.ts`     | En place                                                     |
-| Intégration API  | Vitest + Supertest + Postgres  | `apps/api/tests/`               | En place (4 tests du socle) ; base à brancher dans NOISE-006 |
-| Concurrence      | Vitest + `Promise.all`         | `apps/api/tests/concurrency/`   | NOISE-018, 019, 025                                          |
-| UI mobile        | jest-expo + RN Testing Library | `apps/mobile/src/**/*.test.tsx` | NOISE-008                                                    |
-| E2E mobile       | Maestro                        | `apps/mobile/e2e/`              | NOISE-031                                                    |
-| E2E scanner      | Playwright                     | `apps/scanner/e2e/`             | NOISE-026                                                    |
-| Sandbox paiement | Manuel, checklist              | Staging                         | NOISE-023                                                    |
+| Niveau           | Outil                          | Où                              | État                                                           |
+| ---------------- | ------------------------------ | ------------------------------- | -------------------------------------------------------------- |
+| Unitaire API     | Vitest                         | `apps/api/src/**/*.test.ts`     | En place                                                       |
+| Intégration API  | Vitest + Supertest + Postgres  | `apps/api/tests/`               | En place (4 tests du socle) ; base à brancher dans NOISE-006   |
+| Concurrence      | Vitest + `Promise.all`         | `apps/api/tests/concurrency/`   | NOISE-018, 019, 025                                            |
+| UI mobile        | jest-expo + RN Testing Library | `apps/mobile/src/**/*.test.tsx` | NOISE-008                                                      |
+| E2E mobile       | Maestro                        | `apps/mobile/e2e/`              | NOISE-031                                                      |
+| E2E scanner      | Playwright                     | `apps/scanner/e2e/`             | En place (NOISE-026) : `pnpm --filter @noise/scanner test:e2e` |
+| Sandbox paiement | Manuel, checklist              | Staging                         | NOISE-023                                                      |
 
 ## 3. Règles
 
