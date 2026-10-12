@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -17,7 +19,12 @@ export interface AppDependencies {
   checkDatabase?: () => Promise<void>;
   /** Accès à la base : sans lui, les routes métier ne sont pas montées. */
   prisma?: PrismaClient;
+  /** Dossier du build du scanner web (tests). Par défaut : apps/scanner/dist. */
+  scannerDir?: string;
 }
+
+/** Build du scanner web (apps/scanner/dist), au même niveau depuis src/ et dist/. */
+const DEFAULT_SCANNER_DIR = fileURLToPath(new URL('../../scanner/dist', import.meta.url));
 
 /**
  * Construit l'application Express sans la démarrer : les tests l'utilisent
@@ -27,6 +34,7 @@ export interface AppDependencies {
  */
 export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) {
   const app = express();
+  const scannerDir = deps.scannerDir ?? DEFAULT_SCANNER_DIR;
 
   app.disable('x-powered-by');
   app.set('trust proxy', 1); // derrière le proxy Railway : IP client correcte pour le rate limiting
@@ -57,6 +65,12 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
     app.use('/api/v1/auth', createAuthRouter(auth, env.JWT_ACCESS_SECRET));
     app.use('/api/v1/me', createMeRouter(auth, env.JWT_ACCESS_SECRET));
     app.use('/api/v1/admin', createAdminRouter(deps.prisma, env.JWT_ACCESS_SECRET));
+  }
+
+  // Scanner du staff (NOISE-026), servi s'il a été construit (pnpm --filter @noise/scanner build).
+  // Le jeton du lien est après le « # » : il n'est jamais reçu ni journalisé par le serveur.
+  if (existsSync(scannerDir)) {
+    app.use('/scan', express.static(scannerDir, { index: 'index.html', fallthrough: true }));
   }
 
   app.use(notFoundHandler);
