@@ -19,10 +19,10 @@ export async function completeSignIn(session: AuthSession, preferredRole?: AppRo
 }
 
 /** Efface les jetons et revient à l'écran de connexion. Ne contacte pas le serveur. */
-export async function clearSession(): Promise<void> {
+export async function clearSession(expired = false): Promise<void> {
   accessTokenStore.set(null);
   await refreshTokenStorage.clear().catch(() => undefined);
-  useSession.getState().signOut();
+  useSession.getState().signOut(expired);
 }
 
 export const api = createApiClient(API_BASE_URL, {
@@ -33,7 +33,7 @@ export const api = createApiClient(API_BASE_URL, {
     const { activeRole } = useSession.getState();
     await completeSignIn(session, activeRole ?? undefined);
   },
-  onSessionExpired: clearSession,
+  onSessionExpired: () => clearSession(true),
 });
 
 export const authApi = createAuthApi(api);
@@ -64,7 +64,7 @@ export async function hydrateSession(): Promise<void> {
     );
     await completeSignIn(data);
   } catch (error) {
-    if (toApiError(error).status === 401) await clearSession();
+    if (toApiError(error).status === 401) await clearSession(true);
     else useSession.getState().hydrate();
   }
 }
