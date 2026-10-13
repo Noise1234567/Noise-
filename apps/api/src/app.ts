@@ -26,9 +26,16 @@ import { createTicketIssuer, type TicketIssuer } from './modules/tickets/ticket-
 import { createTicketsRouter } from './modules/tickets/tickets.routes.js';
 import { TicketsService } from './modules/tickets/tickets.service.js';
 import { createEventsRouter } from './modules/events/events.routes.js';
+import {
+  CloudinaryImageStorage,
+  FakeImageStorage,
+  type ImageStorage,
+} from './modules/uploads/image-storage.js';
 import { EventsService } from './modules/events/events.service.js';
 
 export interface AppDependencies {
+  /** Stockage des affiches ; par défaut Cloudinary si CLOUDINARY_URL est défini, sinon simulé. */
+  imageStorage?: ImageStorage;
   /** Vérifie que la base répond (lève une erreur sinon). Absent : /health/ready répond 503. */
   checkDatabase?: () => Promise<void>;
   /** Accès à la base : sans lui, les routes métier ne sont pas montées. */
@@ -43,6 +50,15 @@ export interface AppDependencies {
 
 /** Build du scanner web (apps/scanner/dist), au même niveau depuis src/ et dist/. */
 const DEFAULT_SCANNER_DIR = fileURLToPath(new URL('../../scanner/dist', import.meta.url));
+
+/** Cloudinary si configuré ; sinon stockage simulé (développement local, tests). */
+function defaultImageStorage(env: Env, logger: Logger): ImageStorage {
+  if (env.CLOUDINARY_URL) return new CloudinaryImageStorage(env.CLOUDINARY_URL);
+  if (env.NODE_ENV !== 'test') {
+    logger.warn('CLOUDINARY_URL absente : affiches simulées, non stockées');
+  }
+  return new FakeImageStorage();
+}
 
 /**
  * Construit l'application Express sans la démarrer : les tests l'utilisent
@@ -106,7 +122,11 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
     }
     app.use(
       '/api/v1/events',
-      createEventsRouter(new EventsService(deps.prisma), env.JWT_ACCESS_SECRET),
+      createEventsRouter(
+        new EventsService(deps.prisma),
+        env.JWT_ACCESS_SECRET,
+        deps.imageStorage ?? defaultImageStorage(env, logger),
+      ),
     );
     app.use(
       '/api/v1/orders',

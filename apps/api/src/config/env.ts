@@ -26,6 +26,8 @@ const envSchema = z
     JWT_ACCESS_SECRET: z.string().min(32).optional(),
     /** Signature des QR des billets (NOISE-020) : au moins 32 caractères, distinct des autres secrets. */
     QR_SIGNING_SECRET: z.string().min(32).optional(),
+    /** Stockage des affiches (NOISE-012) : cloudinary://<clé>:<secret>@<nom>. */
+    CLOUDINARY_URL: z.string().startsWith('cloudinary://').optional(),
     // Paiement (NOISE-017, DEC-005). `fake` : FakeProvider, aucun appel réseau.
     PAYMENT_PROVIDER: z.enum(['fake', 'fedapay']).default('fake'),
     PAYMENT_ENVIRONMENT: z.enum(['sandbox', 'live']).default('sandbox'),
@@ -38,6 +40,10 @@ const envSchema = z
     }
     if (env.NODE_ENV !== 'test' && !env.QR_SIGNING_SECRET) {
       ctx.addIssue({ code: 'custom', path: ['QR_SIGNING_SECRET'], message: 'obligatoire' });
+    }
+    // En ligne, une affiche doit vraiment être stockée : pas de stockage simulé.
+    if ((env.NODE_ENV === 'staging' || env.NODE_ENV === 'production') && !env.CLOUDINARY_URL) {
+      ctx.addIssue({ code: 'custom', path: ['CLOUDINARY_URL'], message: 'obligatoire' });
     }
     if (env.PAYMENT_PROVIDER === 'fake') {
       if (env.NODE_ENV === 'production') {

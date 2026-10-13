@@ -151,16 +151,15 @@ Le propriétaire reçoit `capacity` et `organizerFee: { totalXof, paidXof, dueXo
 
 Chaque type de billet renvoie `available` = quantité totale − billets vendus − billets réservés par des commandes `PENDING` non expirées (DEC-007), jamais négatif. `onSale` indique que l'événement est publié et que la date de fin de vente n'est pas dépassée. `quantityTotal` et `quantitySold` ne sont renvoyés qu'à l'organisateur propriétaire.
 
-### `POST /api/v1/events/:id/poster` (NOISE-012, pas encore montée)
+### `POST /api/v1/events/:id/poster` (NOISE-012)
 
-La logique de réception existe (`apps/api/src/modules/uploads/poster-upload.ts`) ; la route sera montée à l'étape 2 de NOISE-012, après la fusion de NOISE-011, derrière `requireAuth`, `requireRole('ORGANIZER')` et le contrôle de propriété de l'événement.
-
-- Accès : organisateur propriétaire de l'événement.
+- Accès : organisateur propriétaire de l'événement. La propriété et le statut sont vérifiés avant la réception du fichier : l'identifiant Cloudinary est celui de l'événement et chaque envoi remplace l'affiche, un autre organisateur ne doit donc jamais pouvoir écrire dessus.
 - Requête : `multipart/form-data`, un seul fichier dans le champ `poster`.
-- Règles : identifiant d'événement au format UUID ; 5 Mo maximum ; JPEG, PNG ou WebP, reconnus à partir des premiers octets du fichier (le nom et le Content-Type annoncés ne comptent pas).
-- Traitement : l'API envoie le fichier à Cloudinary (dossier `noise/posters`, identifiant = id de l'événement, remplacé à chaque envoi). Le mobile ne détient aucun identifiant Cloudinary.
-- Réponse : URL HTTPS de diffusion, limitée à 1080 px de large, qualité et format automatiques (WebP ou AVIF selon le téléphone), avec la version dans l'URL pour qu'une affiche remplacée ne reste pas en cache.
-- Erreurs : 400 `VALIDATION_ERROR` (aucun fichier, mauvais champ, format refusé, plus de 5 Mo) ; 401 ; 403 ; 404 ; 500 `INTERNAL_ERROR` si Cloudinary est indisponible.
+- Règles : identifiant d'événement au format UUID ; 5 Mo maximum ; JPEG, PNG ou WebP, reconnus à partir des premiers octets du fichier (le nom et le Content-Type annoncés ne comptent pas). Un événement annulé ne change plus d'affiche.
+- Traitement : l'API envoie le fichier à Cloudinary (dossier `noise/posters`, identifiant = id de l'événement, remplacé à chaque envoi), puis enregistre l'URL sur l'événement. Le mobile ne détient aucun identifiant Cloudinary.
+- Réponse : 200 `{ event: EventDto }` ; `posterUrl` est une URL HTTPS limitée à 1080 px de large, qualité et format automatiques (WebP ou AVIF selon le téléphone), avec la version dans l'URL pour qu'une affiche remplacée ne reste pas en cache.
+- Erreurs : 400 `VALIDATION_ERROR` (identifiant invalide, aucun fichier, mauvais champ, format refusé, plus de 5 Mo) ; 401 ; 403 (pas organisateur, ou événement d'un autre) ; 404 ; 409 événement annulé ; 500 `INTERNAL_ERROR` si Cloudinary est indisponible (l'affiche existante est conservée).
+- Configuration : `CLOUDINARY_URL` (obligatoire en staging et en production). Sans elle, en développement, les affiches sont simulées : l'URL renvoyée ne pointe vers aucune image.
 
 ## 5. Commandes (NOISE-018)
 

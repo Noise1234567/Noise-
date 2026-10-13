@@ -5,7 +5,8 @@ import type {
   ListMyEventsQuery,
   UpdateEventInput,
 } from '@noise/shared';
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
+import type { StoredImage } from '../uploads/image-storage.js';
 import type { EventsService } from './events.service.js';
 
 /**
@@ -38,6 +39,15 @@ export function createEventsController(service: EventsService) {
       res.json({
         event: await service.update(auth(req), eventId(res), req.body as UpdateEventInput),
       });
+    },
+    /** Avant la réception du fichier : propriété et statut (voir EventsService). */
+    checkPosterAccess: async (req: Request, res: Response, next: NextFunction) => {
+      await service.assertPosterEditable(auth(req), eventId(res));
+      next();
+    },
+    setPoster: async (req: Request, res: Response) => {
+      const poster = res.locals.poster as StoredImage;
+      res.json({ event: await service.setPoster(auth(req), eventId(res), poster.url) });
     },
     addTicketType: async (req: Request, res: Response) => {
       res.status(201).json({
