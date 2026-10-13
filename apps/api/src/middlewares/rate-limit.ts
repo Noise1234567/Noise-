@@ -13,6 +13,7 @@ const FIFTEEN_MINUTES = 15 * 60 * 1000;
 
 export const AUTH_RATE_LIMIT = { windowMs: FIFTEEN_MINUTES, limit: 5 };
 export const GLOBAL_RATE_LIMIT = { windowMs: FIFTEEN_MINUTES, limit: 300 };
+export const PAYMENT_RATE_LIMIT = { windowMs: 10 * 60 * 1000, limit: 5 };
 
 type LimitOverrides = Partial<Pick<Options, 'windowMs' | 'limit'>>;
 
@@ -54,6 +55,21 @@ export function globalRateLimit(overrides: LimitOverrides = {}): RequestHandler 
     standardHeaders: 'draft-8',
     legacyHeaders: false,
     keyGenerator: clientIp,
+    handler: rejectWithStandardError,
+  });
+}
+
+/**
+ * POST /payments/initiate : 5 tentatives par 10 minutes par utilisateur (docs/security.md).
+ * À placer après requireAuth (le compteur est par compte, pas par IP).
+ */
+export function paymentRateLimit(overrides: LimitOverrides = {}): RequestHandler {
+  return rateLimit({
+    ...PAYMENT_RATE_LIMIT,
+    ...overrides,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    keyGenerator: (req) => `user:${req.auth?.userId ?? clientIp(req)}`,
     handler: rejectWithStandardError,
   });
 }

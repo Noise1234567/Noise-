@@ -13,9 +13,16 @@ import type { PrismaClient } from './lib/prisma.js';
 import { createAdminRouter } from './modules/admin/admin.routes.js';
 import { createAuthRouter, createMeRouter } from './modules/auth/auth.routes.js';
 import { AuthService } from './modules/auth/auth.service.js';
+import { createPaymentProvider, type PaymentProvider } from './modules/payments/providers/index.js';
+import {
+  createOrderStatusRouter,
+  createPaymentWebhookRouter,
+  createPaymentsRouter,
+} from './modules/payments/payments.routes.js';
+import { PaymentsService } from './modules/payments/payments.service.js';
 import { createOrdersRouter } from './modules/orders/orders.routes.js';
 import { OrdersService } from './modules/orders/orders.service.js';
-import { createTicketIssuer } from './modules/tickets/ticket-issuer.js';
+import { createTicketIssuer, type TicketIssuer } from './modules/tickets/ticket-issuer.js';
 import { createTicketsRouter } from './modules/tickets/tickets.routes.js';
 import { TicketsService } from './modules/tickets/tickets.service.js';
 import { createEventsRouter } from './modules/events/events.routes.js';
@@ -26,6 +33,10 @@ export interface AppDependencies {
   checkDatabase?: () => Promise<void>;
   /** Accès à la base : sans lui, les routes métier ne sont pas montées. */
   prisma?: PrismaClient;
+  /** Fournisseur de paiement ; par défaut celui de PAYMENT_PROVIDER (FakeProvider en local). */
+  paymentProvider?: PaymentProvider;
+  /** Création des billets à la confirmation du paiement (NOISE-020). */
+  issueTickets?: TicketIssuer;
   /** Dossier du build du scanner web (tests). Par défaut : apps/scanner/dist. */
   scannerDir?: string;
 }
@@ -48,8 +59,25 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
   app.use(helmet());
   app.use(cors({ origin: env.CORS_ORIGINS }));
   app.use(globalRateLimit());
-  app.use(express.json({ limit: '100kb' }));
   app.use(pinoHttp({ logger, genReqId: () => randomUUID() }));
+
+  // Création des billets et de leurs QR (NOISE-020), partagée par le paiement et les billets
+  // gratuits. Sans QR_SIGNING_SECRET (tests seulement), aucun billet n'est créé.
+  const issueTickets =
+    deps.issueTickets ??
+    (env.QR_SIGNING_SECRET ? createTicketIssuer(env.QR_SIGNING_SECRET) : undefined);
+  const payments =
+    deps.prisma &&
+    new PaymentsService(
+      deps.prisma,
+      deps.paymentProvider ?? createPaymentProvider(env),
+      logger,
+      issueTickets,
+    );
+  // Avant express.json() : le webhook a besoin du corps brut pour vérifier la signature.
+  if (payments) app.use('/api/v1/payments/webhook', createPaymentWebhookRouter(payments));
+
+  app.use(express.json({ limit: '100kb' }));
 
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok', env: env.NODE_ENV });
@@ -72,14 +100,14 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
     app.use('/api/v1/auth', createAuthRouter(auth, env.JWT_ACCESS_SECRET));
     app.use('/api/v1/me', createMeRouter(auth, env.JWT_ACCESS_SECRET));
     app.use('/api/v1/admin', createAdminRouter(deps.prisma, env.JWT_ACCESS_SECRET));
+    if (payments) {
+      app.use('/api/v1/payments', createPaymentsRouter(payments, env.JWT_ACCESS_SECRET));
+      app.use('/api/v1/orders', createOrderStatusRouter(payments, env.JWT_ACCESS_SECRET));
+    }
     app.use(
       '/api/v1/events',
       createEventsRouter(new EventsService(deps.prisma), env.JWT_ACCESS_SECRET),
     );
-    // Sans QR_SIGNING_SECRET (tests seulement), aucun billet n'est créé et la route est absente.
-    const issueTickets = env.QR_SIGNING_SECRET
-      ? createTicketIssuer(env.QR_SIGNING_SECRET)
-      : undefined;
     app.use(
       '/api/v1/orders',
       createOrdersRouter(
@@ -87,6 +115,7 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
         env.JWT_ACCESS_SECRET,
       ),
     );
+    // Sans QR_SIGNING_SECRET (tests seulement), la route des billets est absente.
     if (env.QR_SIGNING_SECRET) {
       app.use(
         '/api/v1/tickets',

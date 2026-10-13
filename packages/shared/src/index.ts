@@ -4,6 +4,7 @@ export * from './organizer-fee.js';
 export * from './phone.js';
 export * from './schemas/auth.js';
 export * from './revenue-split.js';
+export * from './schemas/payments.js';
 export * from './schemas/scanner.js';
 export * from './schemas/events.js';
 export * from './schemas/orders.js';
