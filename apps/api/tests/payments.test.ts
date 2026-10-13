@@ -10,7 +10,8 @@ import {
   FakePaymentProvider,
   type PaymentProvider,
 } from '../src/modules/payments/providers/index.js';
-import { PaymentsService, type TicketIssuer } from '../src/modules/payments/payments.service.js';
+import { PaymentsService } from '../src/modules/payments/payments.service.js';
+import type { TicketIssuer } from '../src/modules/tickets/ticket-issuer.js';
 import { createTestPrisma, factories, resetDatabase } from './db/test-database.js';
 
 /**
@@ -183,6 +184,36 @@ describe('POST /api/v1/payments/webhook', () => {
       holderName: 'Aminata Sossou',
       quantity: 2,
     });
+  });
+
+  it('application complète : le paiement confirmé crée les vrais billets (NOISE-020)', async () => {
+    // Sans issueTickets injecté : app.ts doit brancher le créateur de billets réel.
+    const fullApp = createApp(
+      loadEnv({
+        NODE_ENV: 'test',
+        LOG_LEVEL: 'silent',
+        JWT_ACCESS_SECRET: SECRET,
+        QR_SIGNING_SECRET: 'qr-secret-de-test-assez-long-0123456789',
+      }),
+      logger,
+      { prisma, paymentProvider: provider },
+    );
+    const { order, auth } = await scenario();
+    await request(fullApp)
+      .post('/api/v1/payments/initiate')
+      .set('Authorization', auth)
+      .send({ orderId: order.id, operator: 'MTN', phone: FAKE_PHONE_NUMBERS.success });
+    const webhook = provider.buildWebhook(await transactionIdOf(order.id));
+    await request(fullApp)
+      .post('/api/v1/payments/webhook')
+      .set(webhook.headers as Record<string, string>)
+      .set('Content-Type', 'application/json')
+      .send(webhook.rawBody)
+      .expect(200);
+
+    const tickets = await prisma.ticket.findMany({ where: { orderId: order.id } });
+    expect(tickets).toHaveLength(2);
+    expect(tickets.every((t) => t.holderName === 'Aminata Sossou' && t.qrTokenHash)).toBe(true);
   });
 
   it('signature invalide : 401 et aucune modification', async () => {

@@ -7,9 +7,9 @@ import {
   type OrderStatusResponse,
 } from '@noise/shared';
 import type { Logger } from 'pino';
-import type { Prisma } from '../../generated/prisma/client.js';
 import { HttpError } from '../../lib/http-error.js';
 import type { PrismaClient } from '../../lib/prisma.js';
+import type { TicketIssuer } from '../tickets/ticket-issuer.js';
 import type { PaymentProvider, RequestHeaders } from './providers/index.js';
 
 /**
@@ -22,25 +22,6 @@ import type { PaymentProvider, RequestHeaders } from './providers/index.js';
 const PAYMENT_ATTEMPT_COOLDOWN_MS = 2 * 60 * 1000;
 /** Le suivi de commande redemande le statut au fournisseur au plus toutes les 15 s (webhook perdu). */
 const STATUS_RECHECK_INTERVAL_MS = 15 * 1000;
-
-/** Commande confirmée, transmise à la création des billets. */
-export interface PaidOrderForTickets {
-  orderId: string;
-  eventId: string;
-  ticketTypeId: string;
-  participantId: string;
-  holderName: string;
-  quantity: number;
-}
-
-/**
- * Création des billets et de leurs QR, dans la transaction de confirmation (NOISE-020).
- * Si elle échoue, la confirmation entière est annulée.
- */
-export type TicketIssuer = (
-  tx: Prisma.TransactionClient,
-  order: PaidOrderForTickets,
-) => Promise<void>;
 
 export type ReconcileOutcome =
   | 'confirmed'
@@ -63,6 +44,7 @@ export class PaymentsService {
     private readonly prisma: PrismaClient,
     private readonly provider: PaymentProvider,
     private readonly logger: Logger,
+    /** Création des billets dans la transaction de confirmation (NOISE-020) : si elle échoue, la confirmation est annulée. */
     private readonly issueTickets: TicketIssuer = async () => {},
     private readonly now: () => Date = () => new Date(),
   ) {}
