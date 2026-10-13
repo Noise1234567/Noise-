@@ -17,6 +17,7 @@ const toPublicUser = (user: User): PublicUser => ({
   id: user.id,
   name: user.name,
   phone: user.phone,
+  email: user.email,
   roles: user.roles,
 });
 
@@ -32,9 +33,21 @@ export class AuthService {
 
   async register(input: RegisterInput): Promise<AuthSession> {
     const passwordHash = await hashPassword(input.password);
+    // Vérification explicite pour dire quel champ pose problème ; la contrainte d'unicité de la
+    // base reste le garde-fou si deux inscriptions identiques arrivent en même temps.
+    const emailTaken = await this.prisma.user.findUnique({ where: { email: input.email } });
+    if (emailTaken) {
+      throw new HttpError(409, 'CONFLICT', 'Un compte existe déjà avec cette adresse e-mail');
+    }
     try {
       const user = await this.prisma.user.create({
-        data: { name: input.name, phone: input.phone, passwordHash, roles: [input.role] },
+        data: {
+          name: input.name,
+          phone: input.phone,
+          email: input.email,
+          passwordHash,
+          roles: [input.role],
+        },
       });
       return await this.openSession(user);
     } catch (error) {

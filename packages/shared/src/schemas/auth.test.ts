@@ -4,6 +4,7 @@ import { loginSchema, registerSchema } from './auth.js';
 const valid = {
   name: 'Aminata Sossou',
   phone: '01 97 45 45 47',
+  email: 'aminata@example.com',
   password: 'motdepasse',
   role: 'PARTICIPANT',
 };
@@ -16,11 +17,21 @@ describe('registerSchema', () => {
   it.each([
     ['nom trop court', { name: 'A' }],
     ['numéro invalide', { phone: '12345' }],
+    ['e-mail absent', { email: undefined }],
+    ['e-mail invalide', { email: 'aminata.example.com' }],
+    ['e-mail sans domaine', { email: 'aminata@' }],
+    ['e-mail trop long', { email: `${'a'.repeat(250)}@example.com` }],
     ['mot de passe trop court', { password: 'court' }],
     ['mot de passe trop long', { password: 'x'.repeat(129) }],
     ['rôle ADMIN refusé', { role: 'ADMIN' }],
   ])('refuse : %s', (_label, override) => {
     expect(registerSchema.safeParse({ ...valid, ...override }).success).toBe(false);
+  });
+
+  it('normalise l’e-mail : espaces retirés, minuscules', () => {
+    expect(registerSchema.parse({ ...valid, email: '  Aminata.Sossou@Example.COM ' }).email).toBe(
+      'aminata.sossou@example.com',
+    );
   });
 
   it('retire les espaces autour du nom', () => {
