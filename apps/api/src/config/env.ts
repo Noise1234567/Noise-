@@ -24,6 +24,8 @@ const envSchema = z
       ),
     /** Signature des access tokens (HS256, NOISE-007) : au moins 32 caractères, un par environnement. */
     JWT_ACCESS_SECRET: z.string().min(32).optional(),
+    /** Signature des QR des billets (NOISE-020) : au moins 32 caractères, distinct des autres secrets. */
+    QR_SIGNING_SECRET: z.string().min(32).optional(),
     // Paiement (NOISE-017, DEC-005). `fake` : FakeProvider, aucun appel réseau.
     PAYMENT_PROVIDER: z.enum(['fake', 'fedapay']).default('fake'),
     PAYMENT_ENVIRONMENT: z.enum(['sandbox', 'live']).default('sandbox'),
@@ -33,6 +35,9 @@ const envSchema = z
   .superRefine((env, ctx) => {
     if (env.NODE_ENV !== 'test' && !env.JWT_ACCESS_SECRET) {
       ctx.addIssue({ code: 'custom', path: ['JWT_ACCESS_SECRET'], message: 'obligatoire' });
+    }
+    if (env.NODE_ENV !== 'test' && !env.QR_SIGNING_SECRET) {
+      ctx.addIssue({ code: 'custom', path: ['QR_SIGNING_SECRET'], message: 'obligatoire' });
     }
     if (env.PAYMENT_PROVIDER === 'fake') {
       if (env.NODE_ENV === 'production') {
