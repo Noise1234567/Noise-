@@ -36,7 +36,10 @@ describe('loadEnv', () => {
     expect(() => loadEnv({ NODE_ENV: 'production', JWT_ACCESS_SECRET: 'court' })).toThrow(
       /JWT_ACCESS_SECRET/,
     );
-    expect(loadEnv({ JWT_ACCESS_SECRET: 'x'.repeat(32) }).JWT_ACCESS_SECRET).toHaveLength(32);
+    expect(
+      loadEnv({ JWT_ACCESS_SECRET: 'x'.repeat(32), QR_SIGNING_SECRET: 'y'.repeat(32) })
+        .JWT_ACCESS_SECRET,
+    ).toHaveLength(32);
   });
 
   it('utilise le FakeProvider par défaut', () => {
