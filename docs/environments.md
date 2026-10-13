@@ -32,7 +32,7 @@ Un environnement « test » séparé en ligne n'est pas nécessaire : la CI couv
 | `PAYMENT_PROVIDER` (`fake` ou `fedapay`)                             | fake                    | fedapay (`fake` refusé en production)                | NOISE-017      |
 | `PAYMENT_ENVIRONMENT` (`sandbox` ou `live`)                          | sandbox                 | sandbox (staging) / live (production)                | NOISE-017      |
 | `PAYMENT_API_KEY`, `PAYMENT_WEBHOOK_SECRET`                          | vides (fake)            | clé `sk_sandbox_` / `sk_live_` vérifiée au démarrage | NOISE-017      |
-| `QR_SIGNING_SECRET`                                                  | valeur locale           | secret distinct                                      | NOISE-020      |
+| `QR_SIGNING_SECRET` (32 caractères minimum ; obligatoire hors tests) | valeur locale           | secret distinct                                      | NOISE-020      |
 | `SCANNER_JWT_SECRET`                                                 | valeur locale           | secret distinct                                      | NOISE-024      |
 | `SENTRY_DSN`                                                         | vide                    | projet Sentry                                        | NOISE-030      |
 

@@ -25,6 +25,7 @@ afterAll(() => prisma.$disconnect());
 const aminata = {
   name: 'Aminata Sossou',
   phone: '01 97 45 45 47',
+  email: 'aminata@example.com',
   password: 'motdepasse',
   role: 'PARTICIPANT',
 };
@@ -42,6 +43,7 @@ describe('inscription', () => {
       id: expect.any(String),
       name: 'Aminata Sossou',
       phone: '+2290197454547',
+      email: 'aminata@example.com',
       roles: ['PARTICIPANT'],
     });
     expect(res.body.user).not.toHaveProperty('passwordHash');
@@ -63,11 +65,63 @@ describe('inscription', () => {
     expect(res.body.error.code).toBe('CONFLICT');
   });
 
+  it('enregistre l’e-mail en minuscules, sans espaces', async () => {
+    const res = await register({ ...aminata, email: '  Aminata@Example.COM ' });
+    expect(res.status).toBe(201);
+    expect(res.body.user.email).toBe('aminata@example.com');
+    const stored = await prisma.user.findUniqueOrThrow({ where: { phone: '+2290197454547' } });
+    expect(stored.email).toBe('aminata@example.com');
+  });
+
+  it('refuse un e-mail déjà utilisé, quelle que soit la casse (409)', async () => {
+    await register();
+    const res = await register({
+      ...aminata,
+      phone: '01 66 00 00 01',
+      email: 'AMINATA@example.com',
+    });
+    expect(res.status).toBe(409);
+    expect(res.body.error.code).toBe('CONFLICT');
+    expect(res.body.error.message).toMatch(/e-mail/);
+    expect(await prisma.user.count()).toBe(1);
+  });
+
+  it('refuse une inscription sans e-mail (400)', async () => {
+    const withoutEmail: Record<string, unknown> = { ...aminata };
+    delete withoutEmail.email;
+    const res = await register(withoutEmail);
+    expect(res.status).toBe(400);
+    expect(res.body.error.details.map((d: { path: string }) => d.path)).toContain('email');
+    expect(await prisma.user.count()).toBe(0);
+  });
+
+  it('refuse un e-mail invalide (400)', async () => {
+    const res = await register({ ...aminata, email: 'pas-un-email' });
+    expect(res.status).toBe(400);
+    expect(res.body.error.details.map((d: { path: string }) => d.path)).toContain('email');
+  });
+
+  it('deux inscriptions simultanées avec le même e-mail : une seule réussit', async () => {
+    const [first, second] = await Promise.all([
+      register(),
+      register({ ...aminata, phone: '01 66 00 00 01' }),
+    ]);
+    expect([first.status, second.status].sort()).toEqual([201, 409]);
+    expect(await prisma.user.count()).toBe(1);
+  });
+
   it('400 avec le détail des champs invalides', async () => {
-    const res = await register({ ...aminata, phone: '123', password: 'court', role: 'ADMIN' });
+    const res = await register({
+      ...aminata,
+      phone: '123',
+      email: 'x',
+      password: 'court',
+      role: 'ADMIN',
+    });
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('VALIDATION_ERROR');
     expect(res.body.error.details.map((d: { path: string }) => d.path).sort()).toEqual([
+      'email',
       'password',
       'phone',
       'role',

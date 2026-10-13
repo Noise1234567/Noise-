@@ -34,6 +34,7 @@ async function main() {
     data: {
       name: 'Kofi Démo',
       phone: ORGANIZER_PHONE,
+      email: 'kofi.demo@noise.test',
       passwordHash: DEMO_PASSWORD_HASH,
       roles: ['ORGANIZER', 'PARTICIPANT'],
     },
@@ -42,6 +43,7 @@ async function main() {
     data: {
       name: 'Aminata Démo',
       phone: PARTICIPANT_PHONE,
+      email: 'aminata.demo@noise.test',
       passwordHash: DEMO_PASSWORD_HASH,
       roles: ['PARTICIPANT'],
     },
@@ -56,6 +58,7 @@ async function main() {
       genre: 'Afrobeats',
       venue: 'Club Le Lagon',
       city: 'Cotonou',
+      capacity: 80,
       startsAt: inDays(10, 21),
       endsAt: inDays(11, 3),
       status: 'PUBLISHED',
@@ -75,6 +78,7 @@ async function main() {
       genre: 'Jazz',
       venue: 'Plage de Fidjrossè',
       city: 'Cotonou',
+      capacity: 100,
       startsAt: inDays(20, 19),
       endsAt: inDays(20, 23),
       status: 'DRAFT',

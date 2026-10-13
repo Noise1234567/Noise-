@@ -19,7 +19,12 @@ import {
   createPaymentWebhookRouter,
   createPaymentsRouter,
 } from './modules/payments/payments.routes.js';
-import { PaymentsService, type TicketIssuer } from './modules/payments/payments.service.js';
+import { PaymentsService } from './modules/payments/payments.service.js';
+import { createOrdersRouter } from './modules/orders/orders.routes.js';
+import { OrdersService } from './modules/orders/orders.service.js';
+import { createTicketIssuer, type TicketIssuer } from './modules/tickets/ticket-issuer.js';
+import { createTicketsRouter } from './modules/tickets/tickets.routes.js';
+import { TicketsService } from './modules/tickets/tickets.service.js';
 import { createEventsRouter } from './modules/events/events.routes.js';
 import { EventsService } from './modules/events/events.service.js';
 
@@ -56,13 +61,18 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
   app.use(globalRateLimit());
   app.use(pinoHttp({ logger, genReqId: () => randomUUID() }));
 
+  // Création des billets et de leurs QR (NOISE-020), partagée par le paiement et les billets
+  // gratuits. Sans QR_SIGNING_SECRET (tests seulement), aucun billet n'est créé.
+  const issueTickets =
+    deps.issueTickets ??
+    (env.QR_SIGNING_SECRET ? createTicketIssuer(env.QR_SIGNING_SECRET) : undefined);
   const payments =
     deps.prisma &&
     new PaymentsService(
       deps.prisma,
       deps.paymentProvider ?? createPaymentProvider(env),
       logger,
-      deps.issueTickets,
+      issueTickets,
     );
   // Avant express.json() : le webhook a besoin du corps brut pour vérifier la signature.
   if (payments) app.use('/api/v1/payments/webhook', createPaymentWebhookRouter(payments));
@@ -98,6 +108,23 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
       '/api/v1/events',
       createEventsRouter(new EventsService(deps.prisma), env.JWT_ACCESS_SECRET),
     );
+    app.use(
+      '/api/v1/orders',
+      createOrdersRouter(
+        new OrdersService(deps.prisma, undefined, issueTickets),
+        env.JWT_ACCESS_SECRET,
+      ),
+    );
+    // Sans QR_SIGNING_SECRET (tests seulement), la route des billets est absente.
+    if (env.QR_SIGNING_SECRET) {
+      app.use(
+        '/api/v1/tickets',
+        createTicketsRouter(
+          new TicketsService(deps.prisma, env.QR_SIGNING_SECRET),
+          env.JWT_ACCESS_SECRET,
+        ),
+      );
+    }
   }
 
   // Scanner du staff (NOISE-026), servi s'il a été construit (pnpm --filter @noise/scanner build).

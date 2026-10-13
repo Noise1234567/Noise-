@@ -68,7 +68,7 @@ Base : CDC section 7, complétée par les décisions.
 | GET     | `/orders/:id/status`        | Participant propriétaire  | NOISE-019            |
 | POST    | `/payments/initiate`        | Participant propriétaire  | NOISE-019            |
 | POST    | `/payments/webhook`         | Fournisseur (signature)   | NOISE-019            |
-| GET     | `/tickets/mine`             | Participant               | NOISE-020            |
+| GET     | `/tickets/mine`             | Participant               | NOISE-020 (existe)   |
 | POST    | `/scanner/links`            | Organisateur propriétaire | NOISE-024            |
 | GET     | `/events/:id/scanner-links` | Organisateur propriétaire | NOISE-024            |
 | DELETE  | `/scanner/links/:id`        | Organisateur propriétaire | NOISE-024            |
@@ -82,16 +82,16 @@ Chaque endpoint, une fois implémenté, est documenté ici avec : corps de requ�
 
 ### Authentification (NOISE-007)
 
-Format des numéros : toute écriture béninoise est acceptée (`01 97 45 45 47`, `+229…`, ancien format à 8 chiffres) et convertie en E.164 (`+2290197454547`). Réponse de session (`AuthSession`) : `{ accessToken, refreshToken, user: { id, name, phone, roles } }`. Contrats partagés : `packages/shared/src/schemas/auth.ts`.
+Format des numéros : toute écriture béninoise est acceptée (`01 97 45 45 47`, `+229…`, ancien format à 8 chiffres) et convertie en E.164 (`+2290197454547`). Réponse de session (`AuthSession`) : `{ accessToken, refreshToken, user: { id, name, phone, email, roles } }` (`email` est nul pour un compte créé avant DEC-026). Contrats partagés : `packages/shared/src/schemas/auth.ts`.
 
-| Endpoint                     | Corps                                                                        | Réponse                                                                    | Erreurs                                                                                                              |
-| ---------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `POST /api/v1/auth/register` | `name`, `phone`, `password` (8 à 128), `role` (`PARTICIPANT` ou `ORGANIZER`) | 201 `AuthSession`                                                          | 400 ; 409 numéro déjà utilisé ; 429 (5 essais / 15 min par IP et numéro)                                             |
-| `POST /api/v1/auth/login`    | `phone`, `password`                                                          | 200 `AuthSession`                                                          | 400 ; 401 « Numéro ou mot de passe incorrect » (même message dans les deux cas) ; 403 compte suspendu ; 429          |
-| `POST /api/v1/auth/refresh`  | `refreshToken`                                                               | 200 `AuthSession` (nouveaux jetons)                                        | 401 jeton inconnu, expiré ou déjà utilisé (dans ce dernier cas, toutes les sessions de l'utilisateur sont révoquées) |
-| `POST /api/v1/auth/logout`   | `refreshToken` ; access token requis                                         | 204                                                                        | 401                                                                                                                  |
-| `GET /api/v1/me`             | access token requis                                                          | 200 `{ user }`                                                             | 401                                                                                                                  |
-| `PATCH /api/v1/me/roles`     | `role` (`PARTICIPANT` ou `ORGANIZER`)                                        | 200 `{ accessToken, user }` : nouvel access token contenant le rôle ajouté | 400 (ADMIN refusé) ; 401                                                                                             |
+| Endpoint                     | Corps                                                                                 | Réponse                                                                    | Erreurs                                                                                                              |
+| ---------------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/v1/auth/register` | `name`, `phone`, `email`, `password` (8 à 128), `role` (`PARTICIPANT` ou `ORGANIZER`) | 201 `AuthSession`                                                          | 400 ; 409 numéro ou e-mail déjà utilisé ; 429 (5 essais / 15 min par IP et numéro)                                   |
+| `POST /api/v1/auth/login`    | `phone`, `password`                                                                   | 200 `AuthSession`                                                          | 400 ; 401 « Numéro ou mot de passe incorrect » (même message dans les deux cas) ; 403 compte suspendu ; 429          |
+| `POST /api/v1/auth/refresh`  | `refreshToken`                                                                        | 200 `AuthSession` (nouveaux jetons)                                        | 401 jeton inconnu, expiré ou déjà utilisé (dans ce dernier cas, toutes les sessions de l'utilisateur sont révoquées) |
+| `POST /api/v1/auth/logout`   | `refreshToken` ; access token requis                                                  | 204                                                                        | 401                                                                                                                  |
+| `GET /api/v1/me`             | access token requis                                                                   | 200 `{ user }`                                                             | 401                                                                                                                  |
+| `PATCH /api/v1/me/roles`     | `role` (`PARTICIPANT` ou `ORGANIZER`)                                                 | 200 `{ accessToken, user }` : nouvel access token contenant le rôle ajouté | 400 (ADMIN refusé) ; 401                                                                                             |
 
 À l'attention du mobile (NOISE-008) : ne jamais lancer deux `refresh` en parallèle avec le même jeton. Le second est traité comme une réutilisation et déconnecte l'utilisateur partout. L'intercepteur Axios doit mettre les requêtes en attente pendant un rafraîchissement.
 
@@ -137,9 +137,15 @@ Réservé au rôle `ORGANIZER`. Renvoie les événements de l'organisateur conne
 ### Détail, création, modification
 
 - `GET /events/:id` : un événement `PUBLISHED` ou `CANCELLED` est lisible par tout utilisateur connecté (les détenteurs de billets doivent voir une annulation) ; un brouillon n'est visible que de son organisateur (404 pour les autres).
-- `POST /events` : crée l'événement en `DRAFT`. Début dans le futur, fin après le début.
-- `PUT /events/:id` : mise à jour partielle (au moins un champ). `status: "PUBLISHED"` publie le brouillon, à condition qu'il ait au moins un type de billet et qu'il ne soit pas terminé (409 sinon). Aucune autre valeur de statut n'est acceptée : l'annulation aura sa propre route (NOISE-029). Un événement annulé ne se modifie plus (409). Dès qu'un billet est vendu, `startsAt` et `endsAt` ne peuvent plus changer (409) : les acheteurs ne seraient pas prévenus tant que les notifications (NOISE-028) n'existent pas. Les autres champs restent modifiables.
-- `POST /events/:id/ticket-types` : `name` (unique par événement, 409 sinon), `priceXof` (entier de 1 à 10 000 000), `quantityTotal` (entier de 1 à 100 000), `salesEndAt` facultatif (dans le futur, et au plus tard la fin de l'événement).
+- `POST /events` : crée l'événement en `DRAFT`. Début dans le futur, fin après le début, `capacity` obligatoire (nombre de participants attendus, entier de 1 à 100 000).
+- `PUT /events/:id` : mise à jour partielle (au moins un champ). `status: "PUBLISHED"` publie le brouillon, à condition qu'il ait au moins un type de billet et qu'il ne soit pas terminé (409 sinon). Aucune autre valeur de statut n'est acceptée : l'annulation aura sa propre route (NOISE-029). Un événement annulé ne se modifie plus (409). Dès qu'un billet est vendu, `startsAt`, `endsAt` et `venue` ne peuvent plus changer (409) : les acheteurs ne seraient pas prévenus tant que les notifications (NOISE-028) n'existent pas. `capacity` peut être modifiée, sans descendre sous la somme des billets déjà créés (400). Les autres champs restent modifiables.
+- `POST /events/:id/ticket-types` : `name` (unique par événement, 409 sinon), `priceXof` (entier de 0 à 1 000 000, 0 = billet gratuit), `quantityTotal` (entier de 1 à 100 000), `salesEndAt` facultatif (au plus tard la fin de l'événement). La somme des `quantityTotal` des types de billets ne peut pas dépasser la `capacity` de l'événement (409, le message indique combien de places restent).
+
+### Capacité et frais d'organisation
+
+L'organisateur déclare la capacité à la création et peut l'augmenter ensuite. Les frais d'organisation suivent une règle de trois à 40 FCFA par participant déclaré : 0 FCFA jusqu'à 50 participants inclus, puis 40 FCFA × capacité (51 → 2 040, 60 → 2 400, 100 → 4 000). Ils ne dépendent pas du prix des billets. À chaque augmentation, le reste dû est le total du nouveau niveau moins ce qui est déjà payé (40 → 60 : 2 400 ; 50 → 100 : 4 000). Baisser la capacité ne rembourse rien. La règle vit dans `packages/shared/src/organizer-fee.ts`, partagée avec le mobile.
+
+Le propriétaire reçoit `capacity` et `organizerFee: { totalXof, paidXof, dueXof }` dans l'événement ; les autres utilisateurs ne les voient pas. Le paiement des frais et le blocage de la publication tant qu'ils ne sont pas réglés arrivent avec NOISE-044 : pour l'instant l'API calcule et expose le montant.
 
 ### Disponibilité
 
@@ -155,3 +161,37 @@ La logique de réception existe (`apps/api/src/modules/uploads/poster-upload.ts`
 - Traitement : l'API envoie le fichier à Cloudinary (dossier `noise/posters`, identifiant = id de l'événement, remplacé à chaque envoi). Le mobile ne détient aucun identifiant Cloudinary.
 - Réponse : URL HTTPS de diffusion, limitée à 1080 px de large, qualité et format automatiques (WebP ou AVIF selon le téléphone), avec la version dans l'URL pour qu'une affiche remplacée ne reste pas en cache.
 - Erreurs : 400 `VALIDATION_ERROR` (aucun fichier, mauvais champ, format refusé, plus de 5 Mo) ; 401 ; 403 ; 404 ; 500 `INTERNAL_ERROR` si Cloudinary est indisponible.
+
+## 5. Commandes (NOISE-018)
+
+Une commande réserve des places d'un type de billet pour 15 minutes. Elle est réservée au rôle `PARTICIPANT`, et chaque participant ne voit que ses propres commandes.
+
+### Création : `POST /api/v1/orders`
+
+Corps : `{ ticketTypeId, quantity }`, avec `quantity` entier de 1 à 5 (DEC-008). Réponse 201 : `{ order }` (`OrderDto`, `packages/shared/src/schemas/orders.ts`).
+
+- Le prix est figé à la création : `totalXof` = `unitPriceXof` × `quantity`.
+- La commande est `PENDING` et `expiresAt` vaut la création + 15 minutes. Les places sont réservées, mais `quantitySold` n'augmente qu'à la confirmation du paiement (NOISE-019).
+- Contrôle du stock : disponible = total − vendus − réservés par des commandes `PENDING` non expirées (DEC-007). Il est fait dans une transaction qui verrouille le type de billet (`SELECT ... FOR UPDATE`) : si plusieurs personnes visent la dernière place en même temps, une seule réussit.
+- Billet gratuit (prix 0) : rien à payer, la commande est créée directement `PAID` (`paidAt` renseigné, répartition 0 / 0 / 0) et `quantitySold` augmente aussitôt. Ses billets et leurs QR sont créés dans la même transaction (NOISE-020, section 6).
+- Erreurs : 400 (quantité hors de 1 à 5, identifiant invalide) ; 401 ; 403 (rôle participant manquant) ; 404 (type de billet inconnu ou événement en brouillon) ; 409 (événement annulé ou terminé, date limite de vente dépassée, « Ce billet est épuisé » ou « Il ne reste que N place(s) pour ce billet »).
+
+### Suivi : `GET /api/v1/orders/:id`
+
+Réponse 200 : `{ order }`. 404 si la commande n'existe pas ou appartient à un autre participant. Une commande `PENDING` dont l'heure est passée est renvoyée `EXPIRED` (et enregistrée comme telle) sans attendre le job.
+
+### Expiration
+
+Un job passe toutes les minutes (`startOrderExpiryJob`, lancé par `server.ts`) et met en `EXPIRED` les commandes `PENDING` dont `expiresAt` est passé. La réservation est libérée dès l'heure dépassée : le calcul de disponibilité ignore les commandes expirées, avant même le passage du job. Le job peut tourner sur plusieurs instances sans risque (mise à jour conditionnelle).
+
+Le suivi côté paiement (`GET /api/v1/orders/:id/status`, NOISE-019) reste distinct : il rattrape en plus un webhook perdu.
+
+## 6. Billets (NOISE-020)
+
+Un billet est créé pour chaque place d'une commande confirmée, au nom de l'acheteur, avec son QR signé (format et sécurité : `docs/qr-scanner.md`). Pour une commande gratuite, la création se fait dans la transaction de la commande. Pour une commande payée, elle se fait dans la transaction de confirmation du paiement, via le point d'accroche `issueTickets` de NOISE-019 (`createTicketIssuer` dans `modules/tickets/ticket-issuer.ts`).
+
+### Mes billets : `GET /api/v1/tickets/mine`
+
+Réservé au rôle `PARTICIPANT`. Réponse 200 : `{ tickets: TicketDto[] }` (`packages/shared/src/schemas/tickets.ts`), les événements les plus proches d'abord. Chaque billet porte `qrPayload`, le contenu exact du QR à afficher, qui reste le même à chaque appel. Un participant ne reçoit jamais les billets d'un autre. Erreurs : 401, 403.
+
+Configuration : `QR_SIGNING_SECRET` (32 caractères minimum, distinct des autres secrets) est obligatoire hors tests.

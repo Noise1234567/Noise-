@@ -7,7 +7,13 @@ import { ApiError } from './errors';
 const session = (n: number): AuthSession => ({
   accessToken: `access-${n}`,
   refreshToken: `refresh-${n}`,
-  user: { id: 'u1', name: 'Awa', phone: '+22901020304', roles: ['PARTICIPANT'] },
+  user: {
+    id: 'u1',
+    name: 'Awa',
+    phone: '+22901020304',
+    email: 'awa@example.com',
+    roles: ['PARTICIPANT'],
+  },
 });
 
 function setup() {
