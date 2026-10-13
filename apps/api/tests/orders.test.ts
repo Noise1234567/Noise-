@@ -54,6 +54,7 @@ async function setup(
       genre: 'Afrobeats',
       venue: 'Club',
       city: 'Cotonou',
+      capacity: 100_000,
       startsAt: options.startsAt ?? inDays(5),
       endsAt: options.endsAt ?? inDays(6),
       status: options.status ?? 'PUBLISHED',
