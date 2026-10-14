@@ -134,3 +134,32 @@ export function listSubtitle(scope: string, count: number, hasMore: boolean): st
   const total = hasMore ? `${count}+` : String(count);
   return `${scope} · ${total} ${count > 1 ? 'soirées' : 'soirée'} à venir`;
 }
+
+/** Prix d'une ligne de billet : montant ou « Gratuit ». */
+export const ticketPriceLabel = (type: Pick<TicketTypeDto, 'priceXof'>) =>
+  type.priceXof === 0 ? 'Gratuit' : formatFcfa(type.priceXof);
+
+/** Description longue : repliée à 3 lignes avec « Lire la suite » (maquette 7). */
+export const DESCRIPTION_FOLD_CHARS = 140;
+export const isLongDescription = (text: string) =>
+  text.length > DESCRIPTION_FOLD_CHARS || text.split('\n').length > 3;
+
+/** État du bouton principal du détail (maquettes 7, 7b, 7c). */
+export type PurchaseState =
+  | { kind: 'OPEN'; label: 'Choisir mes billets' }
+  | { kind: 'SOLD_OUT'; label: 'Complet'; hint: string }
+  | { kind: 'CANCELLED'; label: 'Achat impossible'; hint: string };
+
+export function purchaseState(event: Pick<EventDto, 'status' | 'ticketTypes'>): PurchaseState {
+  if (event.status === 'CANCELLED') {
+    return { kind: 'CANCELLED', label: 'Achat impossible', hint: 'Cet événement a été annulé.' };
+  }
+  if (!hasPurchasableTicket(event)) {
+    return {
+      kind: 'SOLD_OUT',
+      label: 'Complet',
+      hint: 'Tous les billets sont vendus ou la vente est close.',
+    };
+  }
+  return { kind: 'OPEN', label: 'Choisir mes billets' };
+}

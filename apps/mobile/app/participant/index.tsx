@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 
@@ -123,7 +124,14 @@ export default function Home() {
         <FlatList
           data={list.events}
           keyExtractor={(event) => event.id}
-          renderItem={({ item }) => <EventCard event={item} />}
+          renderItem={({ item }) => (
+            <EventCard
+              event={item}
+              onPress={() =>
+                router.push({ pathname: '/participant/event/[id]', params: { id: item.id } })
+              }
+            />
+          )}
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl

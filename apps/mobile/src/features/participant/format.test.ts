@@ -6,6 +6,9 @@ import {
   formatFcfa,
   listSubtitle,
   priceFromLabel,
+  isLongDescription,
+  purchaseState,
+  ticketPriceLabel,
   ticketAvailability,
   ticketAvailabilityLabel,
 } from './format';
@@ -109,5 +112,36 @@ describe('sous-titre de la liste', () => {
     expect(listSubtitle('Cotonou', 10, true)).toBe('Cotonou · 10+ soirées à venir');
     expect(listSubtitle('Amapiano', 3, false)).toBe('Amapiano · 3 soirées à venir');
     expect(listSubtitle('Cotonou', 1, false)).toBe('Cotonou · 1 soirée à venir');
+  });
+});
+
+describe('détail : prix, description et bouton principal', () => {
+  it('prix d’une ligne de billet', () => {
+    expect(ticketPriceLabel({ priceXof: 5000 })).toBe(`5\u00A0000\u00A0FCFA`);
+    expect(ticketPriceLabel({ priceXof: 0 })).toBe('Gratuit');
+  });
+
+  it('replie les descriptions longues', () => {
+    expect(isLongDescription('Courte description.')).toBe(false);
+    expect(isLongDescription('x'.repeat(141))).toBe(true);
+    expect(isLongDescription('a\nb\nc\nd')).toBe(true);
+  });
+
+  it('bouton : ouvert, complet, vente close, annulé', () => {
+    const open = { status: 'PUBLISHED' as const, ticketTypes: [type()] };
+    expect(purchaseState(open).kind).toBe('OPEN');
+    expect(purchaseState({ ...open, ticketTypes: [type({ available: 0 })] })).toMatchObject({
+      kind: 'SOLD_OUT',
+      label: 'Complet',
+      hint: 'Tous les billets sont vendus ou la vente est close.',
+    });
+    expect(purchaseState({ ...open, ticketTypes: [type({ onSale: false })] }).kind).toBe(
+      'SOLD_OUT',
+    );
+    expect(purchaseState({ status: 'CANCELLED', ticketTypes: [type()] })).toMatchObject({
+      kind: 'CANCELLED',
+      label: 'Achat impossible',
+      hint: 'Cet événement a été annulé.',
+    });
   });
 });
