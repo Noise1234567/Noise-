@@ -245,6 +245,31 @@ export class EventsService {
     }
   }
 
+  /**
+   * Affiche (NOISE-012) : vérifié AVANT de recevoir le fichier. L'identifiant Cloudinary est
+   * celui de l'événement et chaque envoi remplace l'affiche : sans ce contrôle, un
+   * organisateur pourrait écraser l'affiche d'un autre.
+   */
+  async assertPosterEditable(auth: AuthContext, id: string): Promise<void> {
+    const event = await this.findOwned(auth, id);
+    if (event.status === 'CANCELLED') {
+      throw new HttpError(409, 'CONFLICT', 'Un événement annulé ne peut plus être modifié');
+    }
+  }
+
+  /** Enregistre l'URL de l'affiche envoyée au stockage. */
+  async setPoster(auth: AuthContext, id: string, posterUrl: string): Promise<EventDto> {
+    await this.assertPosterEditable(auth, id);
+    const updated = await this.prisma.event.update({
+      where: { id },
+      data: { posterUrl },
+      include: { ticketTypes: { orderBy: [...ticketTypesOrder] } },
+    });
+    const now = new Date();
+    const reserved = await this.reservedByTicketType(updated.ticketTypes, now);
+    return this.toDto(updated, reserved, auth.userId, now);
+  }
+
   /** 404 si l'événement n'existe pas, 403 s'il appartient à un autre organisateur. */
   private async findOwned(auth: AuthContext, id: string): Promise<EventWithTypes> {
     const event = await this.prisma.event.findUnique({
