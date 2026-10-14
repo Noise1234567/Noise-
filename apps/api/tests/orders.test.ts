@@ -51,7 +51,7 @@ async function setup(
       organizerId: organizer.id,
       title: 'Soirée Afrobeats',
       description: 'Test',
-      genre: 'Afrobeats',
+      styles: ['Afrobeat'],
       venue: 'Club',
       city: 'Cotonou',
       capacity: 100_000,

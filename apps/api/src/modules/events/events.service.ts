@@ -1,11 +1,13 @@
 import {
   BENIN_UTC_OFFSET,
+  isLowStock,
   organizerFeeDueXof,
   organizerFeeXof,
   type CreateEventInput,
   type CreateTicketTypeInput,
   type EventDto,
   type EventListResponse,
+  type EventStyle,
   type ListEventsQuery,
   type ListMyEventsQuery,
   type TicketTypeDto,
@@ -48,7 +50,7 @@ export class EventsService {
   async list(auth: AuthContext, query: ListEventsQuery): Promise<EventListResponse> {
     const now = new Date();
     const where: Prisma.EventWhereInput = { status: 'PUBLISHED', endsAt: { gt: now } };
-    if (query.genre) where.genre = { equals: query.genre, mode: 'insensitive' };
+    if (query.styles) where.styles = { hasSome: query.styles };
     if (query.city) where.city = { equals: query.city, mode: 'insensitive' };
     if (query.date) {
       const dayStart = new Date(`${query.date}T00:00:00${BENIN_UTC_OFFSET}`);
@@ -122,7 +124,7 @@ export class EventsService {
         organizerId: auth.userId,
         title: input.title,
         description: input.description,
-        genre: input.genre,
+        styles: input.styles,
         venue: input.venue,
         city: input.city,
         startsAt: new Date(input.startsAt),
@@ -186,7 +188,7 @@ export class EventsService {
       data: {
         title: input.title,
         description: input.description,
-        genre: input.genre,
+        styles: input.styles,
         venue: input.venue,
         city: input.city,
         status: input.status,
@@ -306,12 +308,15 @@ export class EventsService {
     now: Date,
   ): EventDto {
     const isOwner = event.organizerId === viewerId;
+    const ticketTypes = event.ticketTypes.map((type) =>
+      this.toTicketTypeDto(type, event.status, reserved.get(type.id) ?? 0, isOwner, now),
+    );
     return {
       id: event.id,
       organizerId: event.organizerId,
       title: event.title,
       description: event.description,
-      genre: event.genre,
+      styles: event.styles as EventStyle[],
       venue: event.venue,
       city: event.city,
       startsAt: event.startsAt.toISOString(),
@@ -320,9 +325,8 @@ export class EventsService {
       status: event.status,
       createdAt: event.createdAt.toISOString(),
       updatedAt: event.updatedAt.toISOString(),
-      ticketTypes: event.ticketTypes.map((type) =>
-        this.toTicketTypeDto(type, event.status, reserved.get(type.id) ?? 0, isOwner, now),
-      ),
+      ticketTypes,
+      almostFull: this.isAlmostFull(event, ticketTypes),
       ...(isOwner
         ? {
             capacity: event.capacity,
@@ -336,6 +340,19 @@ export class EventsService {
     };
   }
 
+  /**
+   * « Presque complet » pour l'événement : on additionne les types encore en vente (un billet
+   * dont la vente est close ne compte plus), puis on applique la même règle des 20 %.
+   */
+  private isAlmostFull(event: EventWithTypes, dtos: TicketTypeDto[]): boolean {
+    const open = dtos.filter((dto) => dto.onSale);
+    const available = open.reduce((sum, dto) => sum + dto.available, 0);
+    const total = event.ticketTypes
+      .filter((type) => open.some((dto) => dto.id === type.id))
+      .reduce((sum, type) => sum + type.quantityTotal, 0);
+    return isLowStock(available, total);
+  }
+
   /** Disponibilité = total − vendus − réservés (DEC-007), jamais négative. */
   private toTicketTypeDto(
     type: TicketType,
@@ -344,13 +361,15 @@ export class EventsService {
     isOwner: boolean,
     now: Date,
   ): TicketTypeDto {
+    const available = Math.max(0, type.quantityTotal - type.quantitySold - reserved);
     return {
       id: type.id,
       name: type.name,
       priceXof: type.priceXof,
-      available: Math.max(0, type.quantityTotal - type.quantitySold - reserved),
+      available,
       salesEndAt: type.salesEndAt?.toISOString() ?? null,
       onSale: eventStatus === 'PUBLISHED' && (!type.salesEndAt || type.salesEndAt > now),
+      lowStock: isLowStock(available, type.quantityTotal),
       ...(isOwner ? { quantityTotal: type.quantityTotal, quantitySold: type.quantitySold } : {}),
     };
   }

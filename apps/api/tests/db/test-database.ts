@@ -54,7 +54,7 @@ export const factories = {
         organizerId,
         title: 'Soirée test',
         description: 'Test',
-        genre: 'Afrobeats',
+        styles: ['Afrobeat'],
         venue: 'Club',
         city: 'Cotonou',
         capacity: 100,

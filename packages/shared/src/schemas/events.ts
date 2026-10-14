@@ -14,6 +14,41 @@ export const MAX_TICKET_PRICE_XOF = 1_000_000;
 export const MAX_TICKET_QUANTITY = 100_000;
 export const MAX_EVENT_CAPACITY = 100_000;
 
+/**
+ * Styles proposés à l'organisateur (il en choisit 1 à 5 par événement). Liste fermée : les
+ * filtres du mobile reposent dessus. « Autre » couvre ce qui n'y figure pas.
+ */
+export const EVENT_STYLES = [
+  'Afrobeat',
+  'Amapiano',
+  'Rap',
+  'Électro',
+  'Concert',
+  'Soirée',
+  'Gospel',
+  'Zouk',
+  'Coupé-décalé',
+  'Dancehall',
+  'Jazz',
+  'R&B',
+  'Festival',
+  'Autre',
+] as const;
+export type EventStyle = (typeof EVENT_STYLES)[number];
+export const MAX_EVENT_STYLES = 5;
+
+/**
+ * Seuil « Presque complet » (NOISE-014) : il reste 20 % des places ou moins, sans être épuisé.
+ * Calculé côté serveur pour que tous les clients affichent la même chose.
+ */
+export const LOW_STOCK_RATIO = 0.2;
+
+export function isLowStock(available: number, total: number): boolean {
+  if (total <= 0 || available <= 0) return false;
+  // Le petit epsilon évite qu'une erreur d'arrondi flottant exclue la limite exacte (ex. 35 × 0,2).
+  return available <= Math.floor(total * LOW_STOCK_RATIO + 1e-9);
+}
+
 /** Fuseau du Bénin (UTC+1, pas d'heure d'été) : sert au filtre « date » de la liste. */
 export const BENIN_UTC_OFFSET = '+01:00';
 
@@ -23,7 +58,13 @@ const dateTimeSchema = z.iso.datetime({ offset: true, error: 'Date-heure ISO 860
 const eventFieldsSchema = z.object({
   title: z.string().trim().min(3, 'Titre trop court').max(120, 'Titre trop long'),
   description: z.string().trim().min(1, 'Description requise').max(5000, 'Description trop longue'),
-  genre: z.string().trim().min(2, 'Genre trop court').max(40, 'Genre trop long'),
+  styles: z
+    .array(z.enum(EVENT_STYLES, { error: 'Style inconnu' }))
+    .min(1, 'Choisissez au moins un style')
+    .max(MAX_EVENT_STYLES, `${MAX_EVENT_STYLES} styles au maximum`)
+    .refine((styles) => new Set(styles).size === styles.length, {
+      message: 'Un style ne peut être choisi qu’une fois',
+    }),
   venue: z.string().trim().min(2, 'Lieu trop court').max(120, 'Lieu trop long'),
   city: z.string().trim().min(2, 'Ville trop courte').max(60, 'Ville trop longue'),
   startsAt: dateTimeSchema,
@@ -85,7 +126,19 @@ export const createTicketTypeSchema = z.object({
 
 /** GET /api/v1/events : filtres facultatifs et pagination par curseur (docs/api.md). */
 export const listEventsQuerySchema = z.object({
-  genre: z.string().trim().min(1).max(40).optional(),
+  /** Styles séparés par des virgules (`Rap,Concert`) : événements ayant au moins un de ces styles. */
+  styles: z
+    .string()
+    .trim()
+    .min(1)
+    .transform((value) => value.split(',').map((style) => style.trim()))
+    .pipe(
+      z
+        .array(z.enum(EVENT_STYLES, { error: 'Style inconnu' }))
+        .min(1)
+        .max(EVENT_STYLES.length),
+    )
+    .optional(),
   city: z.string().trim().min(1).max(60).optional(),
   /** Jour (AAAA-MM-JJ, heure du Bénin) : événements qui commencent ce jour-là. */
   date: z.iso.date({ error: 'Date AAAA-MM-JJ attendue' }).optional(),
@@ -120,6 +173,8 @@ export interface TicketTypeDto {
   salesEndAt: string | null;
   /** Vente ouverte : événement publié et date de fin de vente non dépassée. */
   onSale: boolean;
+  /** Il reste 20 % des places ou moins (LOW_STOCK_RATIO) : afficher « Presque complet ». */
+  lowStock: boolean;
   quantityTotal?: number;
   quantitySold?: number;
 }
@@ -129,7 +184,7 @@ export interface EventDto {
   organizerId: string;
   title: string;
   description: string;
-  genre: string;
+  styles: EventStyle[];
   venue: string;
   city: string;
   startsAt: string;
@@ -139,6 +194,8 @@ export interface EventDto {
   createdAt: string;
   updatedAt: string;
   ticketTypes: TicketTypeDto[];
+  /** Les billets en vente sont presque épuisés (mêmes règles que `lowStock`, sur le total). */
+  almostFull: boolean;
   /** Capacité déclarée et frais d'organisation : visibles du seul organisateur propriétaire. */
   capacity?: number;
   organizerFee?: OrganizerFeeDto;

@@ -38,7 +38,7 @@ const participant = async () => {
 const validEvent = (overrides: object = {}) => ({
   title: 'Soirée Afrobeats',
   description: 'Une grande soirée au bord de la mer',
-  genre: 'Afrobeats',
+  styles: ['Afrobeat'],
   venue: 'Plage de Fidjrossè',
   city: 'Cotonou',
   startsAt: inDays(10).toISOString(),
@@ -52,7 +52,7 @@ const seedEvent = (
   organizerId: string,
   data: Partial<{
     title: string;
-    genre: string;
+    styles: string[];
     city: string;
     status: 'DRAFT' | 'PUBLISHED' | 'CANCELLED';
     capacity: number;
@@ -66,7 +66,7 @@ const seedEvent = (
       organizerId,
       title: 'Événement',
       description: 'Description',
-      genre: 'Afrobeats',
+      styles: ['Afrobeat'],
       venue: 'Salle',
       city: 'Cotonou',
       capacity: 500,
@@ -88,9 +88,31 @@ describe('création (POST /events)', () => {
       title: 'Soirée Afrobeats',
       status: 'DRAFT',
       posterUrl: null,
+      styles: ['Afrobeat'],
+      almostFull: false,
       ticketTypes: [],
     });
     expect(await prisma.event.count()).toBe(1);
+  });
+
+  it("enregistre plusieurs styles choisis par l'organisateur", async () => {
+    const { headers } = await organizer();
+    const styles = ['Concert', 'Soirée', 'Gospel'];
+    const res = await request(app).post('/api/v1/events').set(headers).send(validEvent({ styles }));
+    expect(res.status).toBe(201);
+    expect(res.body.event.styles).toEqual(styles);
+  });
+
+  it.each([
+    [[]],
+    [['Techno']],
+    [['Rap', 'Rap']],
+    [['Rap', 'Concert', 'Soirée', 'Gospel', 'Zouk', 'Jazz']],
+  ])('refuse des styles invalides (%j)', async (styles) => {
+    const { headers } = await organizer();
+    const res = await request(app).post('/api/v1/events').set(headers).send(validEvent({ styles }));
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('VALIDATION_ERROR');
   });
 
   it('401 sans jeton, 403 pour un participant', async () => {
@@ -544,20 +566,28 @@ describe('liste (GET /events)', () => {
     expect(res.body.nextCursor).toBeNull();
   });
 
-  it('filtre par genre et par ville, sans tenir compte de la casse', async () => {
+  it('filtre par styles (au moins un en commun) et par ville', async () => {
     const owner = await organizer();
     const { headers } = await participant();
-    await seedEvent(owner.user.id, { title: 'A', genre: 'Afrobeats', city: 'Cotonou' });
-    await seedEvent(owner.user.id, { title: 'B', genre: 'Jazz', city: 'Cotonou' });
-    await seedEvent(owner.user.id, { title: 'C', genre: 'Jazz', city: 'Porto-Novo' });
+    await seedEvent(owner.user.id, { title: 'A', styles: ['Afrobeat', 'Soirée'], city: 'Cotonou' });
+    await seedEvent(owner.user.id, { title: 'B', styles: ['Jazz', 'Concert'], city: 'Cotonou' });
+    await seedEvent(owner.user.id, { title: 'C', styles: ['Jazz'], city: 'Porto-Novo' });
 
     const titles = async (query: string) =>
       (await request(app).get(`/api/v1/events?${query}`).set(headers)).body.data
         .map((e: { title: string }) => e.title)
         .sort();
-    expect(await titles('genre=jazz')).toEqual(['B', 'C']);
+    expect(await titles('styles=Jazz')).toEqual(['B', 'C']);
+    expect(await titles('styles=Soirée,Concert')).toEqual(['A', 'B']);
+    expect(await titles('styles=Rap')).toEqual([]);
     expect(await titles('city=COTONOU')).toEqual(['A', 'B']);
-    expect(await titles('genre=jazz&city=cotonou')).toEqual(['B']);
+    expect(await titles('styles=Jazz&city=cotonou')).toEqual(['B']);
+  });
+
+  it('refuse un style inconnu dans le filtre', async () => {
+    const { headers } = await participant();
+    const res = await request(app).get('/api/v1/events?styles=Techno').set(headers);
+    expect(res.status).toBe(400);
   });
 
   it('filtre par jour en heure du Bénin (UTC+1) : 23h30 UTC est déjà le lendemain', async () => {
@@ -812,5 +842,91 @@ describe('détail (GET /events/:id)', () => {
     expect((await request(app).get(`/api/v1/events/${unknown}`)).status).toBe(401);
     expect((await request(app).get('/api/v1/events/abc').set(headers)).status).toBe(400);
     expect((await request(app).get(`/api/v1/events/${unknown}`).set(headers)).status).toBe(404);
+  });
+});
+
+describe('Presque complet (lowStock / almostFull, seuil de 20 %)', () => {
+  /** Un type de 100 billets dont `sold` sont vendus : `available` = 100 − sold. */
+  const publishedWith = async (sold: number[], total = 100) => {
+    const owner = await organizer();
+    const buyer = await participant();
+    const event = await seedEvent(owner.user.id);
+    for (const [index, quantitySold] of sold.entries()) {
+      const type = await factories.ticketType(prisma, event.id, total);
+      await prisma.ticketType.update({
+        where: { id: type.id },
+        data: { quantitySold, priceXof: 1000 * (index + 1) },
+      });
+    }
+    const res = await request(app).get(`/api/v1/events/${event.id}`).set(buyer.headers);
+    return res.body.event as {
+      almostFull: boolean;
+      ticketTypes: { available: number; lowStock: boolean }[];
+    };
+  };
+
+  it('lowStock : faux à 21 % restants, vrai à 20 % pile, vrai à 1 restant', async () => {
+    const { ticketTypes } = await publishedWith([79, 80, 99]);
+    expect(ticketTypes.map((t) => [t.available, t.lowStock])).toEqual([
+      [21, false],
+      [20, true],
+      [1, true],
+    ]);
+  });
+
+  it('lowStock : faux quand le type est épuisé (c’est « Complet », pas « Presque complet »)', async () => {
+    const { ticketTypes } = await publishedWith([100]);
+    expect(ticketTypes[0]).toMatchObject({ available: 0, lowStock: false });
+  });
+
+  it('lowStock tient compte des places réservées par une commande en attente', async () => {
+    const owner = await organizer();
+    const buyer = await participant();
+    const event = await seedEvent(owner.user.id);
+    const type = await factories.ticketType(prisma, event.id, 10);
+    await prisma.ticketType.update({ where: { id: type.id }, data: { quantitySold: 5 } });
+    await factories.order(prisma, buyer.user.id, type.id, 3); // 10 − 5 − 3 = 2 restants
+
+    const res = await request(app).get(`/api/v1/events/${event.id}`).set(buyer.headers);
+    expect(res.body.event.ticketTypes[0]).toMatchObject({ available: 2, lowStock: true });
+    expect(res.body.event.almostFull).toBe(true);
+  });
+
+  it('almostFull : calculé sur le total des billets, pas sur un seul type', async () => {
+    // Deux types de 100 : 20 + 100 restants = 120 sur 200 → 60 %, pas presque complet,
+    // même si le premier type est presque épuisé.
+    const loose = await publishedWith([80, 0]);
+    expect(loose.ticketTypes[0]?.lowStock).toBe(true);
+    expect(loose.almostFull).toBe(false);
+
+    // 10 + 30 restants = 40 sur 200 → 20 % pile → presque complet.
+    const tight = await publishedWith([90, 70]);
+    expect(tight.almostFull).toBe(true);
+
+    // 10 + 31 restants = 41 sur 200 → 20,5 % → pas presque complet.
+    const justAbove = await publishedWith([90, 69]);
+    expect(justAbove.almostFull).toBe(false);
+  });
+
+  it('almostFull : faux sans type de billet, faux quand tout est vendu', async () => {
+    expect((await publishedWith([])).almostFull).toBe(false);
+    expect((await publishedWith([100, 100])).almostFull).toBe(false);
+  });
+
+  it('almostFull ignore un type dont la vente est terminée', async () => {
+    const owner = await organizer();
+    const buyer = await participant();
+    const event = await seedEvent(owner.user.id);
+    const closed = await factories.ticketType(prisma, event.id, 100);
+    await prisma.ticketType.update({
+      where: { id: closed.id },
+      data: { quantitySold: 0, salesEndAt: new Date(Date.now() - 60_000) },
+    });
+    const open = await factories.ticketType(prisma, event.id, 100);
+    await prisma.ticketType.update({ where: { id: open.id }, data: { quantitySold: 85 } });
+
+    const res = await request(app).get(`/api/v1/events/${event.id}`).set(buyer.headers);
+    // Seul le type en vente compte : 15 restants sur 100 → presque complet.
+    expect(res.body.event.almostFull).toBe(true);
   });
 });

@@ -112,7 +112,8 @@ model Event {
   organizerId        String      @map("organizer_id") @db.Uuid
   title              String      @db.VarChar(120)
   description        String
-  genre              String      @db.VarChar(40)
+  /// Styles choisis par l'organisateur (1 à 5, liste EVENT_STYLES du package partagé).
+  styles             String[]    @default([])
   venue              String      @db.VarChar(120)
   city               String      @db.VarChar(60)
   startsAt           DateTime    @map("starts_at") @db.Timestamptz(3)
@@ -136,7 +137,7 @@ model Event {
 
   @@index([status, startsAt])
   @@index([organizerId])
-  @@index([genre, city])
+  @@index([city])
   @@map("events")
 }
 
