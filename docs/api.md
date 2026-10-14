@@ -120,13 +120,13 @@ Tous les endpoints exigent un access token. Création, modification et ajout de 
 
 ### Liste : `GET /api/v1/events`
 
-| Paramètre | Règle                                                                               |
-| --------- | ----------------------------------------------------------------------------------- |
-| `genre`   | Égalité, sans tenir compte de la casse                                              |
-| `city`    | Égalité, sans tenir compte de la casse                                              |
-| `date`    | `AAAA-MM-JJ`, jour en heure du Bénin (UTC+1) : événements qui commencent ce jour-là |
-| `cursor`  | Identifiant du dernier événement de la page précédente (`nextCursor`)               |
-| `limit`   | 1 à 50, 20 par défaut                                                               |
+| Paramètre | Règle                                                                                                                                    |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `styles`  | Styles séparés par des virgules (`Rap,Concert`) : événements ayant au moins un de ces styles (liste fermée, 400 si un style est inconnu) |
+| `city`    | Égalité, sans tenir compte de la casse                                                                                                   |
+| `date`    | `AAAA-MM-JJ`, jour en heure du Bénin (UTC+1) : événements qui commencent ce jour-là                                                      |
+| `cursor`  | Identifiant du dernier événement de la page précédente (`nextCursor`)                                                                    |
+| `limit`   | 1 à 50, 20 par défaut                                                                                                                    |
 
 La liste ne contient que les événements `PUBLISHED` qui ne sont pas terminés, triés par date de début croissante. Réponse : `{ data: EventDto[], nextCursor: string | null }`.
 
@@ -150,6 +150,10 @@ Le propriétaire reçoit `capacity` et `organizerFee: { totalXof, paidXof, dueXo
 ### Disponibilité
 
 Chaque type de billet renvoie `available` = quantité totale − billets vendus − billets réservés par des commandes `PENDING` non expirées (DEC-007), jamais négatif. `onSale` indique que l'événement est publié et que la date de fin de vente n'est pas dépassée. `quantityTotal` et `quantitySold` ne sont renvoyés qu'à l'organisateur propriétaire.
+
+« Presque complet » (NOISE-014) est calculé par l'API pour que tous les clients affichent la même chose. `lowStock` (par type de billet) vaut `true` quand il reste 20 % des places ou moins (`LOW_STOCK_RATIO` dans `@noise/shared`), arrondi vers le bas, sans être épuisé : sur 100 billets, 20 restants = vrai, 21 = faux, 0 = faux (c'est « Complet »). `almostFull` (par événement) applique la même règle au total des types encore en vente (ceux dont `onSale` est vrai) ; faux sans type de billet ou quand tout est vendu.
+
+Styles : un événement porte `styles`, de 1 à 5 valeurs choisies par l'organisateur dans la liste fermée `EVENT_STYLES` : Afrobeat, Amapiano, Rap, Électro, Concert, Soirée, Gospel, Zouk, Coupé-décalé, Dancehall, Jazz, R&B, Festival, Autre. Pas de doublon. Ce champ remplace l'ancien `genre` (texte libre) à la création et à la modification ; la migration reporte les anciens genres connus et met `Autre` pour les autres.
 
 ### `POST /api/v1/events/:id/poster` (NOISE-012)
 

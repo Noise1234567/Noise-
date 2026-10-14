@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   createEventSchema,
   createTicketTypeSchema,
+  isLowStock,
+  LOW_STOCK_RATIO,
   listEventsQuerySchema,
   listMyEventsQuerySchema,
   updateEventSchema,
@@ -12,7 +14,7 @@ const inDays = (days: number) => new Date(Date.now() + days * 86_400_000).toISOS
 const validEvent = {
   title: 'Soirée Afrobeats',
   description: 'Description',
-  genre: 'Afrobeats',
+  styles: ['Afrobeat', 'Soirée'],
   venue: 'Salle',
   city: 'Cotonou',
   startsAt: inDays(5),
@@ -123,5 +125,70 @@ describe('listEventsQuerySchema', () => {
     expect(listEventsQuerySchema.safeParse({ cursor: 'abc' }).success).toBe(false);
     expect(listEventsQuerySchema.safeParse({ date: '10/05/2030' }).success).toBe(false);
     expect(listEventsQuerySchema.safeParse({ date: '2030-05-10' }).success).toBe(true);
+  });
+});
+
+describe('styles', () => {
+  it('accepte 1 à 5 styles distincts de la liste', () => {
+    expect(createEventSchema.safeParse({ ...validEvent, styles: ['Rap'] }).success).toBe(true);
+    expect(
+      createEventSchema.safeParse({
+        ...validEvent,
+        styles: ['Rap', 'Concert', 'Soirée', 'Gospel', 'Coupé-décalé'],
+      }).success,
+    ).toBe(true);
+  });
+
+  it('refuse aucun style, plus de 5, un doublon ou un style inconnu', () => {
+    expect(createEventSchema.safeParse({ ...validEvent, styles: [] }).success).toBe(false);
+    expect(
+      createEventSchema.safeParse({
+        ...validEvent,
+        styles: ['Rap', 'Concert', 'Soirée', 'Gospel', 'Zouk', 'Jazz'],
+      }).success,
+    ).toBe(false);
+    expect(createEventSchema.safeParse({ ...validEvent, styles: ['Rap', 'Rap'] }).success).toBe(
+      false,
+    );
+    expect(createEventSchema.safeParse({ ...validEvent, styles: ['Techno'] }).success).toBe(false);
+  });
+
+  it('filtre de liste : styles séparés par des virgules', () => {
+    expect(listEventsQuerySchema.parse({ styles: 'Rap, Électro' }).styles).toEqual([
+      'Rap',
+      'Électro',
+    ]);
+    expect(listEventsQuerySchema.parse({}).styles).toBeUndefined();
+    expect(listEventsQuerySchema.safeParse({ styles: 'Rap,Techno' }).success).toBe(false);
+    expect(listEventsQuerySchema.safeParse({ styles: 'Rap,' }).success).toBe(false);
+  });
+});
+
+describe('isLowStock (Presque complet à 20 %)', () => {
+  it('vaut 20 %', () => {
+    expect(LOW_STOCK_RATIO).toBe(0.2);
+  });
+
+  it('est vrai à la limite exacte et en dessous', () => {
+    expect(isLowStock(20, 100)).toBe(true);
+    expect(isLowStock(1, 100)).toBe(true);
+    expect(isLowStock(7, 35)).toBe(true);
+    expect(isLowStock(1, 5)).toBe(true);
+  });
+
+  it('est faux au-dessus du seuil', () => {
+    expect(isLowStock(21, 100)).toBe(false);
+    expect(isLowStock(3, 14)).toBe(false);
+    expect(isLowStock(2, 5)).toBe(false);
+  });
+
+  it('est faux quand tout est vendu ou quand le total est nul', () => {
+    expect(isLowStock(0, 100)).toBe(false);
+    expect(isLowStock(0, 0)).toBe(false);
+    expect(isLowStock(5, 0)).toBe(false);
+  });
+
+  it('arrondit vers le bas : sur 14 billets, 2 restants = presque complet, 3 non', () => {
+    expect(isLowStock(2, 14)).toBe(true);
   });
 });
