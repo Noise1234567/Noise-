@@ -7,6 +7,7 @@ import RootLayout from '../../app/_layout';
 import { StateView } from '../components/StateView';
 import { useSession } from '../state/session';
 
+jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
 jest.mock('react-native-safe-area-context', () => ({
   SafeAreaProvider: ({ children }: { children: ReactNode }) => children,
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
@@ -18,6 +19,9 @@ jest.mock('expo-splash-screen', () => ({
 }));
 jest.mock('expo-status-bar', () => ({ StatusBar: () => null }));
 jest.mock('../auth/session-service', () => ({ hydrateSession: jest.fn() }));
+jest.mock('../features/participant/events-api', () => ({
+  eventsApi: { list: jest.fn().mockResolvedValue({ data: [], nextCursor: null }) },
+}));
 jest.mock('expo-router', () => {
   const { Text } = jest.requireActual('react-native');
   const Stack = ({ children }: { children: ReactNode }) => children;
@@ -68,11 +72,11 @@ describe('redirection selon le rôle', () => {
 });
 
 describe('accueils vides', () => {
-  it('participant : salutation et liste vide', async () => {
+  it('participant : titre Événements et liste vide', async () => {
     signInAs('PARTICIPANT');
     await render(<Home />);
-    expect(screen.getByText('Bonjour, Awa')).toBeTruthy();
-    expect(screen.getByText('Aucune soirée pour le moment')).toBeTruthy();
+    expect(screen.getByText('Événements')).toBeTruthy();
+    expect(await screen.findByText('Aucun festival pour le moment')).toBeTruthy();
   });
 
   it('organisateur : salutation et tableau de bord vide', async () => {

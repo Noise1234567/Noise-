@@ -1,19 +1,153 @@
-import { Greeting } from '../../src/components/Greeting';
+import { Ionicons } from '@expo/vector-icons';
+import { useMemo, useState } from 'react';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+
+import { Banner } from '../../src/components/Banner';
+import { Button } from '../../src/components/Button';
 import { RoleHeader } from '../../src/components/RoleHeader';
 import { Screen } from '../../src/components/Screen';
-import { StateView } from '../../src/components/StateView';
+import { Text } from '../../src/components/Text';
+import { EventCard } from '../../src/features/participant/EventCard';
+import { EventCardSkeleton } from '../../src/features/participant/EventCardSkeleton';
+import { PickerPill } from '../../src/features/participant/PickerPill';
+import { StyleChips } from '../../src/features/participant/StyleChips';
+import { eventsApi } from '../../src/features/participant/events-api';
+import {
+  CITIES,
+  DEFAULT_CITY,
+  dateLabel,
+  dateOptions,
+} from '../../src/features/participant/filters';
+import { listSubtitle } from '../../src/features/participant/format';
+import { useEventList } from '../../src/features/participant/useEventList';
+import { colors, spacing } from '../../src/theme';
 
-/** Écran 6 : Accueil Événements. Vide tant que la liste des soirées n'existe pas (NOISE-014). */
+/** Écran 6 : Accueil Événements (vue Participant), avec ses états 6c à 6f. */
 export default function Home() {
+  const [selectedStyles, setStyles] = useState<string[]>([]);
+  const [city, setCity] = useState<string | undefined>(DEFAULT_CITY);
+  const [date, setDate] = useState<string | undefined>(undefined);
+
+  const list = useEventList(eventsApi.list, { styles: selectedStyles, city, date });
+  const days = useMemo(() => dateOptions(), []);
+  const filtered = selectedStyles.length > 0 || city !== DEFAULT_CITY || date !== undefined;
+
+  const resetFilters = () => {
+    setStyles([]);
+    setCity(DEFAULT_CITY);
+    setDate(undefined);
+  };
+
+  const scope =
+    selectedStyles.length > 0 ? selectedStyles.join(' · ') : (city ?? 'Toutes les villes');
+  // Erreur sur un rafraîchissement ou une page suivante alors qu'une liste est déjà affichée :
+  // on garde la liste en lecture seule et on le dit (maquette 6f), plutôt que d'effacer l'écran.
+  const offline = list.error?.network === true && list.events.length > 0;
+
   return (
     <Screen>
-      <RoleHeader />
-      <Greeting />
-      <StateView
-        kind="empty"
-        title="Aucune soirée pour le moment"
-        message="Les prochains événements de Cotonou apparaîtront ici."
-      />
+      <View style={styles.header}>
+        <View style={styles.switcher}>
+          <RoleHeader />
+        </View>
+        <Ionicons
+          name="notifications-outline"
+          size={24}
+          color={colors.text}
+          accessibilityLabel="Notifications"
+        />
+      </View>
+      <Text variant="title">Événements</Text>
+      <Text muted style={styles.subtitle}>
+        {list.loading ? 'Chargement…' : listSubtitle(scope, list.events.length, list.hasMore)}
+      </Text>
+
+      <View style={styles.pills}>
+        <PickerPill
+          icon="location-outline"
+          title="Ville"
+          label={city ?? 'Toutes les villes'}
+          selected={city}
+          onSelect={setCity}
+          options={[
+            ...CITIES.map((value) => ({ value: value as string | undefined, label: value })),
+            { value: undefined, label: 'Toutes les villes' },
+          ]}
+        />
+        <PickerPill
+          icon="calendar-outline"
+          title="Date"
+          label={dateLabel(date)}
+          selected={date}
+          onSelect={setDate}
+          options={days}
+        />
+      </View>
+      <StyleChips selected={selectedStyles} onChange={setStyles} />
+
+      {offline ? (
+        <View style={styles.offline}>
+          <Banner kind="warning">
+            Hors ligne · lecture seule. Vos billets restent disponibles.
+          </Banner>
+          <Button variant="text" label="Réessayer" onPress={list.retry} />
+        </View>
+      ) : null}
+
+      {list.loading ? (
+        <View accessibilityLabel="Chargement des soirées" accessibilityLiveRegion="polite">
+          {[0, 1, 2].map((key) => (
+            <EventCardSkeleton key={key} />
+          ))}
+        </View>
+      ) : list.error && list.events.length === 0 ? (
+        <View style={styles.state}>
+          <Text variant="section">Impossible de charger les soirées</Text>
+          <Text muted style={styles.center}>
+            Votre connexion semble faible. Vos billets restent dans Mes billets.
+          </Text>
+          <Button variant="secondary" label="Réessayer" onPress={list.retry} />
+        </View>
+      ) : list.events.length === 0 ? (
+        <View style={styles.state}>
+          <Ionicons name="musical-notes-outline" size={48} color={colors.textMuted} />
+          <Text variant="section">Aucun festival pour le moment</Text>
+          <Text muted style={styles.center}>
+            Essayez un autre genre ou une autre date.
+          </Text>
+          {filtered ? (
+            <Button variant="secondary" label="Réinitialiser les filtres" onPress={resetFilters} />
+          ) : null}
+        </View>
+      ) : (
+        <FlatList
+          data={list.events}
+          keyExtractor={(event) => event.id}
+          renderItem={({ item }) => <EventCard event={item} />}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={list.refreshing}
+              onRefresh={list.refresh}
+              tintColor={colors.secondary}
+            />
+          }
+          // La page suivante se charge quand il reste environ 2 cartes (maquette 6).
+          onEndReached={list.loadMore}
+          onEndReachedThreshold={1.5}
+          ListFooterComponent={list.loadingMore ? <EventCardSkeleton /> : null}
+        />
+      )}
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+  switcher: { flex: 1, marginRight: spacing.lg },
+  subtitle: { marginTop: spacing.xs, marginBottom: spacing.lg },
+  pills: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
+  offline: { marginBottom: spacing.md },
+  state: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
+  center: { textAlign: 'center' },
+});
