@@ -1,12 +1,19 @@
-import { Placeholder } from '../../src/components/Placeholder';
+import { Greeting } from '../../src/components/Greeting';
+import { RoleHeader } from '../../src/components/RoleHeader';
+import { Screen } from '../../src/components/Screen';
+import { StateView } from '../../src/components/StateView';
 
-/** Écran 18 : Tableau de bord Organisateur (NOISE-013 et suivantes). */
+/** Écran 18 : Tableau de bord Organisateur. Vide tant qu'aucun événement n'existe (NOISE-018). */
 export default function Dashboard() {
   return (
-    <Placeholder
-      withRoleSwitcher
-      title="Tableau de bord"
-      note="Vos ventes et vos prochains événements arrivent avec la vue Organisateur."
-    />
+    <Screen>
+      <RoleHeader />
+      <Greeting />
+      <StateView
+        kind="empty"
+        title="Aucun événement créé"
+        message="Vos ventes et vos prochains événements apparaîtront ici."
+      />
+    </Screen>
   );
 }
