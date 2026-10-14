@@ -29,7 +29,7 @@ async function eventWithSales() {
       organizerId: organizer.id,
       title: 'Afro Night Cadjehoun',
       description: 'Test',
-      genre: 'Afrobeats',
+      styles: ['Afrobeat'],
       venue: 'Club',
       city: 'Cotonou',
       startsAt: new Date('2026-11-01T21:00:00Z'),
