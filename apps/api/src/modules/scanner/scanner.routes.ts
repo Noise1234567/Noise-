@@ -1,12 +1,17 @@
 import {
   createScannerLinkSchema,
   eventIdParamSchema,
+  scanValidateRequestSchema,
   scannerLinkIdParamSchema,
   type CreateScannerLinkInput,
+  type ScanValidateRequest,
 } from '@noise/shared';
 import { Router, type Request } from 'express';
 import { requireAuth, requireRole } from '../../middlewares/auth.js';
+import { scannerRateLimit } from '../../middlewares/rate-limit.js';
 import { validateBody, validateParams } from '../../middlewares/validate.js';
+import { requireScannerLink, scannerLinkOf } from './require-scanner-link.js';
+import type { ScanService } from './scan.service.js';
 import type { ScannerLinksService } from './scanner-links.service.js';
 
 /**
@@ -52,5 +57,25 @@ export function createScannerLinksRouter(
     },
   );
 
+  return router;
+}
+
+/**
+ * POST /api/v1/scanner/validate (NOISE-025, docs/qr-scanner.md section 3) : appelé par le
+ * scanner web du staff avec le jeton de son lien. Le résultat (ACCEPTED, ALREADY_USED…) est
+ * toujours une réponse 200 : seul un lien invalide (401) ou un corps illisible (400) échoue.
+ */
+export function createScanRouter(links: ScannerLinksService, scans: ScanService): Router {
+  const router = Router();
+  router.post(
+    '/scanner/validate',
+    requireScannerLink(links),
+    scannerRateLimit(),
+    validateBody(scanValidateRequestSchema),
+    async (req, res) => {
+      const { qrCode } = req.body as ScanValidateRequest;
+      res.json(await scans.validate(scannerLinkOf(res), qrCode));
+    },
+  );
   return router;
 }

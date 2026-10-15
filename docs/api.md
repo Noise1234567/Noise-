@@ -235,3 +235,23 @@ Réponse 200 : `{ links: ScannerLinkDto[] }`, le plus récent d'abord. Le jeton 
 Réponse 200 : `{ link }` avec `status: REVOKED`. Rejouer la révocation renvoie le même résultat, sans changer la date.
 
 Configuration : `SCANNER_JWT_SECRET` (32 caractères minimum, différent de `JWT_ACCESS_SECRET`) est obligatoire hors tests ; `SCANNER_URL` est facultative. La partie mobile (générer et partager le lien) reste à faire.
+
+## 8. Validation des QR à l'entrée (NOISE-025)
+
+### `POST /api/v1/scanner/validate`
+
+Appelé par le scanner web du staff. Authentification : `Authorization: Bearer <jeton du lien scanner>` ; un lien absent, expiré, révoqué ou falsifié renvoie 401. Corps : `{ qrCode }` (contenu brut lu dans le QR, 512 caractères au plus ; 400 sinon). Contrat partagé : `packages/shared/src/schemas/scanner.ts`.
+
+Réponse 200 `{ result, holderName?, ticketTypeName?, usedAt? }`, quel que soit le résultat :
+
+| `result`       | Cas                                                            | Champs ajoutés                   |
+| -------------- | -------------------------------------------------------------- | -------------------------------- |
+| `ACCEPTED`     | Billet valable : il passe à `USED`, l'heure d'entrée est notée | nom, type de billet              |
+| `ALREADY_USED` | Billet déjà scanné (capture d'écran, deuxième passage)         | nom, type, `usedAt` (1re entrée) |
+| `INVALID`      | QR falsifié, abîmé ou billet inconnu                           | aucun                            |
+| `CANCELLED`    | Billet annulé (événement annulé, remboursement)                | nom, type de billet              |
+| `WRONG_EVENT`  | Billet d'un autre événement que celui du lien                  | nom, type de billet              |
+
+Le billet est verrouillé (`SELECT ... FOR UPDATE`) puis mis à jour dans la même transaction : plusieurs téléphones qui scannent le même QR au même instant ne laissent entrer qu'une personne. Chaque tentative est inscrite dans `ScanLog`. Ordre exact des contrôles : `docs/qr-scanner.md` section 3.
+
+Limitation : 60 validations par minute et par lien (429 au-delà). La route n'est pas soumise à la limite globale par IP, car tout le staff d'une soirée partage souvent la même connexion. Configuration : `SCANNER_JWT_SECRET` et `QR_SIGNING_SECRET`.
