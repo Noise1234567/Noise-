@@ -247,11 +247,12 @@ Choix du fournisseur (NOISE-010, 2026-10-01) — statut : Acceptée (proposée p
 
 - Remplace : le reversement quotidien de DEC-024. La commission de 10 % (DEC-024) et la répartition de chaque vente (DEC-022) ne changent pas.
 - Contexte : le reversement automatique le lendemain de chaque journée de vente multiplie les transferts, sort l'argent avant l'événement même quand l'organisateur n'en a pas besoin, et augmente l'exposition de Noise en cas d'annulation (DEC-025).
-- Choix (décision d'équipe du 2026-10-15) :
-  - l'organisateur voit son solde dans l'application, en temps réel : la part qui lui revient sur les ventes confirmées (90 % du prix des billets, sans la commission Noise ni les frais de paiement payés par l'acheteur), moins les virements déjà effectués ;
-  - il peut demander un virement quand il le souhaite, du montant qu'il veut, dans la limite de son solde ;
-  - le premier virement est gratuit ; à partir du deuxième, chaque virement est payant ;
-  - s'il n'a demandé aucun virement ou un seul, le reste de son solde lui est versé automatiquement au plus tard 72 heures après la fin de l'événement.
+- Choix (décisions d'équipe du 2026-10-15) :
+  - un solde par événement. L'organisateur le voit dans l'application, en temps réel : la part qui lui revient sur les ventes confirmées de l'événement (90 % du prix des billets, sans la commission Noise ni les frais de paiement payés par l'acheteur), moins les virements déjà effectués ;
+  - deux montants affichés : « disponible » (fonds déjà reçus de FedaPay, qui peuvent être virés) et « en attente » (ventes confirmées dont FedaPay n'a pas encore versé les fonds ; environ 3 jours en sandbox). Noise n'avance jamais d'argent sur sa trésorerie ;
+  - chaque événement a un virement gratuit, programmé automatiquement au plus tard 72 heures après la fin de l'événement, pour tout le solde ;
+  - l'organisateur peut déclencher ce virement gratuit plus tôt, quand il le souhaite et du montant qu'il veut, dans la limite du solde disponible ; tous les virements suivants de cet événement sont alors payants ;
+  - pas de plafond avant l'événement, pas de montant minimum : un virement payant doit seulement être supérieur à ses frais.
 - Raison : l'organisateur garde la possibilité de financer sa soirée avec les premières ventes, mais l'argent reste par défaut chez Noise jusqu'à la fin de l'événement. Moins de transferts, et moins de sommes à récupérer en cas d'annulation.
 - Conséquences :
   - en cas d'annulation (DEC-025), les sommes à renvoyer par l'organisateur sont les virements déjà effectués ; le reste du solde est retenu par Noise ;
@@ -259,11 +260,8 @@ Choix du fournisseur (NOISE-010, 2026-10-01) — statut : Acceptée (proposée p
   - nouvelles tâches : NOISE-050 (API du solde et des virements) et NOISE-051 (écran « Solde » de l'organisateur) ;
   - chaque virement est tracé (demande, montant, frais, statut, identifiant de transfert FedaPay) et idempotent.
 - Points ouverts :
-  - montant des frais à partir du deuxième virement (fixe ou pourcentage), et s'ils sont déduits du montant viré ;
-  - solde par événement ou global pour l'organisateur (le versement à 72 h suggère un solde par événement) ;
-  - après deux virements ou plus, le reste est-il aussi versé automatiquement après l'événement, et gratuitement ;
-  - argent pas encore reçu de FedaPay : en sandbox, les fonds arrivent sur la balance environ 3 jours après le paiement. Distinguer un solde « disponible » (fonds reçus) d'un solde « en attente », sinon chaque virement anticipé est une avance sur la trésorerie de Noise ;
-  - plafond de virement avant l'événement (risque d'un organisateur qui retire tout puis disparaît) et montant minimum d'un virement ;
-  - numéro Mobile Money de destination : celui du compte vérifié (DEC-018) ou un autre, et procédure de changement ;
-  - gratuité des transferts FedaPay vers Mobile Money à confirmer par écrit (NOISE-045) : elle conditionne le coût réel du premier virement et du versement final.
+  - frais des virements payants : proposé de les déduire du montant viré (l'écran affiche « vous recevrez X, frais Y » avant confirmation), plutôt qu'un paiement séparé qui ajouterait une étape et des frais de paiement sur les frais ; à confirmer. Montant (fixe ou pourcentage) à fixer une fois connu le coût réel d'un transfert FedaPay ;
+  - reste du solde après l'événement quand le virement gratuit a déjà été utilisé : proposé de le verser automatiquement à 72 h, frais déduits, pour qu'aucun argent ne reste bloqué chez Noise ; ou de le laisser sur le solde jusqu'à une demande de l'organisateur. À trancher ;
+  - numéro Mobile Money qui reçoit les virements : proposé le numéro du compte de l'organisateur par défaut, un autre numéro seulement au nom de la même personne vérifiée (DEC-018), et tout changement de numéro confirmé par le mot de passe puis suivi de 24 h sans virement (protection contre un vol de compte). À trancher ;
+  - gratuité des transferts FedaPay vers Mobile Money et possibilité de virer des fonds encore en attente : à confirmer par écrit (NOISE-045).
 - Personnes : Yannis, Orias (et l'équipe).
