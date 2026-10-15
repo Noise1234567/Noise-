@@ -863,6 +863,23 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Tests :
   - Tests UI : montant supérieur au solde refusé, frais du deuxième virement affichés, erreurs réseau avec « Réessayer »
 
+#### NOISE-052 — Confirmation du numéro de virement (SMS) et de l'e-mail
+
+- Objectif : Confirmer que l'organisateur détient le numéro qui reçoit les virements et son adresse e-mail avant tout virement (DEC-027).
+- Responsable : à attribuer · Reviewer : l'autre développeur
+- Sprint : S5 · Type : Feature · Domaine : Backend · Priorité : P1 · Estimation : 8 h
+- Dépendances : NOISE-047, NOISE-050 ; fournisseur SMS (DEC-017) ; fournisseur d'e-mails à choisir · Dépend d'un service externe
+- Statut : À faire
+- Fichiers concernés : apps/api/src/modules/verification/_, apps/mobile/src/features/organizer/_
+- Critères d'acceptation :
+  - [ ] Code à usage unique envoyé par SMS au numéro de virement, et par e-mail à l'adresse de l'organisateur ; expiration courte, nombre d'essais limité
+  - [ ] Code stocké haché, jamais journalisé (CLAUDE.md section 9)
+  - [ ] Virement refusé tant que le numéro et l'e-mail ne sont pas confirmés ; nouvelle confirmation à chaque changement de numéro
+  - [ ] Limitation de débit sur l'envoi des codes (coût des SMS, abus)
+- Tests :
+  - Intégration : code faux, expiré, rejoué ; envoi limité ; virement refusé avant confirmation
+  - Fournisseurs SMS et e-mail simulés (fake), jamais appelés en test
+
 ### M5 — Google Play
 
 #### NOISE-038 — Google Play Console et test fermé
