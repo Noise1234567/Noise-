@@ -18,6 +18,8 @@ export default function OrganizerLayout() {
       <Tabs.Screen name="index" options={{ title: 'Tableau de bord' }} />
       <Tabs.Screen name="events" options={{ title: 'Mes événements' }} />
       <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
+      {/* Assistant de création : plein écran, sans onglet ni barre. */}
+      <Tabs.Screen name="create-event" options={{ href: null, tabBarStyle: { display: 'none' } }} />
     </Tabs>
   );
 }
