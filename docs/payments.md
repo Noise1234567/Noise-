@@ -151,17 +151,17 @@ NOISE-019 (`apps/api/src/modules/payments/payments.service.ts`) :
 - Montant différent → pas de confirmation, alerte.
 - Commande expirée → pas de billet, alerte de remboursement.
 
-## 7. Frais, reversements et remboursements (DEC-023, DEC-024, DEC-025)
+## 7. Frais, reversements et remboursements (DEC-023, DEC-024, DEC-025, DEC-027)
 
 Règles décidées en réunion d'équipe le 2026-10-08. Montants en FCFA entiers.
 
 - Frais d'organisation (DEC-023) : 40 FCFA par participant déclaré (capacité de l'événement) si la capacité dépasse 50, gratuit jusqu'à 50 ; en cas d'augmentation, l'organisateur paie la différence entre les frais du nouveau total et ce qu'il a déjà payé ; offerts aux premiers organisateurs prospectés. Ils s'ajoutent à la commission.
 - Commission (DEC-024) : 10 % du prix de chaque billet vendu. Les frais du fournisseur sont payés par l'acheteur en plus du billet et n'entrent pas dans ce calcul.
 - Paiement des frais d'organisation (DEC-023) : avant publication, par Mobile Money via FedaPay, même parcours que l'achat d'un billet.
-- Reversement (DEC-024) : automatique, par transfert FedaPay vers le Mobile Money de l'organisateur ; 90 % des ventes, versés le lendemain de chaque journée de vente (journée en heure de Cotonou). Transferts vers Mobile Money annoncés gratuits par FedaPay, fonction activée sur demande au support (à confirmer, NOISE-045). Chaque reversement est tracé (date, montant, identifiant de transfert) : l'annulation en dépend.
+- Reversement (DEC-027, remplace le reversement quotidien de DEC-024) : l'organisateur voit en temps réel son solde (90 % des ventes confirmées, moins les virements déjà faits) et demande un virement quand il veut, du montant qu'il veut. Le premier virement est gratuit, les suivants sont payants (montant à fixer). Sans virement ou après un seul, le reste est versé automatiquement au plus tard 72 h après la fin de l'événement. Virements par transfert FedaPay vers le Mobile Money de l'organisateur ; transferts annoncés gratuits par FedaPay, fonction activée sur demande au support (à confirmer, NOISE-045). Chaque virement est tracé (date, montant, frais, identifiant de transfert) : l'annulation en dépend. Attention : en sandbox, les fonds arrivent sur la balance FedaPay environ 3 jours après le paiement ; un virement demandé avant est une avance sur la trésorerie de Noise (point ouvert de DEC-027).
 - Annulation par l'organisateur (DEC-025) :
   - frais d'annulation = ventes totales × 10 % ;
-  - l'organisateur renvoie sous 10 jours les sommes déjà reversées ; la part non encore reversée est retenue ;
+  - l'organisateur renvoie sous 10 jours les virements déjà effectués ; le reste du solde est retenu ;
   - après le retour des fonds, chaque acheteur est remboursé de 100 % du prix de ses billets, hors frais de paiement, par transfert automatique si l'API FedaPay le permet (NOISE-045), sinon manuellement ;
   - sans paiement sous 10 jours : e-mail et SMS, relance deux à trois jours après avec un délai de 48 à 72 h, puis bannissement définitif et poursuites ; les acheteurs sont informés d'une enquête de 7 jours au plus, puis remboursés sous 10 jours sur la trésorerie de Noise si l'enquête est concluante (NOISE-046).
 

@@ -765,7 +765,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 
 #### NOISE-045 — Transferts automatiques FedaPay (reversements et remboursements)
 
-- Objectif : Vérifier en sandbox puis utiliser l'API de transfert de FedaPay pour les reversements quotidiens (DEC-024) et les remboursements d'annulation (DEC-025).
+- Objectif : Vérifier en sandbox puis utiliser l'API de transfert de FedaPay pour les virements aux organisateurs (DEC-027 : à la demande, et versement automatique du reste après l'événement) et les remboursements d'annulation (DEC-025).
 - Responsable : Commun · Reviewer : revue mutuelle (binôme)
 - Sprint : S5 · Type : Feature · Domaine : Backend · Priorité : P1 · Estimation : 8 h
 - Dépendances : NOISE-017, NOISE-039 · Dépend d'un service externe
@@ -774,7 +774,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Critères d'acceptation :
   - [ ] Payouts activés par le support FedaPay ; gratuité vers Mobile Money confirmée par écrit
   - [ ] API de transfert vérifiée en sandbox : délais, statuts, webhooks
-  - [ ] Reversement automatique quotidien (DEC-024) et remboursements après annulation (DEC-025)
+  - [ ] Virements demandés par l'organisateur et versement automatique du reste au plus tard 72 h après l'événement (DEC-027), remboursements après annulation (DEC-025)
   - [ ] Transfert idempotent, rejouable sans double paiement
 - Tests :
   - Intégration avec le fake provider : transfert rejoué, échec puis nouvelle tentative
@@ -825,6 +825,41 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
   - [ ] Création et publication d'événement refusées (403) tant que l'identité n'est pas vérifiée ; message clair dans l'app
 - Tests :
   - Intégration : organisateur non vérifié → 403 à la création ; vérifié → 201 ; un non-administrateur ne peut ni voir les pièces ni valider
+
+#### NOISE-050 — Solde de l'organisateur et virements à la demande (API)
+
+- Objectif : Exposer le solde de l'organisateur en temps réel et lui permettre de demander un virement (DEC-027).
+- Responsable : à attribuer · Reviewer : l'autre développeur
+- Sprint : S5 · Type : Feature · Domaine : Backend · Priorité : P1 · Estimation : 10 h
+- Dépendances : NOISE-019, NOISE-039 ; points ouverts de DEC-027 ; transferts réels avec NOISE-045
+- Statut : À faire
+- Fichiers concernés : apps/api/prisma/schema.prisma, apps/api/src/modules/payouts/*, packages/shared/src/schemas/payouts.ts, docs/api.md
+- Critères d'acceptation :
+  - [ ] Modèle Payout (organisateur, événement si solde par événement, montant, frais, statut, identifiant de transfert, clé d'idempotence)
+  - [ ] GET du solde : part organisateur des ventes PAID, moins les virements effectués ou en cours ; disponible / en attente selon la décision sur les fonds FedaPay
+  - [ ] POST d'une demande de virement : montant ≤ solde disponible, premier virement gratuit, frais appliqués ensuite, verrou contre deux demandes simultanées
+  - [ ] Tâche planifiée : versement automatique du reste au plus tard 72 h après la fin de l'événement (0 ou 1 virement demandé)
+  - [ ] Organisateur propriétaire uniquement ; identité vérifiée exigée (DEC-018)
+- Tests :
+  - Unitaires : calcul du solde, frais à partir du deuxième virement
+  - Intégration : 401, 403, montant supérieur au solde, demande rejouée (idempotence)
+  - Concurrence : deux demandes simultanées ne dépassent jamais le solde
+
+#### NOISE-051 — Mobile organisateur : écran « Solde » et demande de virement
+
+- Objectif : Afficher le solde en temps réel et demander un virement depuis l'application (DEC-027).
+- Responsable : à attribuer · Reviewer : l'autre développeur
+- Sprint : S5 · Type : Feature · Domaine : Mobile · Priorité : P1 · Estimation : 6 h
+- Dépendances : NOISE-050, NOISE-008
+- Statut : À faire
+- Fichiers concernés : apps/mobile/src/features/organizer/balance/*
+- Critères d'acceptation :
+  - [ ] Solde affiché (disponible, en attente si applicable), mis à jour à l'ouverture et au retour sur l'écran
+  - [ ] Demande de virement : montant libre, frais affichés avant confirmation (« gratuit » pour le premier)
+  - [ ] Historique des virements avec leur statut
+  - [ ] Rappel : reste versé automatiquement au plus tard 72 h après la fin de l'événement
+- Tests :
+  - Tests UI : montant supérieur au solde refusé, frais du deuxième virement affichés, erreurs réseau avec « Réessayer »
 
 ### M5 — Google Play
 
