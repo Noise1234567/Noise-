@@ -5,7 +5,8 @@ import { createAuthApi } from '../api/auth';
 import { createApiClient } from '../api/client';
 import { API_BASE_URL } from '../api/config';
 import { toApiError } from '../api/errors';
-import { accessTokenStore, refreshTokenStorage } from '../api/token-storage';
+import { accessTokenStore, lastUserStorage, refreshTokenStorage } from '../api/token-storage';
+import { ticketCache } from '../features/participant/tickets/ticket-cache';
 import { type AppRole, useSession } from '../state/session';
 
 const appRoles = (roles: AuthSession['user']['roles']): AppRole[] =>
@@ -15,13 +16,20 @@ const appRoles = (roles: AuthSession['user']['roles']): AppRole[] =>
 export async function completeSignIn(session: AuthSession, preferredRole?: AppRole): Promise<void> {
   accessTokenStore.set(session.accessToken);
   await refreshTokenStorage.set(session.refreshToken);
+  await lastUserStorage.set(session.user).catch(() => undefined);
   useSession.getState().signIn(appRoles(session.user.roles), preferredRole, session.user);
 }
 
-/** Efface les jetons et revient à l'écran de connexion. Ne contacte pas le serveur. */
+/**
+ * Efface les jetons et revient à l'écran de connexion. Ne contacte pas le serveur.
+ * Une déconnexion volontaire efface aussi les billets enregistrés (téléphone prêté ou partagé) ;
+ * une session expirée les garde, pour que l'utilisateur les retrouve après reconnexion.
+ */
 export async function clearSession(expired = false): Promise<void> {
   accessTokenStore.set(null);
   await refreshTokenStorage.clear().catch(() => undefined);
+  await lastUserStorage.clear().catch(() => undefined);
+  if (!expired) await ticketCache.clearAll().catch(() => undefined);
   useSession.getState().signOut(expired);
 }
 
@@ -64,7 +72,17 @@ export async function hydrateSession(): Promise<void> {
     );
     await completeSignIn(data);
   } catch (error) {
-    if (toApiError(error).status === 401) await clearSession(true);
-    else useSession.getState().hydrate();
+    if (toApiError(error).status === 401) {
+      await clearSession(true);
+      return;
+    }
+    // Pas de réseau : la session est rouverte avec le dernier profil connu (billets hors
+    // ligne, NOISE-022). Le jeton sera rafraîchi à la première requête qui aboutit.
+    const lastUser = await lastUserStorage.get();
+    if (lastUser && appRoles(lastUser.roles).length > 0) {
+      useSession.getState().signIn(appRoles(lastUser.roles), undefined, lastUser);
+    } else {
+      useSession.getState().hydrate();
+    }
   }
 }
