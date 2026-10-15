@@ -177,8 +177,12 @@ export default function EventDetail() {
         <Button
           label={purchase.label}
           disabled={purchase.kind !== 'OPEN'}
-          // L'achat (choix des billets, commande) arrive avec le ticket suivant.
-          onPress={() => undefined}
+          onPress={() =>
+            router.push({
+              pathname: '/participant/checkout/[eventId]',
+              params: { eventId: event.id },
+            })
+          }
         />
         {purchase.kind !== 'OPEN' ? (
           <Text variant="caption" muted style={styles.hint}>

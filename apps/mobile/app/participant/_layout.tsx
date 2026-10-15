@@ -20,6 +20,11 @@ export default function ParticipantLayout() {
       <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
       {/* Détail d'un événement : plein écran, hors de la barre d'onglets (maquette 7). */}
       <Tabs.Screen name="event/[id]" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      {/* Tunnel d'achat : plein écran (NOISE-021). */}
+      <Tabs.Screen
+        name="checkout/[eventId]"
+        options={{ href: null, tabBarStyle: { display: 'none' } }}
+      />
     </Tabs>
   );
 }
