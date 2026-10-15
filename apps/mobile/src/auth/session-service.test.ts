@@ -2,6 +2,7 @@ import type { AuthSession } from '@noise/shared';
 import axios from 'axios';
 
 import { accessTokenStore } from '../api/token-storage';
+import { ticketCache } from '../features/participant/tickets/ticket-cache';
 import { useSession } from '../state/session';
 import { clearSession, completeSignIn, hydrateSession } from './session-service';
 
@@ -90,6 +91,26 @@ describe('service de session', () => {
     await hydrateSession();
     expect(useSession.getState().status).toBe('signedOut');
     expect(mockStore.get('noise.refreshToken')).toBe('old');
+  });
+
+  it('réseau coupé au lancement avec un profil connu : session rouverte pour les billets hors ligne', async () => {
+    await completeSignIn(session);
+    useSession.setState({ status: 'loading', user: null, roles: [], activeRole: null });
+    jest
+      .mocked(axios.post)
+      .mockRejectedValue(Object.assign(new Error('net'), { isAxiosError: true }));
+    await hydrateSession();
+    expect(useSession.getState().status).toBe('signedIn');
+    expect(useSession.getState().user?.id).toBe(session.user.id);
+    expect(mockStore.has('noise.refreshToken')).toBe(true);
+  });
+
+  it('déconnexion volontaire : billets enregistrés effacés ; session expirée : conservés', async () => {
+    await ticketCache.save(session.user.id, [], new Date());
+    await clearSession(true);
+    expect(await ticketCache.load(session.user.id)).not.toBeNull();
+    await clearSession();
+    expect(await ticketCache.load(session.user.id)).toBeNull();
   });
 
   it('clearSession efface tout', async () => {
