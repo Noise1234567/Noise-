@@ -309,6 +309,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
   - [ ] Validation partagée (schémas Zod de packages/shared)
   - [ ] Liste « Mes événements » : à venir / passé / annulé
   - [ ] Erreurs réseau gérées avec possibilité de réessayer
+  - [ ] Numéro Mobile Money de virement demandé, prérempli avec celui du compte (DEC-027)
 - Tests :
   - Tests UI : validation des étapes, soumission
   - Test manuel sur appareil
@@ -838,7 +839,8 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
   - [ ] Modèle Payout (événement, organisateur, montant, frais, statut, identifiant de transfert, clé d'idempotence)
   - [ ] GET du solde d'un événement : part organisateur des ventes PAID, moins les virements effectués ou en cours ; séparé en disponible (fonds reçus de FedaPay) et en attente
   - [ ] POST d'une demande de virement : montant ≤ solde disponible, premier virement gratuit (une fois par événement), frais déduits ensuite, verrou contre deux demandes simultanées
-  - [ ] Tâche planifiée : virement gratuit programmé au plus tard 72 h après la fin de l'événement s'il n'a pas été déclenché ; reste du solde selon le point ouvert de DEC-027
+  - [ ] Tâche planifiée : au plus tard 72 h après la fin de l'événement, tout le reste du solde est viré (gratuit si le virement gratuit n'a pas servi, frais déduits sinon)
+  - [ ] Numéro de virement enregistré sur l'événement ; changement confirmé par le mot de passe, puis 24 h sans virement
   - [ ] Organisateur propriétaire uniquement ; identité vérifiée exigée (DEC-018)
 - Tests :
   - Unitaires : calcul du solde, frais à partir du deuxième virement
