@@ -1,6 +1,7 @@
 import { Button } from '../../src/components/Button';
 import { Placeholder } from '../../src/components/Placeholder';
 import { SupportButton } from '../../src/components/SupportButton';
+import { IdentitySection } from '../../src/features/identity/IdentitySection';
 import { logout } from '../../src/auth/session-service';
 
 /** Écran 26 : Profil Organisateur. */
@@ -11,6 +12,7 @@ export default function Profile() {
       title="Profil"
       note="Informations du compte, reversements, passage à la vue Participant."
     >
+      <IdentitySection />
       <Button variant="secondary" label="Se déconnecter" onPress={onLogout} />
       <SupportButton />
     </Placeholder>

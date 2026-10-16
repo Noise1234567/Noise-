@@ -1,6 +1,7 @@
 import type { TicketTypeDto } from '@noise/shared';
 
 import {
+  formatDeadline,
   formatEventDate,
   formatEventRange,
   formatFcfa,
@@ -29,6 +30,16 @@ describe('formatFcfa', () => {
     expect(formatFcfa(5000)).toBe('5 000 FCFA');
     expect(formatFcfa(1_250_000)).toBe('1 250 000 FCFA');
     expect(formatFcfa(500)).toBe('500 FCFA');
+  });
+});
+
+describe('date limite en heure du Bénin', () => {
+  it('13:00 UTC un lundi est 14:00 à Cotonou', () => {
+    expect(formatDeadline('2026-10-19T13:00:00Z')).toBe('lundi 19 octobre à 14:00');
+  });
+
+  it('23:30 UTC passe au lendemain', () => {
+    expect(formatDeadline('2026-10-19T23:30:00Z')).toBe('mardi 20 octobre à 00:30');
   });
 });
 
