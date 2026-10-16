@@ -1,8 +1,15 @@
-import type { AdminOrdersQuery, AdminPaymentsQuery, SuspensionInput } from '@noise/shared';
+import type {
+  AdminIdentityListQuery,
+  AdminOrdersQuery,
+  AdminPaymentsQuery,
+  RefuseIdentityInput,
+  SuspensionInput,
+} from '@noise/shared';
 import type { Request, Response } from 'express';
 import type { PrismaClient } from '../../lib/prisma.js';
 import type { AdminListsService } from './admin-lists.service.js';
 import { writeAuditLog } from './admin-audit.js';
+import type { IdentityReviewService } from './identity-review.service.js';
 import type { ModerationService } from './moderation.service.js';
 import { salesReportToCsv } from './sales-csv.js';
 import type { SalesExportService } from './sales-export.service.js';
@@ -24,9 +31,16 @@ interface AdminControllerDeps {
   sales: SalesExportService;
   moderation: ModerationService;
   lists: AdminListsService;
+  identity: IdentityReviewService;
 }
 
-export function createAdminController({ prisma, sales, moderation, lists }: AdminControllerDeps) {
+export function createAdminController({
+  prisma,
+  sales,
+  moderation,
+  lists,
+  identity,
+}: AdminControllerDeps) {
   // L'identité de l'admin vient du jeton validé par requireAuth + requireRole('ADMIN').
   const adminId = (req: Request) => req.auth!.userId;
   const reason = (req: Request) => (req.body as SuspensionInput).reason;
@@ -72,6 +86,19 @@ export function createAdminController({ prisma, sales, moderation, lists }: Admi
     },
     reactivateEvent: async (req: Request, res: Response) => {
       res.json(await moderation.reactivateEvent(adminId(req), param(res, 'eventId'), reason(req)));
+    },
+    listIdentities: async (_req: Request, res: Response) => {
+      res.json(await identity.list(res.locals.query as AdminIdentityListQuery));
+    },
+    identityDocument: async (req: Request, res: Response) => {
+      res.json(await identity.documentLink(adminId(req), param(res, 'userId')));
+    },
+    approveIdentity: async (req: Request, res: Response) => {
+      res.json(await identity.approve(adminId(req), param(res, 'userId')));
+    },
+    refuseIdentity: async (req: Request, res: Response) => {
+      const { reason, immediate } = req.body as RefuseIdentityInput;
+      res.json(await identity.refuse(adminId(req), param(res, 'userId'), { reason, immediate }));
     },
     listOrders: async (_req: Request, res: Response) => {
       res.json(await lists.listOrders(res.locals.query as AdminOrdersQuery));

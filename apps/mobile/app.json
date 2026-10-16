@@ -25,6 +25,15 @@
     },
     "platforms": ["android"],
     "scheme": "noise",
-    "plugins": ["expo-router", "expo-font"]
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Noise utilise l’appareil photo pour photographier votre pièce d’identité."
+        }
+      ]
+    ]
   }
 }
