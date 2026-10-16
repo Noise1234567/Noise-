@@ -157,6 +157,37 @@ describe('POST /api/v1/scanner/validate', () => {
     expect(await prisma.scanLog.count({ where: { ticketId } })).toBe(10);
   });
 
+  it('verrou : un scan attend la transaction qui tient le billet, puis voit son résultat (course déterministe)', async () => {
+    // Le test des 10 scans ne garantit pas que les requêtes se chevauchent vraiment. Ici, une
+    // transaction tient le billet ; le scan doit l'attendre au lieu de lire l'ancien statut.
+    const { qrCode, token, ticketId } = await eventWithTicket();
+    let release!: () => void;
+    const released = new Promise<void>((resolve) => (release = resolve));
+    let markLocked!: () => void;
+    const locked = new Promise<void>((resolve) => (markLocked = resolve));
+
+    const holder = prisma.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`SELECT id FROM tickets WHERE id = ${ticketId}::uuid FOR UPDATE`;
+        markLocked();
+        await released;
+        await tx.ticket.update({
+          where: { id: ticketId },
+          data: { status: 'USED', usedAt: new Date() },
+        });
+      },
+      { timeout: 20_000 },
+    );
+    await locked;
+    const pending = scan(token, { qrCode }).then((res) => res.body.result as string);
+    // Laisse au scan le temps d'atteindre la base et de buter sur le verrou.
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    release();
+    await holder;
+
+    expect(await pending).toBe('ALREADY_USED');
+  });
+
   it('lien absent, révoqué ou falsifié : 401, rien n’est validé', async () => {
     const { qrCode, token, organizer, ticketId } = await eventWithTicket();
     expect((await scan(null, { qrCode })).status).toBe(401);
