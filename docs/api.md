@@ -69,9 +69,9 @@ Base : CDC section 7, complétée par les décisions.
 | POST    | `/payments/initiate`        | Participant propriétaire  | NOISE-019            |
 | POST    | `/payments/webhook`         | Fournisseur (signature)   | NOISE-019            |
 | GET     | `/tickets/mine`             | Participant               | NOISE-020 (existe)   |
-| POST    | `/scanner/links`            | Organisateur propriétaire | NOISE-024            |
-| GET     | `/events/:id/scanner-links` | Organisateur propriétaire | NOISE-024            |
-| DELETE  | `/scanner/links/:id`        | Organisateur propriétaire | NOISE-024            |
+| POST    | `/scanner/links`            | Organisateur propriétaire | NOISE-024 (existe)   |
+| GET     | `/events/:id/scanner-links` | Organisateur propriétaire | NOISE-024 (existe)   |
+| DELETE  | `/scanner/links/:id`        | Organisateur propriétaire | NOISE-024 (existe)   |
 | POST    | `/scanner/validate`         | Scanner JWT               | NOISE-025            |
 | POST    | `/me/push-token`            | Auth                      | NOISE-028            |
 | *       | `/admin/*`                  | Admin                     | NOISE-037, NOISE-039 |
@@ -153,6 +153,8 @@ Chaque type de billet renvoie `available` = quantité totale − billets vendus 
 
 « Presque complet » (NOISE-014) est calculé par l'API pour que tous les clients affichent la même chose. `lowStock` (par type de billet) vaut `true` quand il reste 20 % des places ou moins (`LOW_STOCK_RATIO` dans `@noise/shared`), arrondi vers le bas, sans être épuisé : sur 100 billets, 20 restants = vrai, 21 = faux, 0 = faux (c'est « Complet »). `almostFull` (par événement) applique la même règle au total des types encore en vente (ceux dont `onSale` est vrai) ; faux sans type de billet ou quand tout est vendu.
 
+`organizerName` est le nom du compte organisateur, affiché « par <organisateur> » sur le détail. Aucune autre donnée de l'organisateur n'est exposée (ni téléphone, ni e-mail).
+
 Styles : un événement porte `styles`, de 1 à 5 valeurs choisies par l'organisateur dans la liste fermée `EVENT_STYLES` : Afrobeat, Amapiano, Rap, Électro, Concert, Soirée, Gospel, Zouk, Coupé-décalé, Dancehall, Jazz, R&B, Festival, Autre. Pas de doublon. Ce champ remplace l'ancien `genre` (texte libre) à la création et à la modification ; la migration reporte les anciens genres connus et met `Autre` pour les autres.
 
 ### `POST /api/v1/events/:id/poster` (NOISE-012)
@@ -198,3 +200,23 @@ Un billet est créé pour chaque place d'une commande confirmée, au nom de l'ac
 Réservé au rôle `PARTICIPANT`. Réponse 200 : `{ tickets: TicketDto[] }` (`packages/shared/src/schemas/tickets.ts`), les événements les plus proches d'abord. Chaque billet porte `qrPayload`, le contenu exact du QR à afficher, qui reste le même à chaque appel. Un participant ne reçoit jamais les billets d'un autre. Erreurs : 401, 403.
 
 Configuration : `QR_SIGNING_SECRET` (32 caractères minimum, distinct des autres secrets) est obligatoire hors tests.
+
+## 7. Liens scanner (NOISE-024)
+
+Un lien donne accès au scanner d'un seul événement, sans compte (conception : `docs/qr-scanner.md` section 2). Les trois routes sont réservées au rôle `ORGANIZER`, puis à l'organisateur propriétaire de l'événement : 403 pour celui d'un autre, 404 si l'événement ou le lien n'existe pas.
+
+### Création : `POST /api/v1/scanner/links`
+
+Corps : `{ eventId, label?, durationHours? }` (`packages/shared/src/schemas/scanner-links.ts`). `label` : 1 à 60 caractères ; `durationHours` : entier de 1 à 48. Réponse 201 : `{ link, token, url }`. `link` est un `ScannerLinkDto` (`status` : `ACTIVE`, `EXPIRED` ou `REVOKED`). `token` est le JWT, montré une seule fois. `url` vaut `<SCANNER_URL>#<token>`, ou `null` si `SCANNER_URL` n'est pas configurée.
+
+Erreurs : 400 (corps invalide) ; 401 ; 403 ; 404 ; 409 (événement en brouillon, annulé ou terminé).
+
+### Liste : `GET /api/v1/events/:id/scanner-links`
+
+Réponse 200 : `{ links: ScannerLinkDto[] }`, le plus récent d'abord. Le jeton n'y figure jamais.
+
+### Révocation : `DELETE /api/v1/scanner/links/:id`
+
+Réponse 200 : `{ link }` avec `status: REVOKED`. Rejouer la révocation renvoie le même résultat, sans changer la date.
+
+Configuration : `SCANNER_JWT_SECRET` (32 caractères minimum, différent de `JWT_ACCESS_SECRET`) est obligatoire hors tests ; `SCANNER_URL` est facultative. La partie mobile (générer et partager le lien) reste à faire.

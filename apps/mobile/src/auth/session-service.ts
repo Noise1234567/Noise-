@@ -5,18 +5,41 @@ import { createAuthApi } from '../api/auth';
 import { createApiClient } from '../api/client';
 import { API_BASE_URL } from '../api/config';
 import { toApiError } from '../api/errors';
-import { accessTokenStore, refreshTokenStorage } from '../api/token-storage';
+import { accessTokenStore, activeRoleStorage, refreshTokenStorage } from '../api/token-storage';
 import { type AppRole, useSession } from '../state/session';
 
 const appRoles = (roles: AuthSession['user']['roles']): AppRole[] =>
   roles.filter((r): r is AppRole => r === 'PARTICIPANT' || r === 'ORGANIZER');
 
-/** Enregistre la session reçue : jetons d'abord (stockage), puis état de l'app. */
+const isAppRole = (value: string | null): value is AppRole =>
+  value === 'PARTICIPANT' || value === 'ORGANIZER';
+
+/**
+ * Enregistre la session reçue : jetons d'abord (stockage), puis état de l'app.
+ * Sans rôle demandé (connexion, relancement), on reprend la dernière vue de ce compte ; si elle
+ * n'existe pas ou n'est plus activée, `signIn` retombe sur le premier rôle du compte.
+ */
 export async function completeSignIn(session: AuthSession, preferredRole?: AppRole): Promise<void> {
   accessTokenStore.set(session.accessToken);
   await refreshTokenStorage.set(session.refreshToken);
-  useSession.getState().signIn(appRoles(session.user.roles), preferredRole, session.user);
+  const stored = preferredRole
+    ? null
+    : await activeRoleStorage.get(session.user.id).catch(() => null);
+  useSession
+    .getState()
+    .signIn(
+      appRoles(session.user.roles),
+      preferredRole ?? (isAppRole(stored) ? stored : undefined),
+      session.user,
+    );
 }
+
+// Chaque changement de vue (sélecteur de rôle) est retenu pour le prochain lancement.
+useSession.subscribe((state, previous) => {
+  if (state.status !== 'signedIn' || !state.user || !state.activeRole) return;
+  if (state.activeRole === previous.activeRole && state.user.id === previous.user?.id) return;
+  void activeRoleStorage.set(state.user.id, state.activeRole).catch(() => undefined);
+});
 
 /** Efface les jetons et revient à l'écran de connexion. Ne contacte pas le serveur. */
 export async function clearSession(expired = false): Promise<void> {
