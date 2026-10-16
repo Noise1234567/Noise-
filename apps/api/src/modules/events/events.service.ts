@@ -125,6 +125,7 @@ export class EventsService {
   /** L'événement est créé en brouillon : il devient visible une fois publié (update). */
   async create(auth: AuthContext, input: CreateEventInput): Promise<EventDto> {
     await this.assertOrganizerActive(auth);
+    await this.assertIdentitySubmitted(auth);
     const event = await this.prisma.event.create({
       data: {
         organizerId: auth.userId,
@@ -149,6 +150,9 @@ export class EventsService {
       throw new HttpError(409, 'CONFLICT', 'Un événement annulé ne peut plus être modifié');
     }
     this.assertNotSuspended(event.status);
+    if (input.status === 'PUBLISHED' && event.status !== 'PUBLISHED') {
+      await this.assertIdentitySubmitted(auth);
+    }
 
     const now = new Date();
     const startsAt = input.startsAt ? new Date(input.startsAt) : event.startsAt;
@@ -294,6 +298,32 @@ export class EventsService {
       select: { status: true },
     });
     if (user?.status !== 'ACTIVE') throw new HttpError(403, 'FORBIDDEN', 'Compte suspendu');
+  }
+
+  /**
+   * DEC-018 : pour créer ou publier, l'organisateur doit avoir envoyé sa pièce d'identité
+   * (en attente ou vérifiée). Non soumise ou refusée : 403 IDENTITY_REQUIRED, code que le
+   * mobile utilise pour afficher l'écran d'envoi.
+   */
+  private async assertIdentitySubmitted(auth: AuthContext): Promise<void> {
+    const identity = await this.prisma.identityVerification.findUnique({
+      where: { userId: auth.userId },
+      select: { status: true },
+    });
+    if (!identity) {
+      throw new HttpError(
+        403,
+        'IDENTITY_REQUIRED',
+        'Envoie ta pièce d’identité pour pouvoir organiser des événements',
+      );
+    }
+    if (identity.status === 'REFUSED') {
+      throw new HttpError(
+        403,
+        'IDENTITY_REQUIRED',
+        'Ta pièce d’identité a été refusée : envoie-en une nouvelle pour organiser des événements',
+      );
+    }
   }
 
   private assertNotSuspended(status: string): void {

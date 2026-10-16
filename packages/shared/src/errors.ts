@@ -6,6 +6,8 @@ export const ERROR_CODES = [
   'VALIDATION_ERROR',
   'UNAUTHENTICATED',
   'FORBIDDEN',
+  /** 403 : l'organisateur doit d'abord envoyer sa pièce d'identité (DEC-018). */
+  'IDENTITY_REQUIRED',
   'NOT_FOUND',
   'CONFLICT',
   'RATE_LIMITED',

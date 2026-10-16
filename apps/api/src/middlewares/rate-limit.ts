@@ -15,6 +15,8 @@ export const AUTH_RATE_LIMIT = { windowMs: FIFTEEN_MINUTES, limit: 5 };
 export const GLOBAL_RATE_LIMIT = { windowMs: FIFTEEN_MINUTES, limit: 300 };
 export const PAYMENT_RATE_LIMIT = { windowMs: 10 * 60 * 1000, limit: 5 };
 
+export const IDENTITY_UPLOAD_RATE_LIMIT = { windowMs: 60 * 60 * 1000, limit: 10 };
+
 type LimitOverrides = Partial<Pick<Options, 'windowMs' | 'limit'>>;
 
 const rejectWithStandardError: Options['handler'] = (_req, _res, next) => {
@@ -70,6 +72,18 @@ export function paymentRateLimit(overrides: LimitOverrides = {}): RequestHandler
     standardHeaders: 'draft-8',
     legacyHeaders: false,
     keyGenerator: (req) => `user:${req.auth?.userId ?? clientIp(req)}`,
+    handler: rejectWithStandardError,
+  });
+}
+
+/** Envoi de pièce d'identité : 10 par heure et par compte (après requireAuth). */
+export function identityUploadRateLimit(overrides: LimitOverrides = {}): RequestHandler {
+  return rateLimit({
+    ...IDENTITY_UPLOAD_RATE_LIMIT,
+    ...overrides,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    keyGenerator: (req) => req.auth?.userId ?? clientIp(req),
     handler: rejectWithStandardError,
   });
 }
