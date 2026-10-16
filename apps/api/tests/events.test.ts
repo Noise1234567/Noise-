@@ -85,6 +85,7 @@ describe('création (POST /events)', () => {
     expect(res.status).toBe(201);
     expect(res.body.event).toMatchObject({
       organizerId: user.id,
+      organizerName: 'Utilisateur Test',
       title: 'Soirée Afrobeats',
       status: 'DRAFT',
       posterUrl: null,
@@ -795,6 +796,20 @@ describe('mes événements (GET /events/mine)', () => {
 });
 
 describe('détail (GET /events/:id)', () => {
+  it("renvoie le nom de l'organisateur, dans le détail comme dans la liste", async () => {
+    const owner = await organizer();
+    await prisma.user.update({ where: { id: owner.user.id }, data: { name: 'Studio Cadjehoun' } });
+    const { headers } = await participant();
+    const event = await seedEvent(owner.user.id);
+
+    const detail = await request(app).get(`/api/v1/events/${event.id}`).set(headers);
+    expect(detail.body.event.organizerName).toBe('Studio Cadjehoun');
+    const list = await request(app).get('/api/v1/events').set(headers);
+    expect(list.body.data[0].organizerName).toBe('Studio Cadjehoun');
+    // Seul le nom est public : ni téléphone ni e-mail de l'organisateur.
+    expect(JSON.stringify(detail.body)).not.toContain(owner.user.phone);
+  });
+
   it('renvoie un événement publié avec ses types de billets triés par prix', async () => {
     const owner = await organizer();
     const { headers } = await participant();

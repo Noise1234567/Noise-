@@ -153,6 +153,8 @@ Chaque type de billet renvoie `available` = quantité totale − billets vendus 
 
 « Presque complet » (NOISE-014) est calculé par l'API pour que tous les clients affichent la même chose. `lowStock` (par type de billet) vaut `true` quand il reste 20 % des places ou moins (`LOW_STOCK_RATIO` dans `@noise/shared`), arrondi vers le bas, sans être épuisé : sur 100 billets, 20 restants = vrai, 21 = faux, 0 = faux (c'est « Complet »). `almostFull` (par événement) applique la même règle au total des types encore en vente (ceux dont `onSale` est vrai) ; faux sans type de billet ou quand tout est vendu.
 
+`organizerName` est le nom du compte organisateur, affiché « par <organisateur> » sur le détail. Aucune autre donnée de l'organisateur n'est exposée (ni téléphone, ni e-mail).
+
 Styles : un événement porte `styles`, de 1 à 5 valeurs choisies par l'organisateur dans la liste fermée `EVENT_STYLES` : Afrobeat, Amapiano, Rap, Électro, Concert, Soirée, Gospel, Zouk, Coupé-décalé, Dancehall, Jazz, R&B, Festival, Autre. Pas de doublon. Ce champ remplace l'ancien `genre` (texte libre) à la création et à la modification ; la migration reporte les anciens genres connus et met `Autre` pour les autres.
 
 ### `POST /api/v1/events/:id/poster` (NOISE-012)
