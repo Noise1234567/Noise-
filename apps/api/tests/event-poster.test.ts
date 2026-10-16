@@ -122,6 +122,7 @@ describe('CLOUDINARY_URL', () => {
   const base = {
     JWT_ACCESS_SECRET: SECRET,
     QR_SIGNING_SECRET: 'q'.repeat(32),
+    SCANNER_JWT_SECRET: 's'.repeat(32),
     PAYMENT_PROVIDER: 'fedapay',
     PAYMENT_API_KEY: 'sk_live_x',
     PAYMENT_ENVIRONMENT: 'live',
@@ -141,7 +142,11 @@ describe('CLOUDINARY_URL', () => {
 
   it('facultative en développement (affiches simulées)', () => {
     expect(() =>
-      loadEnv({ JWT_ACCESS_SECRET: SECRET, QR_SIGNING_SECRET: 'q'.repeat(32) }),
+      loadEnv({
+        JWT_ACCESS_SECRET: SECRET,
+        QR_SIGNING_SECRET: 'q'.repeat(32),
+        SCANNER_JWT_SECRET: 's'.repeat(32),
+      }),
     ).not.toThrow();
   });
 });
