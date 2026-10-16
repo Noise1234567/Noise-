@@ -102,7 +102,22 @@ Format des numéros : toute écriture béninoise est acceptée (`01 97 45 45 47`
 | `GET /api/v1/admin/events/:eventId/sales`     | 200 `{ eventTitle, lines: [{ ticketTypeName, unitPriceXof, ticketsSold, grossXof }], totals: { ticketsSold, grossXof, noiseXof, affiliateXof, organizerXof } }` | 400 identifiant invalide ; 401 ; 403 (pas ADMIN) ; 404 événement inconnu ; 409 commande payée sans répartition enregistrée |
 | `GET /api/v1/admin/events/:eventId/sales.csv` | 200 `text/csv; charset=utf-8`, fichier `ventes-<titre>-<date>.csv` (voir docs/payments.md section 7.1)                                                          | idem                                                                                                                       |
 
-Seules les commandes PAID sont comptées, à partir de la répartition enregistrée à la confirmation du paiement (DEC-022). Chaque appel est journalisé (identifiant de l'administrateur, événement, action).
+Seules les commandes PAID sont comptées, à partir de la répartition enregistrée à la confirmation du paiement (DEC-022). Chaque appel laisse une ligne d'audit `SALES_EXPORTED` (administrateur, événement, format).
+
+### Administration minimale (NOISE-037, rôle ADMIN)
+
+| Endpoint                                        | Corps / réponse                                                                                            | Erreurs                                                                                      |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `POST /api/v1/admin/users/:userId/suspend`      | `{ reason }` (5 à 500 caractères) → 200 `{ userId, status, affectedEvents }`                               | 400 ; 401 ; 403 (pas ADMIN, ou cible ADMIN) ; 404 ; 409 (déjà suspendu, ou pas organisateur) |
+| `POST /api/v1/admin/users/:userId/reactivate`   | idem                                                                                                       | idem, 409 si le compte n'est pas suspendu                                                    |
+| `POST /api/v1/admin/events/:eventId/suspend`    | `{ reason }` → 200 `{ eventId, status }`                                                                   | 400 ; 401 ; 403 ; 404 ; 409 (seul un événement publié se suspend)                            |
+| `POST /api/v1/admin/events/:eventId/reactivate` | idem                                                                                                       | 409 si l'événement n'est pas suspendu ou si son organisateur l'est                           |
+| `GET /api/v1/admin/orders`                      | Filtres `status`, `eventId`, `from`, `to`, `limit` (défaut 20, max 50), `cursor` → `{ items, nextCursor }` | 400 filtre invalide ; 401 ; 403                                                              |
+| `GET /api/v1/admin/payments`                    | Mêmes filtres + `operator` → `{ items, nextCursor }`                                                       | idem                                                                                         |
+
+Effets de la suspension d'un organisateur : connexion et refresh refusés, sessions révoquées, événements publiés passés en SUSPENDED (et remis en vente à la réactivation, seuls ceux-là), écritures organisateur refusées (403 « Compte suspendu », même avec un jeton encore valide). Un événement SUSPENDED n'accepte plus de commande ni d'initiation de paiement (409) ; un paiement déjà lancé reste confirmé par le webhook, et les billets déjà vendus restent valides. Les listes sont triées du plus récent au plus ancien et ne renvoient que des numéros masqués.
+
+Chaque action (suspension, réactivation, export des ventes) écrit une ligne dans `admin_audit_logs` (admin, action, cible, motif), dans la même transaction que l'action.
 
 ### Paiement et suivi de commande (NOISE-019)
 

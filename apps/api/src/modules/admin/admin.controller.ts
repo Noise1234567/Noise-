@@ -1,4 +1,9 @@
+import type { AdminOrdersQuery, AdminPaymentsQuery, SuspensionInput } from '@noise/shared';
 import type { Request, Response } from 'express';
+import type { PrismaClient } from '../../lib/prisma.js';
+import type { AdminListsService } from './admin-lists.service.js';
+import { writeAuditLog } from './admin-audit.js';
+import type { ModerationService } from './moderation.service.js';
 import { salesReportToCsv } from './sales-csv.js';
 import type { SalesExportService } from './sales-export.service.js';
 
@@ -14,29 +19,65 @@ function csvFileName(eventTitle: string, now = new Date()): string {
   return `ventes-${slug || 'evenement'}-${now.toISOString().slice(0, 10)}.csv`;
 }
 
-export function createAdminController(sales: SalesExportService) {
-  const audit = (req: Request, action: string) => {
-    // Chaque action d'administration est journalisée (DEC-020, NOISE-037).
-    req.log.info(
-      { adminId: req.auth?.userId, eventId: req.params.eventId, action },
-      'Action admin',
-    );
-  };
+interface AdminControllerDeps {
+  prisma: PrismaClient;
+  sales: SalesExportService;
+  moderation: ModerationService;
+  lists: AdminListsService;
+}
+
+export function createAdminController({ prisma, sales, moderation, lists }: AdminControllerDeps) {
+  // L'identité de l'admin vient du jeton validé par requireAuth + requireRole('ADMIN').
+  const adminId = (req: Request) => req.auth!.userId;
+  const reason = (req: Request) => (req.body as SuspensionInput).reason;
+  const param = (res: Response, name: string) => String(res.locals.params[name]);
+
+  /** Un export de ventes est une donnée sensible : chaque lecture laisse une trace. */
+  const auditSales = (req: Request, eventId: string, format: 'json' | 'csv') =>
+    writeAuditLog(prisma, {
+      adminId: adminId(req),
+      action: 'SALES_EXPORTED',
+      targetType: 'EVENT',
+      targetId: eventId,
+      metadata: { format },
+    });
 
   return {
     salesReport: async (req: Request, res: Response) => {
-      const report = await sales.salesReport(String(req.params.eventId));
-      audit(req, 'sales-report');
+      const eventId = String(req.params.eventId);
+      const report = await sales.salesReport(eventId);
+      await auditSales(req, eventId, 'json');
       res.json(report);
     },
     salesCsv: async (req: Request, res: Response) => {
-      const report = await sales.salesReport(String(req.params.eventId));
-      audit(req, 'sales-export-csv');
+      const eventId = String(req.params.eventId);
+      const report = await sales.salesReport(eventId);
+      await auditSales(req, eventId, 'csv');
       res
         .status(200)
         .type('text/csv; charset=utf-8')
         .attachment(csvFileName(report.eventTitle))
         .send(salesReportToCsv(report));
+    },
+    suspendUser: async (req: Request, res: Response) => {
+      res.json(await moderation.suspendOrganizer(adminId(req), param(res, 'userId'), reason(req)));
+    },
+    reactivateUser: async (req: Request, res: Response) => {
+      res.json(
+        await moderation.reactivateOrganizer(adminId(req), param(res, 'userId'), reason(req)),
+      );
+    },
+    suspendEvent: async (req: Request, res: Response) => {
+      res.json(await moderation.suspendEvent(adminId(req), param(res, 'eventId'), reason(req)));
+    },
+    reactivateEvent: async (req: Request, res: Response) => {
+      res.json(await moderation.reactivateEvent(adminId(req), param(res, 'eventId'), reason(req)));
+    },
+    listOrders: async (_req: Request, res: Response) => {
+      res.json(await lists.listOrders(res.locals.query as AdminOrdersQuery));
+    },
+    listPayments: async (_req: Request, res: Response) => {
+      res.json(await lists.listPayments(res.locals.query as AdminPaymentsQuery));
     },
   };
 }

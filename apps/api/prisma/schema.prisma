@@ -30,6 +30,8 @@ enum EventStatus {
   DRAFT
   PUBLISHED
   CANCELLED
+  /// Retiré de la vente par un administrateur (NOISE-037) ; les billets déjà vendus restent valables.
+  SUSPENDED
 }
 
 enum OrderStatus {
@@ -85,6 +87,7 @@ model User {
   referredOrders     Order[]        @relation("referrer")
   createdScannerLink ScannerLink[]
   pushTokens         PushToken[]
+  adminAuditLogs     AdminAuditLog[]
 
   @@map("users")
 }
@@ -127,6 +130,8 @@ model Event {
   /// Affiliation (DEC-022, après le MVP) : 1 % pour le partageur si l'organisateur l'accepte.
   affiliationEnabled Boolean     @default(false) @map("affiliation_enabled")
   cancelledAt        DateTime?   @map("cancelled_at") @db.Timestamptz(3)
+  /// Vrai quand l'événement a été suspendu avec son organisateur : la réactivation de celui-ci le republie (NOISE-037).
+  suspendedWithOrg   Boolean     @default(false) @map("suspended_with_organizer")
   createdAt          DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt          DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -286,4 +291,37 @@ model PushToken {
 
   @@index([userId])
   @@map("push_tokens")
+}
+
+enum AdminAction {
+  USER_SUSPENDED
+  USER_REACTIVATED
+  EVENT_SUSPENDED
+  EVENT_REACTIVATED
+  SALES_EXPORTED
+}
+
+enum AdminTargetType {
+  USER
+  EVENT
+}
+
+/// Journal des actions d'administration (DEC-020, NOISE-037) : qui a fait quoi, sur quoi, pourquoi.
+model AdminAuditLog {
+  id         String          @id @default(uuid()) @db.Uuid
+  adminId    String          @map("admin_id") @db.Uuid
+  action     AdminAction
+  targetType AdminTargetType @map("target_type")
+  targetId   String          @map("target_id") @db.Uuid
+  /// Motif saisi par l'administrateur (obligatoire pour une suspension ou une réactivation).
+  reason     String?         @db.VarChar(500)
+  /// Détails de l'action (ex. nombre d'événements suspendus avec l'organisateur).
+  metadata   Json?
+  createdAt  DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  admin User @relation(fields: [adminId], references: [id], onDelete: Restrict)
+
+  @@index([targetType, targetId])
+  @@index([adminId, createdAt])
+  @@map("admin_audit_logs")
 }
