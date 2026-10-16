@@ -143,5 +143,10 @@ describe('détail : prix, description et bouton principal', () => {
       label: 'Achat impossible',
       hint: 'Cet événement a été annulé.',
     });
+    expect(purchaseState({ status: 'SUSPENDED', ticketTypes: [type()] })).toMatchObject({
+      kind: 'SUSPENDED',
+      label: 'Achat impossible',
+      hint: 'Cet événement est momentanément indisponible.',
+    });
   });
 });

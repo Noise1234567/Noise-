@@ -690,12 +690,12 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Responsable : Orias · Reviewer : Yannis
 - Sprint : S5 · Type : Feature · Domaine : Backend · Priorité : P1 · Estimation : 4 h
 - Dépendances : NOISE-019
-- Statut : À faire
+- Statut : Implémenté (en attente de revue)
 - Fichiers concernés : apps/api/src/modules/admin/*
 - Critères d'acceptation :
-  - [ ] Rôle ADMIN ; suspendre un organisateur ou un événement ; lister paiements et commandes
-  - [ ] Pas de validation des organisateurs (DEC-018) ; suspension d'un organisateur qui ne respecte pas les CGU
-  - [ ] Chaque action admin journalisée
+  - [x] Rôle ADMIN ; suspendre un organisateur ou un événement ; lister paiements et commandes
+  - [x] Pas de validation des organisateurs (DEC-018) ; suspension d'un organisateur qui ne respecte pas les CGU
+  - [x] Chaque action admin journalisée
 - Tests :
   - Intégration : accès refusé aux non-admins
 

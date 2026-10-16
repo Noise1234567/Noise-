@@ -124,6 +124,7 @@ export class EventsService {
 
   /** L'événement est créé en brouillon : il devient visible une fois publié (update). */
   async create(auth: AuthContext, input: CreateEventInput): Promise<EventDto> {
+    await this.assertOrganizerActive(auth);
     const event = await this.prisma.event.create({
       data: {
         organizerId: auth.userId,
@@ -142,10 +143,12 @@ export class EventsService {
   }
 
   async update(auth: AuthContext, id: string, input: UpdateEventInput): Promise<EventDto> {
+    await this.assertOrganizerActive(auth);
     const event = await this.findOwned(auth, id);
     if (event.status === 'CANCELLED') {
       throw new HttpError(409, 'CONFLICT', 'Un événement annulé ne peut plus être modifié');
     }
+    this.assertNotSuspended(event.status);
 
     const now = new Date();
     const startsAt = input.startsAt ? new Date(input.startsAt) : event.startsAt;
@@ -212,10 +215,12 @@ export class EventsService {
     eventId: string,
     input: CreateTicketTypeInput,
   ): Promise<TicketTypeDto> {
+    await this.assertOrganizerActive(auth);
     const event = await this.findOwned(auth, eventId);
     if (event.status === 'CANCELLED') {
       throw new HttpError(409, 'CONFLICT', 'Un événement annulé ne peut plus être modifié');
     }
+    this.assertNotSuspended(event.status);
     const declared = event.ticketTypes.reduce((sum, type) => sum + type.quantityTotal, 0);
     if (declared + input.quantityTotal > event.capacity) {
       throw new HttpError(
@@ -258,10 +263,12 @@ export class EventsService {
    * organisateur pourrait écraser l'affiche d'un autre.
    */
   async assertPosterEditable(auth: AuthContext, id: string): Promise<void> {
+    await this.assertOrganizerActive(auth);
     const event = await this.findOwned(auth, id);
     if (event.status === 'CANCELLED') {
       throw new HttpError(409, 'CONFLICT', 'Un événement annulé ne peut plus être modifié');
     }
+    this.assertNotSuspended(event.status);
   }
 
   /** Enregistre l'URL de l'affiche envoyée au stockage. */
@@ -275,6 +282,24 @@ export class EventsService {
     const now = new Date();
     const reserved = await this.reservedByTicketType(updated.ticketTypes, now);
     return this.toDto(updated, reserved, auth.userId, now);
+  }
+
+  /**
+   * Le jeton d'accès vit 15 minutes : un compte suspendu peut encore en détenir un valide.
+   * On relit donc le statut en base avant toute écriture d'organisateur (DEC-020).
+   */
+  private async assertOrganizerActive(auth: AuthContext): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: auth.userId },
+      select: { status: true },
+    });
+    if (user?.status !== 'ACTIVE') throw new HttpError(403, 'FORBIDDEN', 'Compte suspendu');
+  }
+
+  private assertNotSuspended(status: string): void {
+    if (status === 'SUSPENDED') {
+      throw new HttpError(409, 'CONFLICT', 'Cet événement est suspendu par l’administration');
+    }
   }
 
   /** 404 si l'événement n'existe pas, 403 s'il appartient à un autre organisateur. */
