@@ -24,8 +24,8 @@ type SessionState = {
   signIn: (roles: AppRole[], preferredRole?: AppRole, user?: PublicUser) => void;
   signOut: (expired?: boolean) => void;
   /**
-   * Bascule de vue sans reconnexion. Renvoie false si le rôle n'est pas activé :
-   * l'écran doit alors proposer la feuille d'activation (une requête API, pas de reconnexion).
+   * Bascule de vue sans reconnexion (compte qui a les deux rôles). Renvoie false si le compte
+   * n'a pas ce rôle : rien ne change.
    */
   switchRole: (role: AppRole) => boolean;
 };
