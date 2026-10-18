@@ -11,6 +11,7 @@ function event(id: string, values: Partial<EventDto> = {}): EventDto {
   return {
     id,
     organizerId: 'org',
+    organizerName: 'Awa Dossou',
     title: id,
     description: '',
     styles: ['Rap'],

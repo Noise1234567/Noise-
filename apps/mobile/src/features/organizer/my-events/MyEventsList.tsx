@@ -34,6 +34,7 @@ const statusLabel: Record<EventDto['status'], string> = {
   DRAFT: 'Brouillon',
   PUBLISHED: 'Publié',
   CANCELLED: 'Annulé',
+  SUSPENDED: 'Suspendu',
 };
 
 /** Écran 19 : « Mes événements », classés à venir / passés / annulés (NOISE-013). */
