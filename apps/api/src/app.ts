@@ -11,6 +11,14 @@ import { errorHandler, notFoundHandler } from './middlewares/error-handler.js';
 import { globalRateLimit } from './middlewares/rate-limit.js';
 import type { PrismaClient } from './lib/prisma.js';
 import { createAdminRouter } from './modules/admin/admin.routes.js';
+import {
+  createAdminRefundsRouter,
+  createEventCancellationRouter,
+} from './modules/cancellation/cancellation.routes.js';
+import {
+  CancellationService,
+  type CancellationNotifier,
+} from './modules/cancellation/cancellation.service.js';
 import { createAuthRouter, createMeRouter } from './modules/auth/auth.routes.js';
 import { AuthService } from './modules/auth/auth.service.js';
 import { createPaymentProvider, type PaymentProvider } from './modules/payments/providers/index.js';
@@ -43,6 +51,8 @@ import {
 import { EventsService } from './modules/events/events.service.js';
 
 export interface AppDependencies {
+  /** Prévient les acheteurs d'une annulation (notifications push, NOISE-028) ; aucun envoi par défaut. */
+  notifyCancellation?: CancellationNotifier;
   /** Stockage des affiches ; par défaut Cloudinary si CLOUDINARY_URL est défini, sinon simulé. */
   imageStorage?: ImageStorage;
   /** Stockage privé des pièces d'identité ; par défaut Cloudinary si CLOUDINARY_URL est défini, sinon simulé. */
@@ -144,6 +154,10 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
         new IdentityMaintenance(deps.prisma, identityStorage),
       ),
     );
+    // Annulation d'un événement (NOISE-029) : organisateur, et remboursements pour l'admin.
+    const cancellations = new CancellationService(deps.prisma, logger, deps.notifyCancellation);
+    app.use('/api/v1/events', createEventCancellationRouter(cancellations, env.JWT_ACCESS_SECRET));
+    app.use('/api/v1/admin', createAdminRefundsRouter(cancellations, env.JWT_ACCESS_SECRET));
     if (payments) {
       app.use('/api/v1/payments', createPaymentsRouter(payments, env.JWT_ACCESS_SECRET));
       app.use('/api/v1/orders', createOrderStatusRouter(payments, env.JWT_ACCESS_SECRET));

@@ -90,6 +90,7 @@ model User {
   adminAuditLogs       AdminAuditLog[]
   identityVerification IdentityVerification?  @relation("identityOwner")
   decidedIdentities    IdentityVerification[] @relation("identityDecider")
+  cancelledEvents      EventCancellation[]
 
   @@map("users")
 }
@@ -139,10 +140,11 @@ model Event {
   createdAt            DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt            DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  organizer    User          @relation(fields: [organizerId], references: [id], onDelete: Restrict)
+  organizer    User               @relation(fields: [organizerId], references: [id], onDelete: Restrict)
   ticketTypes  TicketType[]
   tickets      Ticket[]
   scannerLinks ScannerLink[]
+  cancellation EventCancellation?
 
   @@index([status, startsAt])
   @@index([organizerId])
@@ -371,4 +373,28 @@ model IdentityVerification {
   @@index([status, resubmitDeadline])
   @@index([documentPurgeAt])
   @@map("identity_verifications")
+}
+
+/// Annulation d'un événement par son organisateur (DEC-025, NOISE-029). Les montants sont figés
+/// au moment de l'annulation : l'administrateur suit le paiement dû et les remboursements.
+model EventCancellation {
+  id                 String   @id @default(uuid()) @db.Uuid
+  eventId            String   @unique @map("event_id") @db.Uuid
+  cancelledById      String   @map("cancelled_by_id") @db.Uuid
+  reason             String?  @db.VarChar(500)
+  ticketsCancelled   Int      @map("tickets_cancelled")
+  salesXof           Int      @map("sales_xof")
+  /// Frais d'annulation : la commission de 10 % des ventes.
+  cancellationFeeXof Int      @map("cancellation_fee_xof")
+  /// Sommes déjà reversées à l'organisateur au moment de l'annulation (DEC-027).
+  paidOutXof         Int      @map("paid_out_xof")
+  /// Échéance du paiement de l'organisateur : annulation + 10 jours.
+  returnDueAt        DateTime @map("return_due_at") @db.Timestamptz(3)
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  event       Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  cancelledBy User  @relation(fields: [cancelledById], references: [id], onDelete: Restrict)
+
+  @@index([returnDueAt])
+  @@map("event_cancellations")
 }
