@@ -826,6 +826,22 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Tests :
   - Intégration : organisateur non vérifié → 403 à la création ; vérifié → 201 ; un non-administrateur ne peut ni voir les pièces ni valider
 
+#### NOISE-053 — Idempotency-Key sur la commande et le paiement
+
+- Objectif : Une requête renvoyée après une réponse perdue (3G) ne crée pas une seconde commande ni une seconde demande de paiement.
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : S4 · Type : Feature · Domaine : Backend · Priorité : P1 · Estimation : 3 h
+- Dépendances : NOISE-018, NOISE-019
+- Statut : En revue
+- Fichiers concernés : apps/api/src/middlewares/idempotency.ts, apps/api/prisma/schema.prisma, docs/api.md
+- Critères d'acceptation :
+  - [x] En-tête facultatif sur POST /orders et POST /payments/initiate ; réponse rejouée pour la même clé et le même corps
+  - [x] 409 si la clé a servi à une autre requête ou si la première est en cours ; rien de gardé sur une erreur 5xx
+  - [x] Clés propres à chaque compte, gardées 24 heures
+  - [ ] Le mobile envoie une clé par intention d'achat (NOISE-021)
+- Tests :
+  - Intégration : commande et paiement rejoués sans doublon, autre corps, autre compte, erreur 4xx rejouée, requête en cours, 5xx, clé expirée
+
 ### M5 — Google Play
 
 #### NOISE-038 — Google Play Console et test fermé
