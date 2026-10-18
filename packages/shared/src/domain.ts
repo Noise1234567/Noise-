@@ -15,7 +15,8 @@ export const MAX_TICKETS_PER_ORDER = 5;
 export const USER_ROLES = ['PARTICIPANT', 'ORGANIZER', 'ADMIN'] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
-export const EVENT_STATUSES = ['DRAFT', 'PUBLISHED', 'CANCELLED'] as const;
+/** SUSPENDED : retiré de la vente par un administrateur (DEC-020), réversible. */
+export const EVENT_STATUSES = ['DRAFT', 'PUBLISHED', 'CANCELLED', 'SUSPENDED'] as const;
 export type EventStatus = (typeof EVENT_STATUSES)[number];
 
 /**

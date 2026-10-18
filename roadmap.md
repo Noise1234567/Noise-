@@ -337,11 +337,11 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Statut : À faire
 - Fichiers concernés : apps/mobile/src/shared/_, apps/api/src/modules/users/_
 - Critères d'acceptation :
-  - [ ] Sélecteur en haut de l'app si l'utilisateur a les deux rôles
-  - [ ] Activation du second rôle depuis les paramètres
-  - [ ] Rôle actif persistant
+  - [x] Sélecteur en haut de l'app si l'utilisateur a les deux rôles (absent pour un compte à un seul rôle)
+  - [x] Pas d'activation du second rôle dans les paramètres : le rôle se choisit à l'inscription (décision d'Orias, 2026-10-14)
+  - [x] Dernière vue utilisée retenue au relancement et à la reconnexion
 - Tests :
-  - Test UI du sélecteur ; test API d'activation
+  - Test UI du sélecteur ; tests du service de session (vue retenue)
 
 #### NOISE-016 — Environnement staging sur Railway
 
@@ -690,12 +690,12 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Responsable : Orias · Reviewer : Yannis
 - Sprint : S5 · Type : Feature · Domaine : Backend · Priorité : P1 · Estimation : 4 h
 - Dépendances : NOISE-019
-- Statut : À faire
+- Statut : Implémenté (en attente de revue)
 - Fichiers concernés : apps/api/src/modules/admin/*
 - Critères d'acceptation :
-  - [ ] Rôle ADMIN ; suspendre un organisateur ou un événement ; lister paiements et commandes
-  - [ ] Pas de validation des organisateurs (DEC-018) ; suspension d'un organisateur qui ne respecte pas les CGU
-  - [ ] Chaque action admin journalisée
+  - [x] Rôle ADMIN ; suspendre un organisateur ou un événement ; lister paiements et commandes
+  - [x] Pas de validation des organisateurs (DEC-018) ; suspension d'un organisateur qui ne respecte pas les CGU
+  - [x] Chaque action admin journalisée
 - Tests :
   - Intégration : accès refusé aux non-admins
 

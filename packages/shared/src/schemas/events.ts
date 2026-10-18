@@ -182,6 +182,8 @@ export interface TicketTypeDto {
 export interface EventDto {
   id: string;
   organizerId: string;
+  /** Nom de l'organisateur (public) : « par <organisateur> » sur le détail. */
+  organizerName: string;
   title: string;
   description: string;
   styles: EventStyle[];

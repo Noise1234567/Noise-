@@ -32,9 +32,14 @@ import type { AuthContext } from '../../middlewares/auth.js';
  * pour l'instant l'API calcule et expose le montant, sans bloquer la publication.
  */
 
-type EventWithTypes = Event & { ticketTypes: TicketType[] };
+type EventWithTypes = Event & { ticketTypes: TicketType[]; organizer: { name: string } };
 
 const ticketTypesOrder = [{ priceXof: 'asc' }, { name: 'asc' }] as const;
+/** Relations chargées avec chaque événement : ses billets et le nom (public) de l'organisateur. */
+const eventInclude = {
+  ticketTypes: { orderBy: [...ticketTypesOrder] },
+  organizer: { select: { name: true } },
+} satisfies Prisma.EventInclude;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const invalid = (path: string, message: string) =>
@@ -60,7 +65,7 @@ export class EventsService {
     // Une ligne de plus que demandé : sa présence indique qu'il reste une page suivante.
     const rows = await this.prisma.event.findMany({
       where,
-      include: { ticketTypes: { orderBy: [...ticketTypesOrder] } },
+      include: eventInclude,
       orderBy: [{ startsAt: 'asc' }, { id: 'asc' }],
       take: query.limit + 1,
       ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
@@ -86,7 +91,7 @@ export class EventsService {
     const now = new Date();
     const rows = await this.prisma.event.findMany({
       where: { organizerId: auth.userId },
-      include: { ticketTypes: { orderBy: [...ticketTypesOrder] } },
+      include: eventInclude,
       orderBy: [{ startsAt: 'asc' }, { id: 'asc' }],
       take: query.limit + 1,
       ...(query.cursor ? { cursor: { id: query.cursor }, skip: 1 } : {}),
@@ -107,7 +112,7 @@ export class EventsService {
   async get(auth: AuthContext, id: string): Promise<EventDto> {
     const event = await this.prisma.event.findUnique({
       where: { id },
-      include: { ticketTypes: { orderBy: [...ticketTypesOrder] } },
+      include: eventInclude,
     });
     if (!event || (event.status === 'DRAFT' && event.organizerId !== auth.userId)) {
       throw new HttpError(404, 'NOT_FOUND', 'Événement introuvable');
@@ -119,6 +124,7 @@ export class EventsService {
 
   /** L'événement est créé en brouillon : il devient visible une fois publié (update). */
   async create(auth: AuthContext, input: CreateEventInput): Promise<EventDto> {
+    await this.assertOrganizerActive(auth);
     const event = await this.prisma.event.create({
       data: {
         organizerId: auth.userId,
@@ -131,16 +137,18 @@ export class EventsService {
         endsAt: new Date(input.endsAt),
         capacity: input.capacity,
       },
-      include: { ticketTypes: true },
+      include: eventInclude,
     });
     return this.toDto(event, new Map(), auth.userId, new Date());
   }
 
   async update(auth: AuthContext, id: string, input: UpdateEventInput): Promise<EventDto> {
+    await this.assertOrganizerActive(auth);
     const event = await this.findOwned(auth, id);
     if (event.status === 'CANCELLED') {
       throw new HttpError(409, 'CONFLICT', 'Un événement annulé ne peut plus être modifié');
     }
+    this.assertNotSuspended(event.status);
 
     const now = new Date();
     const startsAt = input.startsAt ? new Date(input.startsAt) : event.startsAt;
@@ -196,7 +204,7 @@ export class EventsService {
         startsAt,
         endsAt,
       },
-      include: { ticketTypes: { orderBy: [...ticketTypesOrder] } },
+      include: eventInclude,
     });
     const reserved = await this.reservedByTicketType(updated.ticketTypes, now);
     return this.toDto(updated, reserved, auth.userId, now);
@@ -207,10 +215,12 @@ export class EventsService {
     eventId: string,
     input: CreateTicketTypeInput,
   ): Promise<TicketTypeDto> {
+    await this.assertOrganizerActive(auth);
     const event = await this.findOwned(auth, eventId);
     if (event.status === 'CANCELLED') {
       throw new HttpError(409, 'CONFLICT', 'Un événement annulé ne peut plus être modifié');
     }
+    this.assertNotSuspended(event.status);
     const declared = event.ticketTypes.reduce((sum, type) => sum + type.quantityTotal, 0);
     if (declared + input.quantityTotal > event.capacity) {
       throw new HttpError(
@@ -253,10 +263,12 @@ export class EventsService {
    * organisateur pourrait écraser l'affiche d'un autre.
    */
   async assertPosterEditable(auth: AuthContext, id: string): Promise<void> {
+    await this.assertOrganizerActive(auth);
     const event = await this.findOwned(auth, id);
     if (event.status === 'CANCELLED') {
       throw new HttpError(409, 'CONFLICT', 'Un événement annulé ne peut plus être modifié');
     }
+    this.assertNotSuspended(event.status);
   }
 
   /** Enregistre l'URL de l'affiche envoyée au stockage. */
@@ -265,18 +277,36 @@ export class EventsService {
     const updated = await this.prisma.event.update({
       where: { id },
       data: { posterUrl },
-      include: { ticketTypes: { orderBy: [...ticketTypesOrder] } },
+      include: eventInclude,
     });
     const now = new Date();
     const reserved = await this.reservedByTicketType(updated.ticketTypes, now);
     return this.toDto(updated, reserved, auth.userId, now);
   }
 
+  /**
+   * Le jeton d'accès vit 15 minutes : un compte suspendu peut encore en détenir un valide.
+   * On relit donc le statut en base avant toute écriture d'organisateur (DEC-020).
+   */
+  private async assertOrganizerActive(auth: AuthContext): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: auth.userId },
+      select: { status: true },
+    });
+    if (user?.status !== 'ACTIVE') throw new HttpError(403, 'FORBIDDEN', 'Compte suspendu');
+  }
+
+  private assertNotSuspended(status: string): void {
+    if (status === 'SUSPENDED') {
+      throw new HttpError(409, 'CONFLICT', 'Cet événement est suspendu par l’administration');
+    }
+  }
+
   /** 404 si l'événement n'existe pas, 403 s'il appartient à un autre organisateur. */
   private async findOwned(auth: AuthContext, id: string): Promise<EventWithTypes> {
     const event = await this.prisma.event.findUnique({
       where: { id },
-      include: { ticketTypes: true },
+      include: eventInclude,
     });
     if (!event) throw new HttpError(404, 'NOT_FOUND', 'Événement introuvable');
     if (event.organizerId !== auth.userId) throw new HttpError(403, 'FORBIDDEN', 'Accès refusé');
@@ -314,6 +344,7 @@ export class EventsService {
     return {
       id: event.id,
       organizerId: event.organizerId,
+      organizerName: event.organizer.name,
       title: event.title,
       description: event.description,
       styles: event.styles as EventStyle[],

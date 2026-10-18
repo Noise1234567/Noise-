@@ -37,8 +37,11 @@ describe('loadEnv', () => {
       /JWT_ACCESS_SECRET/,
     );
     expect(
-      loadEnv({ JWT_ACCESS_SECRET: 'x'.repeat(32), QR_SIGNING_SECRET: 'y'.repeat(32) })
-        .JWT_ACCESS_SECRET,
+      loadEnv({
+        JWT_ACCESS_SECRET: 'x'.repeat(32),
+        QR_SIGNING_SECRET: 'y'.repeat(32),
+        SCANNER_JWT_SECRET: 'z'.repeat(32),
+      }).JWT_ACCESS_SECRET,
     ).toHaveLength(32);
   });
 

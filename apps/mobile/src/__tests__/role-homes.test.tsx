@@ -86,6 +86,12 @@ describe('accueils vides', () => {
     expect(screen.getByText('Aucun événement créé')).toBeTruthy();
   });
 
+  it('compte à un seul rôle : pas de sélecteur de rôle', async () => {
+    useSession.getState().signIn(['PARTICIPANT'], 'PARTICIPANT', user);
+    await render(<Home />);
+    expect(screen.queryByRole('tab', { name: 'Organisateur' })).toBeNull();
+  });
+
   it('le sélecteur de rôle bascule la vue sans reconnexion', async () => {
     signInAs('PARTICIPANT');
     await render(<Home />);

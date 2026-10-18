@@ -15,6 +15,7 @@ export function createTestPrisma(): PrismaClient {
 }
 
 const TABLES = [
+  'admin_audit_logs',
   'scan_logs',
   'scanner_links',
   'tickets',
@@ -38,7 +39,10 @@ let phoneCounter = 0;
 
 /** Petites fabriques : des données valides, à modifier test par test. */
 export const factories = {
-  user: (prisma: PrismaClient, roles: ('PARTICIPANT' | 'ORGANIZER')[] = ['PARTICIPANT']) =>
+  user: (
+    prisma: PrismaClient,
+    roles: ('PARTICIPANT' | 'ORGANIZER' | 'ADMIN')[] = ['PARTICIPANT'],
+  ) =>
     prisma.user.create({
       data: {
         name: 'Utilisateur Test',
