@@ -816,13 +816,13 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Responsable : à attribuer · Reviewer : l'autre développeur
 - Sprint : S4 · Type : Feature · Domaine : Full stack · Priorité : P0 · Estimation : 8 h
 - Dépendances : NOISE-011, NOISE-037
-- Statut : À faire
+- Statut : API implémentée (en attente de revue) ; écran mobile à faire
 - Fichiers concernés : apps/api/prisma/_, apps/api/src/modules/events/_, apps/api/src/modules/admin/_, apps/mobile/src/features/organizer/_
 - Critères d'acceptation :
-  - [ ] Statut d'identité de l'organisateur : non soumis, en attente, vérifié, refusé (avec motif)
-  - [ ] Envoi d'une photo de pièce d'identité depuis le mobile ; stockage non public, consultable par les seuls administrateurs
-  - [ ] Validation ou refus par un administrateur (action journalisée)
-  - [ ] Création et publication d'événement refusées (403) tant que l'identité n'est pas vérifiée ; message clair dans l'app
+  - [x] Statut d'identité de l'organisateur : non soumis, en attente, vérifié, refusé (avec motif)
+  - [x] API d'envoi d'une photo de pièce d'identité ; stockage non public, consultable par les seuls administrateurs (écran mobile : PR suivante)
+  - [x] Validation ou refus par un administrateur (action journalisée), refus avec délai de 72 h ou immédiat
+  - [x] Création et publication d'événement refusées (403 IDENTITY_REQUIRED) tant que la pièce n'est pas envoyée (précision de DEC-018, 2026-10-16) ; message clair dans l'app (PR mobile)
 - Tests :
   - Intégration : organisateur non vérifié → 403 à la création ; vérifié → 201 ; un non-administrateur ne peut ni voir les pièces ni valider
 
