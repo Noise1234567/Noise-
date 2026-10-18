@@ -27,6 +27,7 @@ function event(ticketTypes: TicketTypeDto[] = [type()]): EventDto {
   return {
     id: 'evt',
     organizerId: 'org',
+    organizerName: 'Awa Dossou',
     title: 'Afro Night',
     description: '',
     styles: ['Afrobeat'],
