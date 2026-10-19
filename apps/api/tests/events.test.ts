@@ -28,6 +28,8 @@ const as = async (user: { id: string; roles: UserRole[] }) => ({
 });
 const organizer = async () => {
   const user = await factories.user(prisma, ['ORGANIZER']);
+  // DEC-018 : sans pièce d'identité envoyée, un organisateur ne peut ni créer ni publier.
+  await factories.identity(prisma, user.id);
   return { user, headers: await as(user) };
 };
 const participant = async () => {

@@ -80,7 +80,7 @@ export class ModerationService {
       // Garde dans la requête : deux suspensions simultanées n'écrivent qu'une trace.
       const { count } = await tx.event.updateMany({
         where: { id: eventId, status: 'PUBLISHED' },
-        data: { status: 'SUSPENDED', suspendedWithOrg: false },
+        data: { status: 'SUSPENDED', suspendedWithOrg: false, suspendedForIdentity: false },
       });
       if (count === 0) {
         throw new HttpError(409, 'CONFLICT', 'Seul un événement publié peut être suspendu');
@@ -112,7 +112,7 @@ export class ModerationService {
       }
       const { count } = await tx.event.updateMany({
         where: { id: eventId, status: 'SUSPENDED' },
-        data: { status: 'PUBLISHED', suspendedWithOrg: false },
+        data: { status: 'PUBLISHED', suspendedWithOrg: false, suspendedForIdentity: false },
       });
       if (count === 0) throw new HttpError(409, 'CONFLICT', 'Événement non suspendu');
       await writeAuditLog(tx, {
