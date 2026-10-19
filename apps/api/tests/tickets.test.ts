@@ -313,7 +313,8 @@ describe('configuration', () => {
     const prod = { NODE_ENV: 'development', JWT_ACCESS_SECRET: SECRET } as const;
     expect(() => loadEnv(prod)).toThrow(/QR_SIGNING_SECRET/);
     expect(() => loadEnv({ ...prod, QR_SIGNING_SECRET: 'court' })).toThrow(/QR_SIGNING_SECRET/);
-    expect(loadEnv({ ...prod, QR_SIGNING_SECRET: QR_SECRET }).QR_SIGNING_SECRET).toBe(QR_SECRET);
+    const full = { ...prod, QR_SIGNING_SECRET: QR_SECRET, SCANNER_JWT_SECRET: 's'.repeat(32) };
+    expect(loadEnv(full).QR_SIGNING_SECRET).toBe(QR_SECRET);
   });
 
   it('sans secret (tests), les commandes gratuites fonctionnent sans billets', async () => {

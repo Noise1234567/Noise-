@@ -33,6 +33,7 @@
 | 400  | `VALIDATION_ERROR`                                   |
 | 401  | `UNAUTHENTICATED`                                    |
 | 403  | `FORBIDDEN`                                          |
+| 403  | `IDENTITY_REQUIRED` (pièce d'identité à envoyer)     |
 | 404  | `NOT_FOUND`                                          |
 | 409  | `CONFLICT` (stock épuisé, commande expirée, doublon) |
 | 429  | `RATE_LIMITED`                                       |
@@ -44,37 +45,38 @@ Les codes sont définis dans `packages/shared/src/errors.ts` ; le mobile affiche
 
 Base : CDC section 7, complétée par les décisions.
 
-| Méthode | Endpoint                    | Accès                     | Tâche                |
-| ------- | --------------------------- | ------------------------- | -------------------- |
-| GET     | `/health`                   | Public                    | NOISE-000 (existe)   |
-| GET     | `/health/ready`             | Public                    | NOISE-006            |
-| POST    | `/auth/register`            | Public                    | NOISE-007 (existe)   |
-| POST    | `/auth/login`               | Public                    | NOISE-007            |
-| POST    | `/auth/refresh`             | Public (refresh token)    | NOISE-007            |
-| POST    | `/auth/logout`              | Auth                      | NOISE-007            |
-| GET     | `/me`                       | Auth                      | NOISE-007            |
-| PATCH   | `/me/roles`                 | Auth                      | NOISE-015            |
-| GET     | `/events`                   | Auth                      | NOISE-011 (existe)   |
-| GET     | `/events/:id`               | Auth                      | NOISE-011 (existe)   |
-| POST    | `/events`                   | Organisateur              | NOISE-011 (existe)   |
-| PUT     | `/events/:id`               | Organisateur propriétaire | NOISE-011 (existe)   |
-| POST    | `/events/:id/ticket-types`  | Organisateur propriétaire | NOISE-011 (existe)   |
-| POST    | `/events/:id/poster`        | Organisateur propriétaire | NOISE-012            |
-| POST    | `/events/:id/cancel`        | Organisateur propriétaire | NOISE-029            |
-| GET     | `/organizer/events`         | Organisateur              | NOISE-013            |
-| GET     | `/events/:id/stats`         | Organisateur propriétaire | NOISE-027            |
-| POST    | `/orders`                   | Participant               | NOISE-018            |
-| GET     | `/orders/:id`               | Participant propriétaire  | NOISE-018            |
-| GET     | `/orders/:id/status`        | Participant propriétaire  | NOISE-019            |
-| POST    | `/payments/initiate`        | Participant propriétaire  | NOISE-019            |
-| POST    | `/payments/webhook`         | Fournisseur (signature)   | NOISE-019            |
-| GET     | `/tickets/mine`             | Participant               | NOISE-020 (existe)   |
-| POST    | `/scanner/links`            | Organisateur propriétaire | NOISE-024            |
-| GET     | `/events/:id/scanner-links` | Organisateur propriétaire | NOISE-024            |
-| DELETE  | `/scanner/links/:id`        | Organisateur propriétaire | NOISE-024            |
-| POST    | `/scanner/validate`         | Scanner JWT               | NOISE-025            |
-| POST    | `/me/push-token`            | Auth                      | NOISE-028            |
-| *       | `/admin/*`                  | Admin                     | NOISE-037, NOISE-039 |
+| Méthode   | Endpoint                    | Accès                     | Tâche                |
+| --------- | --------------------------- | ------------------------- | -------------------- |
+| GET       | `/health`                   | Public                    | NOISE-000 (existe)   |
+| GET       | `/health/ready`             | Public                    | NOISE-006            |
+| POST      | `/auth/register`            | Public                    | NOISE-007 (existe)   |
+| POST      | `/auth/login`               | Public                    | NOISE-007            |
+| POST      | `/auth/refresh`             | Public (refresh token)    | NOISE-007            |
+| POST      | `/auth/logout`              | Auth                      | NOISE-007            |
+| GET       | `/me`                       | Auth                      | NOISE-007            |
+| PATCH     | `/me/roles`                 | Auth                      | NOISE-015            |
+| GET       | `/events`                   | Auth                      | NOISE-011 (existe)   |
+| GET       | `/events/:id`               | Auth                      | NOISE-011 (existe)   |
+| POST      | `/events`                   | Organisateur              | NOISE-011 (existe)   |
+| PUT       | `/events/:id`               | Organisateur propriétaire | NOISE-011 (existe)   |
+| POST      | `/events/:id/ticket-types`  | Organisateur propriétaire | NOISE-011 (existe)   |
+| POST      | `/events/:id/poster`        | Organisateur propriétaire | NOISE-012            |
+| POST      | `/events/:id/cancel`        | Organisateur propriétaire | NOISE-029            |
+| GET       | `/organizer/events`         | Organisateur              | NOISE-013            |
+| GET       | `/events/:id/stats`         | Organisateur propriétaire | NOISE-027            |
+| POST      | `/orders`                   | Participant               | NOISE-018            |
+| GET       | `/orders/:id`               | Participant propriétaire  | NOISE-018            |
+| GET       | `/orders/:id/status`        | Participant propriétaire  | NOISE-019            |
+| POST      | `/payments/initiate`        | Participant propriétaire  | NOISE-019            |
+| POST      | `/payments/webhook`         | Fournisseur (signature)   | NOISE-019            |
+| GET       | `/tickets/mine`             | Participant               | NOISE-020 (existe)   |
+| POST      | `/scanner/links`            | Organisateur propriétaire | NOISE-024 (existe)   |
+| GET       | `/events/:id/scanner-links` | Organisateur propriétaire | NOISE-024 (existe)   |
+| DELETE    | `/scanner/links/:id`        | Organisateur propriétaire | NOISE-024 (existe)   |
+| POST      | `/scanner/validate`         | Scanner JWT               | NOISE-025            |
+| POST      | `/me/push-token`            | Auth                      | NOISE-028            |
+| GET, POST | `/me/identity`              | Organisateur              | NOISE-048            |
+| *         | `/admin/*`                  | Admin                     | NOISE-037, NOISE-039 |
 
 Écart avec le CDC : un seul endpoint webhook (`/payments/webhook`) car l'agrégateur envoie MTN et Moov au même endroit (DEC-005).
 
@@ -102,7 +104,48 @@ Format des numéros : toute écriture béninoise est acceptée (`01 97 45 45 47`
 | `GET /api/v1/admin/events/:eventId/sales`     | 200 `{ eventTitle, lines: [{ ticketTypeName, unitPriceXof, ticketsSold, grossXof }], totals: { ticketsSold, grossXof, noiseXof, affiliateXof, organizerXof } }` | 400 identifiant invalide ; 401 ; 403 (pas ADMIN) ; 404 événement inconnu ; 409 commande payée sans répartition enregistrée |
 | `GET /api/v1/admin/events/:eventId/sales.csv` | 200 `text/csv; charset=utf-8`, fichier `ventes-<titre>-<date>.csv` (voir docs/payments.md section 7.1)                                                          | idem                                                                                                                       |
 
-Seules les commandes PAID sont comptées, à partir de la répartition enregistrée à la confirmation du paiement (DEC-022). Chaque appel est journalisé (identifiant de l'administrateur, événement, action).
+Seules les commandes PAID sont comptées, à partir de la répartition enregistrée à la confirmation du paiement (DEC-022). Chaque appel laisse une ligne d'audit `SALES_EXPORTED` (administrateur, événement, format).
+
+### Administration minimale (NOISE-037, rôle ADMIN)
+
+| Endpoint                                        | Corps / réponse                                                                                            | Erreurs                                                                                      |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `POST /api/v1/admin/users/:userId/suspend`      | `{ reason }` (5 à 500 caractères) → 200 `{ userId, status, affectedEvents }`                               | 400 ; 401 ; 403 (pas ADMIN, ou cible ADMIN) ; 404 ; 409 (déjà suspendu, ou pas organisateur) |
+| `POST /api/v1/admin/users/:userId/reactivate`   | idem                                                                                                       | idem, 409 si le compte n'est pas suspendu                                                    |
+| `POST /api/v1/admin/events/:eventId/suspend`    | `{ reason }` → 200 `{ eventId, status }`                                                                   | 400 ; 401 ; 403 ; 404 ; 409 (seul un événement publié se suspend)                            |
+| `POST /api/v1/admin/events/:eventId/reactivate` | idem                                                                                                       | 409 si l'événement n'est pas suspendu ou si son organisateur l'est                           |
+| `GET /api/v1/admin/orders`                      | Filtres `status`, `eventId`, `from`, `to`, `limit` (défaut 20, max 50), `cursor` → `{ items, nextCursor }` | 400 filtre invalide ; 401 ; 403                                                              |
+| `GET /api/v1/admin/payments`                    | Mêmes filtres + `operator` → `{ items, nextCursor }`                                                       | idem                                                                                         |
+
+Effets de la suspension d'un organisateur : connexion et refresh refusés, sessions révoquées, événements publiés passés en SUSPENDED (et remis en vente à la réactivation, seuls ceux-là), écritures organisateur refusées (403 « Compte suspendu », même avec un jeton encore valide). Un événement SUSPENDED n'accepte plus de commande ni d'initiation de paiement (409) ; un paiement déjà lancé reste confirmé par le webhook, et les billets déjà vendus restent valides. Les listes sont triées du plus récent au plus ancien et ne renvoient que des numéros masqués.
+
+Chaque action (suspension, réactivation, export des ventes) écrit une ligne dans `admin_audit_logs` (admin, action, cible, motif), dans la même transaction que l'action.
+
+### Vérification d'identité des organisateurs (NOISE-048, DEC-018)
+
+Règle : pour créer un événement ou le publier, l'organisateur doit avoir envoyé sa pièce d'identité. Statuts : non soumis (aucune ligne), `PENDING` (envoyée, en attente de décision), `VERIFIED`, `REFUSED` (avec motif). En attente ou vérifiée : il peut créer et publier sans attendre la décision. Non soumis ou refusé : `POST /events` et le passage en `PUBLISHED` répondent 403 `IDENTITY_REQUIRED` ; le mobile s'appuie sur ce code pour afficher l'écran d'envoi.
+
+Côté organisateur (rôle ORGANIZER) :
+
+| Endpoint                   | Corps / réponse                                                                                                                                          | Erreurs                                                                                                                     |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/v1/me/identity`  | 200 `{ status, canOrganize, submittedAt, refusalReason, resubmitDeadline, eventsPulled }` (`status` : `NOT_SUBMITTED`, `PENDING`, `VERIFIED`, `REFUSED`) | 401 ; 403 (pas organisateur)                                                                                                |
+| `POST /api/v1/me/identity` | `multipart/form-data`, champ `document` (JPEG, PNG ou WebP, 5 Mo maximum, type reconnu par le contenu) → 201, même réponse que le GET                    | 400 fichier absent, trop lourd ou d'un autre type ; 401 ; 403 ; 409 déjà en attente ou vérifiée ; 429 (10 envois par heure) |
+
+L'image n'est jamais renvoyée à l'organisateur. Un nouvel envoi n'est possible que s'il n'a encore rien envoyé ou si la pièce a été refusée.
+
+Côté administrateur (rôle ADMIN) :
+
+| Endpoint                                                    | Corps / réponse                                                                                                               | Erreurs                                               |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `GET /api/v1/admin/identity-verifications`                  | Filtres `status` (défaut `PENDING`), `limit` (défaut 20, max 50), `cursor` ; plus anciennes d'abord → `{ items, nextCursor }` | 400 ; 401 ; 403                                       |
+| `GET /api/v1/admin/identity-verifications/:userId/document` | 200 `{ url, expiresAt }` : lien signé valable 5 minutes ; la consultation est tracée                                          | 400 ; 401 ; 403 ; 404 sans demande ou pièce supprimée |
+| `POST /api/v1/admin/identity-verifications/:userId/approve` | 200 `{ userId, status, affectedEvents }` ; les événements retirés faute de pièce sont remis en vente                          | 401 ; 403 ; 404 ; 409 déjà décidée                    |
+| `POST /api/v1/admin/identity-verifications/:userId/refuse`  | `{ reason, immediate? }` (motif 5 à 500 caractères) → 200 `{ userId, status, affectedEvents }`                                | 400 ; 401 ; 403 ; 404 ; 409 déjà décidée              |
+
+Refus avec avertissement : l'organisateur voit le motif et dispose de 72 heures (`resubmitDeadline`) pour renvoyer une pièce ; pendant ce délai ses événements publiés restent en vente mais il ne peut plus créer ni publier. Le délai écoulé sans nouvel envoi, une tâche horaire retire ses événements publiés de la vente (statut `SUSPENDED`, `eventsPulled: true`) ; ils reviennent si une pièce est ensuite validée. Avec `immediate: true`, les événements sont retirés tout de suite (fraude évidente). Les billets déjà vendus restent valides dans tous les cas. Chaque consultation, validation et refus écrit une ligne dans `admin_audit_logs`.
+
+Conservation : la pièce est stockée en privé chez Cloudinary (type `authenticated`, aucune URL publique). Une pièce refusée est supprimée tout de suite ; une pièce validée est supprimée 12 mois après la validation (le statut reste `VERIFIED`).
 
 ### Paiement et suivi de commande (NOISE-019)
 
@@ -153,6 +196,8 @@ Chaque type de billet renvoie `available` = quantité totale − billets vendus 
 
 « Presque complet » (NOISE-014) est calculé par l'API pour que tous les clients affichent la même chose. `lowStock` (par type de billet) vaut `true` quand il reste 20 % des places ou moins (`LOW_STOCK_RATIO` dans `@noise/shared`), arrondi vers le bas, sans être épuisé : sur 100 billets, 20 restants = vrai, 21 = faux, 0 = faux (c'est « Complet »). `almostFull` (par événement) applique la même règle au total des types encore en vente (ceux dont `onSale` est vrai) ; faux sans type de billet ou quand tout est vendu.
 
+`organizerName` est le nom du compte organisateur, affiché « par <organisateur> » sur le détail. Aucune autre donnée de l'organisateur n'est exposée (ni téléphone, ni e-mail).
+
 Styles : un événement porte `styles`, de 1 à 5 valeurs choisies par l'organisateur dans la liste fermée `EVENT_STYLES` : Afrobeat, Amapiano, Rap, Électro, Concert, Soirée, Gospel, Zouk, Coupé-décalé, Dancehall, Jazz, R&B, Festival, Autre. Pas de doublon. Ce champ remplace l'ancien `genre` (texte libre) à la création et à la modification ; la migration reporte les anciens genres connus et met `Autre` pour les autres.
 
 ### `POST /api/v1/events/:id/poster` (NOISE-012)
@@ -198,3 +243,23 @@ Un billet est créé pour chaque place d'une commande confirmée, au nom de l'ac
 Réservé au rôle `PARTICIPANT`. Réponse 200 : `{ tickets: TicketDto[] }` (`packages/shared/src/schemas/tickets.ts`), les événements les plus proches d'abord. Chaque billet porte `qrPayload`, le contenu exact du QR à afficher, qui reste le même à chaque appel. Un participant ne reçoit jamais les billets d'un autre. Erreurs : 401, 403.
 
 Configuration : `QR_SIGNING_SECRET` (32 caractères minimum, distinct des autres secrets) est obligatoire hors tests.
+
+## 7. Liens scanner (NOISE-024)
+
+Un lien donne accès au scanner d'un seul événement, sans compte (conception : `docs/qr-scanner.md` section 2). Les trois routes sont réservées au rôle `ORGANIZER`, puis à l'organisateur propriétaire de l'événement : 403 pour celui d'un autre, 404 si l'événement ou le lien n'existe pas.
+
+### Création : `POST /api/v1/scanner/links`
+
+Corps : `{ eventId, label?, durationHours? }` (`packages/shared/src/schemas/scanner-links.ts`). `label` : 1 à 60 caractères ; `durationHours` : entier de 1 à 48. Réponse 201 : `{ link, token, url }`. `link` est un `ScannerLinkDto` (`status` : `ACTIVE`, `EXPIRED` ou `REVOKED`). `token` est le JWT, montré une seule fois. `url` vaut `<SCANNER_URL>#<token>`, ou `null` si `SCANNER_URL` n'est pas configurée.
+
+Erreurs : 400 (corps invalide) ; 401 ; 403 ; 404 ; 409 (événement en brouillon, annulé ou terminé).
+
+### Liste : `GET /api/v1/events/:id/scanner-links`
+
+Réponse 200 : `{ links: ScannerLinkDto[] }`, le plus récent d'abord. Le jeton n'y figure jamais.
+
+### Révocation : `DELETE /api/v1/scanner/links/:id`
+
+Réponse 200 : `{ link }` avec `status: REVOKED`. Rejouer la révocation renvoie le même résultat, sans changer la date.
+
+Configuration : `SCANNER_JWT_SECRET` (32 caractères minimum, différent de `JWT_ACCESS_SECRET`) est obligatoire hors tests ; `SCANNER_URL` est facultative. La partie mobile (générer et partager le lien) reste à faire.

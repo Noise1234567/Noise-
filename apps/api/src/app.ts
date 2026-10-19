@@ -25,17 +25,28 @@ import { OrdersService } from './modules/orders/orders.service.js';
 import { createTicketIssuer, type TicketIssuer } from './modules/tickets/ticket-issuer.js';
 import { createTicketsRouter } from './modules/tickets/tickets.routes.js';
 import { TicketsService } from './modules/tickets/tickets.service.js';
+import { ScannerLinksService } from './modules/scanner/scanner-links.service.js';
+import { createScannerLinksRouter } from './modules/scanner/scanner.routes.js';
 import { createEventsRouter } from './modules/events/events.routes.js';
 import {
   CloudinaryImageStorage,
   FakeImageStorage,
   type ImageStorage,
 } from './modules/uploads/image-storage.js';
+import { createIdentityRouter } from './modules/identity/identity.routes.js';
+import { IdentityMaintenance } from './modules/identity/identity-maintenance.js';
+import { IdentityService } from './modules/identity/identity.service.js';
+import {
+  createIdentityStorage,
+  type IdentityDocumentStorage,
+} from './modules/uploads/identity-storage.js';
 import { EventsService } from './modules/events/events.service.js';
 
 export interface AppDependencies {
   /** Stockage des affiches ; par défaut Cloudinary si CLOUDINARY_URL est défini, sinon simulé. */
   imageStorage?: ImageStorage;
+  /** Stockage privé des pièces d'identité ; par défaut Cloudinary si CLOUDINARY_URL est défini, sinon simulé. */
+  identityStorage?: IdentityDocumentStorage;
   /** Vérifie que la base répond (lève une erreur sinon). Absent : /health/ready répond 503. */
   checkDatabase?: () => Promise<void>;
   /** Accès à la base : sans lui, les routes métier ne sont pas montées. */
@@ -114,8 +125,25 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
   if (deps.prisma && env.JWT_ACCESS_SECRET) {
     const auth = new AuthService(deps.prisma, env.JWT_ACCESS_SECRET);
     app.use('/api/v1/auth', createAuthRouter(auth, env.JWT_ACCESS_SECRET));
+    const identityStorage = deps.identityStorage ?? createIdentityStorage(env.CLOUDINARY_URL);
+    // Avant /me : « /me/identity » ne doit pas être intercepté par le routeur du profil.
+    app.use(
+      '/api/v1/me/identity',
+      createIdentityRouter(
+        new IdentityService(deps.prisma, identityStorage),
+        env.JWT_ACCESS_SECRET,
+      ),
+    );
     app.use('/api/v1/me', createMeRouter(auth, env.JWT_ACCESS_SECRET));
-    app.use('/api/v1/admin', createAdminRouter(deps.prisma, env.JWT_ACCESS_SECRET));
+    app.use(
+      '/api/v1/admin',
+      createAdminRouter(
+        deps.prisma,
+        env.JWT_ACCESS_SECRET,
+        identityStorage,
+        new IdentityMaintenance(deps.prisma, identityStorage),
+      ),
+    );
     if (payments) {
       app.use('/api/v1/payments', createPaymentsRouter(payments, env.JWT_ACCESS_SECRET));
       app.use('/api/v1/orders', createOrderStatusRouter(payments, env.JWT_ACCESS_SECRET));
@@ -141,6 +169,16 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
         '/api/v1/tickets',
         createTicketsRouter(
           new TicketsService(deps.prisma, env.QR_SIGNING_SECRET),
+          env.JWT_ACCESS_SECRET,
+        ),
+      );
+    }
+    // Sans SCANNER_JWT_SECRET (tests seulement), les liens scanner ne sont pas montés.
+    if (env.SCANNER_JWT_SECRET) {
+      app.use(
+        '/api/v1',
+        createScannerLinksRouter(
+          new ScannerLinksService(deps.prisma, env.SCANNER_JWT_SECRET, env.SCANNER_URL ?? null),
           env.JWT_ACCESS_SECRET,
         ),
       );

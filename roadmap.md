@@ -338,11 +338,11 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Statut : À faire
 - Fichiers concernés : apps/mobile/src/shared/_, apps/api/src/modules/users/_
 - Critères d'acceptation :
-  - [ ] Sélecteur en haut de l'app si l'utilisateur a les deux rôles
-  - [ ] Activation du second rôle depuis les paramètres
-  - [ ] Rôle actif persistant
+  - [x] Sélecteur en haut de l'app si l'utilisateur a les deux rôles (absent pour un compte à un seul rôle)
+  - [x] Pas d'activation du second rôle dans les paramètres : le rôle se choisit à l'inscription (décision d'Orias, 2026-10-14)
+  - [x] Dernière vue utilisée retenue au relancement et à la reconnexion
 - Tests :
-  - Test UI du sélecteur ; test API d'activation
+  - Test UI du sélecteur ; tests du service de session (vue retenue)
 
 #### NOISE-016 — Environnement staging sur Railway
 
@@ -691,12 +691,12 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Responsable : Orias · Reviewer : Yannis
 - Sprint : S5 · Type : Feature · Domaine : Backend · Priorité : P1 · Estimation : 4 h
 - Dépendances : NOISE-019
-- Statut : À faire
+- Statut : Implémenté (en attente de revue)
 - Fichiers concernés : apps/api/src/modules/admin/*
 - Critères d'acceptation :
-  - [ ] Rôle ADMIN ; suspendre un organisateur ou un événement ; lister paiements et commandes
-  - [ ] Pas de validation des organisateurs (DEC-018) ; suspension d'un organisateur qui ne respecte pas les CGU
-  - [ ] Chaque action admin journalisée
+  - [x] Rôle ADMIN ; suspendre un organisateur ou un événement ; lister paiements et commandes
+  - [x] Pas de validation des organisateurs (DEC-018) ; suspension d'un organisateur qui ne respecte pas les CGU
+  - [x] Chaque action admin journalisée
 - Tests :
   - Intégration : accès refusé aux non-admins
 
@@ -817,13 +817,13 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Responsable : à attribuer · Reviewer : l'autre développeur
 - Sprint : S4 · Type : Feature · Domaine : Full stack · Priorité : P0 · Estimation : 8 h
 - Dépendances : NOISE-011, NOISE-037
-- Statut : À faire
+- Statut : API implémentée (en attente de revue) ; écran mobile à faire
 - Fichiers concernés : apps/api/prisma/_, apps/api/src/modules/events/_, apps/api/src/modules/admin/_, apps/mobile/src/features/organizer/_
 - Critères d'acceptation :
-  - [ ] Statut d'identité de l'organisateur : non soumis, en attente, vérifié, refusé (avec motif)
-  - [ ] Envoi d'une photo de pièce d'identité depuis le mobile ; stockage non public, consultable par les seuls administrateurs
-  - [ ] Validation ou refus par un administrateur (action journalisée)
-  - [ ] Création et publication d'événement refusées (403) tant que l'identité n'est pas vérifiée ; message clair dans l'app
+  - [x] Statut d'identité de l'organisateur : non soumis, en attente, vérifié, refusé (avec motif)
+  - [x] API d'envoi d'une photo de pièce d'identité ; stockage non public, consultable par les seuls administrateurs (écran mobile : PR suivante)
+  - [x] Validation ou refus par un administrateur (action journalisée), refus avec délai de 72 h ou immédiat
+  - [x] Création et publication d'événement refusées (403 IDENTITY_REQUIRED) tant que la pièce n'est pas envoyée (précision de DEC-018, 2026-10-16) ; message clair dans l'app (PR mobile)
 - Tests :
   - Intégration : organisateur non vérifié → 403 à la création ; vérifié → 201 ; un non-administrateur ne peut ni voir les pièces ni valider
 

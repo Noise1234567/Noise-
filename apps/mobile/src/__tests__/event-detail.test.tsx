@@ -36,6 +36,7 @@ const event = (over: Partial<EventDto> = {}): EventDto =>
   ({
     id: 'e1',
     organizerId: 'o1',
+    organizerName: 'Club Cadjehoun',
     title: 'Cadjehoun Nights #12',
     description: 'Une soirée afrobeat.',
     styles: ['Afrobeat', 'Soirée'],
@@ -69,6 +70,7 @@ describe('détail événement (écran 7)', () => {
     );
     await render(<EventDetail />);
     expect(await screen.findByText('Cadjehoun Nights #12')).toBeTruthy();
+    expect(screen.getByText('par Club Cadjehoun')).toBeTruthy();
     expect(screen.getByText('Afrobeat')).toBeTruthy();
     expect(screen.getByText('Samedi 17 octobre · 22:00 – 04:00')).toBeTruthy();
     expect(screen.getByText('Le Toit, Haie Vive · Cotonou')).toBeTruthy();
