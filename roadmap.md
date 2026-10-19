@@ -827,7 +827,6 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Tests :
   - Intégration : organisateur non vérifié → 403 à la création ; vérifié → 201 ; un non-administrateur ne peut ni voir les pièces ni valider
 
-
 #### NOISE-053 — Idempotency-Key sur la commande et le paiement
 
 - Objectif : Une requête renvoyée après une réponse perdue (3G) ne crée pas une seconde commande ni une seconde demande de paiement.
