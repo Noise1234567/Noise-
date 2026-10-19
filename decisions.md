@@ -31,9 +31,10 @@ Statuts : Proposée · Acceptée · En attente (bloquée par une information ou 
 | DEC-021 | Revue de PR par IA (Claude Code GitHub Actions), consultative, validation humaine obligatoire | Acceptée                | 2026-10-06 |
 | DEC-022 | Répartition de chaque vente, commission Noise 10 %, affiliation après le MVP                  | Acceptée                | 2026-10-06 |
 | DEC-023 | Frais d'organisation : 40 FCFA par participant déclaré, gratuit jusqu'à 50 participants       | Acceptée                | 2026-10-08 |
-| DEC-024 | Commission de 10 % et reversement à l'organisateur le lendemain de chaque journée de vente    | Acceptée                | 2026-10-08 |
+| DEC-024 | Commission de 10 % et reversement à l'organisateur le lendemain de chaque journée de vente    | Remplacée en partie     | 2026-10-08 |
 | DEC-025 | Annulation par l'organisateur : frais de 10 %, retour des sommes reversées sous 10 jours      | Acceptée                | 2026-10-08 |
 | DEC-026 | E-mail demandé à l'inscription (tous les comptes)                                             | Acceptée                | 2026-10-08 |
+| DEC-027 | Solde de l'organisateur, virements à la demande, reste versé sous 72 h après l'événement      | Acceptée                | 2026-10-15 |
 
 ---
 
@@ -207,6 +208,7 @@ Choix du fournisseur (NOISE-010, 2026-10-01) — statut : Acceptée (proposée p
 
 ## DEC-024 — Commission et reversement quotidien
 
+- Statut : le reversement quotidien est remplacé par DEC-027 (2026-10-15) ; la commission de 10 % reste en vigueur.
 - Remplace : DEC-009.
 - Choix (réunion d'équipe du 2026-10-08) : Noise prélève 10 % du prix de chaque billet vendu. Les 90 % restants sont reversés à l'organisateur le lendemain de chaque journée de vente, sans attendre l'événement.
 - Raison : permettre aux organisateurs de financer l'organisation de la soirée avec les premières ventes. L'équipe accepte en contrepartie le risque qu'un organisateur encaisse puis annule ou disparaisse ; ce risque est couvert par les frais d'annulation (DEC-025) et par les CGU (DEC-018).
@@ -241,3 +243,31 @@ Choix du fournisseur (NOISE-010, 2026-10-01) — statut : Acceptée (proposée p
 - Choix (Yannis, 2026-10-08) : l'e-mail est demandé à l'inscription, pour tous les comptes (participants et organisateurs), unique par compte.
 - Conséquences : colonne `email` sur User (migration), schéma d'inscription et écrans mobiles mis à jour (NOISE-047) ; règle des données personnelles de CLAUDE.md section 9 élargie ; e-mail masqué dans les journaux comme le téléphone.
 - Personnes : Yannis, Orias.
+
+## DEC-027 — Solde de l'organisateur et virements à la demande
+
+- Remplace : le reversement quotidien de DEC-024. La commission de 10 % (DEC-024) et la répartition de chaque vente (DEC-022) ne changent pas.
+- Contexte : le reversement automatique le lendemain de chaque journée de vente multiplie les transferts, sort l'argent avant l'événement même quand l'organisateur n'en a pas besoin, et augmente l'exposition de Noise en cas d'annulation (DEC-025).
+- Choix (décisions d'équipe du 2026-10-15) :
+  - un solde par événement. L'organisateur le voit dans l'application, en temps réel : la part qui lui revient sur les ventes confirmées de l'événement (90 % du prix des billets, sans la commission Noise ni les frais de paiement payés par l'acheteur), moins les virements déjà effectués ;
+  - deux montants affichés : « disponible » (fonds déjà reçus de FedaPay, qui peuvent être virés) et « en attente » (ventes confirmées dont FedaPay n'a pas encore versé les fonds ; environ 3 jours en sandbox). Noise n'avance jamais d'argent sur sa trésorerie ;
+  - chaque événement a un virement gratuit, programmé automatiquement au plus tard 72 heures après la fin de l'événement, pour tout le solde ;
+  - l'organisateur peut déclencher ce virement gratuit plus tôt, quand il le souhaite et du montant qu'il veut, dans la limite du solde disponible ; tous les virements suivants de cet événement sont alors payants ;
+  - pas de plafond avant l'événement, pas de montant minimum : un virement payant doit seulement être supérieur à ses frais ;
+  - les frais d'un virement payant sont déduits du montant viré : l'écran affiche « vous recevrez X, frais Y » avant confirmation ;
+  - si le virement gratuit a été déclenché avant la fin, le reste du solde est quand même envoyé automatiquement au plus tard 72 heures après la fin de l'événement, frais déduits : aucun argent ne reste chez Noise ;
+  - le numéro Mobile Money qui reçoit les virements est demandé à la création de l'événement, prérempli avec le numéro du compte de l'organisateur. Il doit être au nom de l'organisateur vérifié (DEC-018). Le numéro est confirmé par un code envoyé automatiquement par SMS à ce numéro, et l'e-mail de l'organisateur (DEC-026) par un code ou un lien envoyé à cette adresse : aucun virement n'est possible tant que les deux ne sont pas confirmés. Tout changement de ce numéro est confirmé par le mot de passe et suivi de 24 heures sans virement, pour qu'un vol de compte ne permette pas de détourner l'argent.
+- Raison : l'organisateur garde la possibilité de financer sa soirée avec les premières ventes, mais l'argent reste par défaut chez Noise jusqu'à la fin de l'événement. Moins de transferts, et moins de sommes à récupérer en cas d'annulation.
+- Conséquences :
+  - en cas d'annulation (DEC-025), les sommes à renvoyer par l'organisateur sont les virements déjà effectués ; le reste du solde est retenu par Noise ;
+  - NOISE-045 (transferts FedaPay) porte sur les virements à la demande et le versement automatique de fin d'événement, plus les remboursements ;
+  - nouvelles tâches : NOISE-050 (API du solde et des virements) et NOISE-051 (écran « Solde » de l'organisateur) ;
+  - le formulaire de création d'événement (NOISE-013) demande le numéro de virement ;
+  - nouvelle tâche NOISE-052 : confirmation du numéro de virement par SMS et de l'e-mail par code ;
+  - chaque virement est tracé (demande, montant, frais, statut, identifiant de transfert FedaPay) et idempotent.
+- Points ouverts :
+  - montant des frais d'un virement payant (fixe ou pourcentage), à fixer une fois connu le coût réel d'un transfert FedaPay ;
+  - le code SMS prouve que l'organisateur détient le numéro, pas que le numéro est à son nom : la déclaration dans les CGU (NOISE-043) reste nécessaire, et un contrôle du titulaire auprès de l'opérateur sera ajouté si FedaPay le permet ;
+  - fournisseur SMS (DEC-017, en attente) et fournisseur d'envoi d'e-mails (à choisir) : ils conditionnent la confirmation et servent aussi aux relances de DEC-025 ;
+  - gratuité des transferts FedaPay vers Mobile Money et possibilité de virer des fonds encore en attente : à confirmer par écrit (NOISE-045).
+- Personnes : Yannis, Orias (et l'équipe).
