@@ -564,14 +564,15 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Responsable : Yannis · Reviewer : Orias
 - Sprint : S4 · Type : Feature · Domaine : Full stack · Priorité : P1 · Estimation : 5 h
 - Dépendances : NOISE-020, NOISE-028
-- Statut : À faire
+- Statut : API en revue (NOISE-029, partie 1) ; écran organisateur et notification push à faire
 - Fichiers concernés : apps/api/src/modules/events/*
 - Critères d'acceptation :
-  - [ ] POST /events/:id/cancel (organisateur propriétaire)
-  - [ ] Billets → CANCELLED, commandes → CANCELLED, liens scanner révoqués
-  - [ ] Push aux acheteurs ; liste des remboursements à effectuer : 100 % du prix des billets, hors frais de paiement (DEC-025)
-  - [ ] Calcul affiché à l'organisateur avant confirmation : frais d'annulation (10 % des ventes), sommes déjà reversées à renvoyer sous 10 jours, part retenue
-  - [ ] Échéance de retour (annulation + 10 jours) enregistrée et visible par l'admin
+  - [x] POST /events/:id/cancel (organisateur propriétaire)
+  - [x] Billets → CANCELLED, commandes → CANCELLED, liens scanner révoqués
+  - [ ] Push aux acheteurs (point d'accroche prêt, envoi avec NOISE-028)
+  - [x] Liste des remboursements à effectuer : 100 % du prix des billets, hors frais de paiement (DEC-025)
+  - [x] Calcul renvoyé par l'API avant confirmation : frais d'annulation (10 % des ventes), sommes déjà reversées à renvoyer sous 10 jours, part retenue (écran mobile à faire)
+  - [x] Échéance de retour (annulation + 10 jours) enregistrée et visible par l'admin
 - Tests :
   - Intégration : scan d'un billet annulé → CANCELLED
   - Unitaires : frais d'annulation et montant à renvoyer (aucun reversement, reversement partiel, tout reversé)
