@@ -4,67 +4,89 @@ Fichier factuel : il décrit uniquement ce qui a été vérifié. Statuts : À f
 
 Mise à jour : par la PR de suivi (une seule PR groupée, après les fusions), pas par chaque PR de fonctionnalité. Une ligne par tâche, sans tableau, pour que Git fusionne sans conflit. Chaque PR de fonctionnalité porte son statut dans sa propre description.
 
-Dernière mise à jour : 2026-10-07 (Claude).
+Dernière mise à jour : 2026-10-15 (Claude, d'après l'historique de main et les branches poussées).
 
 ## Synthèse
 
-- Tâches mergées dans main : NOISE-000, NOISE-006, NOISE-007, NOISE-010, NOISE-017, NOISE-041, NOISE-042.
-- PR ouvertes : #9 (NOISE-039), #11 (NOISE-012), #12 (NOISE-026), #13 (NOISE-019), #15 (NOISE-011).
+- Tâches mergées dans main : NOISE-000, NOISE-001 (décisions), NOISE-006, NOISE-007, NOISE-008, NOISE-010, NOISE-011, NOISE-012, NOISE-014, NOISE-017, NOISE-018, NOISE-019, NOISE-020, NOISE-026 (interface), NOISE-039, NOISE-041, NOISE-042, NOISE-044 (partie 1), NOISE-047.
+- Branches poussées en attente de revue : NOISE-013, NOISE-021, NOISE-022, NOISE-049, DEC-027.
+- Aucune tâche n'est encore « Testée » : le statut exige une vérification sur staging, qui n'existe pas (NOISE-016).
 - Environnements en ligne : aucun (local uniquement).
+- Notion : pas synchronisé depuis le 2026-10-07 (limite de blocs de l'offre gratuite atteinte).
 - Dernière release : aucune.
 
 ## Terminé
 
 - NOISE-000 Socle du repository et documentation : Validé. PR #1 mergée (commit 96e662c).
-- NOISE-004 Espace Notion : Implémenté. Créé par Claude le 2026-09-24 ; partage et invitation de Yannis non reconfirmés.
-- NOISE-006 Schéma Prisma v1, migration initiale, seed : Implémenté. PR #5 mergée (commit 008b61d) ; vérifiée par Yannis et Orias (migration sur noise_dev et noise_test, seed, 66 tests dont 16 d'intégration).
-- NOISE-007 Authentification API : Implémenté. PR #6 mergée (commit a6407e5) ; routes register, login, refresh (rotation, réutilisation = révocation de toutes les sessions), logout, GET /api/v1/me, PATCH /api/v1/me/roles ; argon2id, access token JWT 15 min, refresh token opaque haché, limitation 5 essais / 15 min. Vérifiée par Yannis puis par Orias en local (109 tests API, 26 tests shared). Pas encore vérifiée sur staging (inexistant).
-- NOISE-010 Choix du fournisseur de paiement : Validé. FedaPay retenu (DEC-005), mergée (commit 8b0f79e).
-- NOISE-017 Interface PaymentProvider (FedaPay + Fake) : Validé. PR #3 mergée ; 47 tests API ; FedaPayProvider vérifié contre la vraie sandbox.
-- NOISE-041 Revue de PR par IA : Validé. PR #4 mergée ; DEC-021 ; protection de main activée le 2026-10-06 (1 approbation, Code Owners, checks CI requis) ; Revue Claude non requise.
-- NOISE-042 Évaluation de FeexPay : Validé. PR #10 mergée (commit 7416a92) ; FedaPay conservé (FeexPay : webhooks non signés, aucun paiement validé en sandbox).
+- NOISE-001 Décisions métier (frais, commission, reversements, annulation, e-mail, identité) : Implémenté. PR #19 mergée (commit b9e6fda) ; DEC-018 et DEC-022 à DEC-026 ; DEC-023 précisée par la PR #24 (commit c24b6e7).
+- NOISE-004 Espace Notion : Implémenté. Créé par Claude le 2026-09-24 ; synchronisation arrêtée par la limite de blocs.
+- NOISE-006 Schéma Prisma v1, migration initiale, seed : Implémenté. PR #5 mergée (commit 008b61d).
+- NOISE-007 Authentification API : Implémenté. PR #6 mergée (commit a6407e5).
+- NOISE-008 Application mobile (thème, navigation, auth, accueils par rôle) : Implémenté. PR #17, #20, #18, #21, #22 mergées (dernier commit 38fa7f4) ; champ e-mail de l'inscription inclus (NOISE-047).
+- NOISE-010 Choix du fournisseur de paiement : Validé. FedaPay retenu (DEC-005), commit 8b0f79e.
+- NOISE-011 API événements et types de billets : Implémenté. PR #15 mergée (commit a111413) ; GET /events/mine inclus.
+- NOISE-012 Upload des affiches : Implémenté. PR #11 (commit 10a2f25) et #28 (commit d003b52, route montée avec contrôle de propriété avant la réception du fichier). Non vérifié : envoi réel vers Cloudinary (pas de compte).
+- NOISE-014 Mobile participant (accueil, filtres, détail) : Implémenté. PR #29 (commit e7e102b, styles multiples et « presque complet ») et #30 (commit f7c37b0).
+- NOISE-017 Interface PaymentProvider (FedaPay + Fake) : Validé. PR #3 mergée.
+- NOISE-018 Commandes, réservation du stock, expiration : Implémenté. PR #26 mergée (commit 48954ea).
+- NOISE-019 Paiement, webhook signé, statut de commande : Implémenté. PR #13 mergée (commit b2b9eb5) ; paiement réel en sandbox FedaPay vérifié le 2026-10-07 avant fusion (6 000 FCFA, confirmé sans webhook par la revérification) ; billets créés à la confirmation, test de bout en bout ajouté.
+- NOISE-020 Billets et QR signé, GET /tickets/mine : Implémenté. PR #27 fusionnée dans la branche de NOISE-018, mergée avec la PR #26.
+- NOISE-026 Scanner web staff (interface) : Implémenté. PR #12 mergée (commit 246cbb5) ; test manuel sur iPhone (iOS 18.7). La validation côté serveur attend NOISE-025.
+- NOISE-039 Export des ventes et répartition : Implémenté. PR #9 mergée (commit 2769d90).
+- NOISE-041 Revue de PR par IA : Validé. PR #4 mergée.
+- NOISE-042 Évaluation de FeexPay : Validé. PR #10 mergée (commit 7416a92).
+- NOISE-044 Frais d'organisation, partie 1 (capacité, calcul des frais, billets gratuits) : Implémenté. PR #23 mergée (commit c7876c7). Reste : paiement des frais avant publication.
+- NOISE-047 E-mail demandé à l'inscription : Implémenté. PR #25 mergée (commit 4c9f81b) ; champ mobile dans la PR #21.
 
 ## En revue
 
-- NOISE-039 Export des ventes et répartition (DEC-022) : PR #9 (Yannis). Revue d'Orias en cours ; conflit de fusion à résoudre par Yannis.
-- NOISE-019 Paiement, webhook signé, statut de commande : PR #13 (Yannis, construite sur #9). À lancer en local par le reviewer (CLAUDE.md section 12).
-- NOISE-011 API événements : PR #15 (Orias). 148 tests API confirmés par Orias sur Postgres 17 ; revue de Yannis à demander.
-- NOISE-012 Upload d'affiche : PR #11 (Yannis, dépend de NOISE-011).
-- NOISE-026 Scanner : PR #12 (Yannis ; test manuel sur téléphone requis).
+- NOISE-013 Mobile organisateur, création d'événement et « Mes événements » : branche feat/NOISE-013-organizer-events (Yannis), poussée le 2026-10-15. 146 tests mobile en local. Reste : test manuel sur téléphone, numéro de virement (DEC-027).
+- NOISE-022 Mes billets avec QR hors ligne : branche feat/NOISE-022-offline-tickets (Yannis), poussée le 2026-10-15. Modifie la reprise de session hors ligne (code de NOISE-008, relecture d'Orias demandée).
+- NOISE-021 Tunnel d'achat et paiement : branche feat/NOISE-021-checkout (Yannis), poussée le 2026-10-15.
+- NOISE-049 Mission de prospection à Cotonou : branche docs/NOISE-049-prospection-cotonou (Yannis), poussée le 2026-10-15 ; le classeur rempli reste hors de Git (données personnelles).
+- DEC-027 Solde de l'organisateur et virements à la demande : branche docs/DEC-027-organizer-withdrawals, poussée le 2026-10-15 ; décision commune à relire par Orias.
+
+## En cours
+
+- NOISE-024 Liens scanner : branche feat/NOISE-024-scanner-links (Orias), sans PR au 2026-10-15.
 
 ## Bloqué
 
 - NOISE-034 Paiement production : KYC impossible tant que le titulaire du compte marchand n'est pas décidé (DEC-016).
-- NOISE-040 OTP SMS : périmètre non décidé (DEC-017).
-- NOISE-008 Application mobile (socle) : choix de navigation à confirmer (DEC-011).
+- NOISE-043 CGU : dépend de DEC-016 (entité qui signe).
+- NOISE-040 OTP SMS : fournisseur SMS non choisi (DEC-017) ; il conditionne aussi NOISE-052.
+- NOISE-045 Transferts FedaPay : activation des transferts demandée au support le 2026-10-15 ; accusé de réception reçu, aucune réponse sur le fond.
 
 ## Prochaines tâches
 
-- Relire et fusionner #9, puis #13, #11 (après #15), #12.
-- NOISE-008 : ne jamais lancer deux refresh en parallèle (docs/api.md).
-- Décisions en attente : DEC-011, DEC-016 à DEC-019, écart des frais FedaPay (1,8 % annoncé, environ 4 % observé en sandbox).
-- Si le check « Revue Claude » échoue encore, vérifier le jeton de l'abonnement Claude d'Orias.
+- Relire et fusionner NOISE-013, puis NOISE-022, puis NOISE-021 : la boucle création, achat, billet devient testable sur téléphone avec le faux fournisseur.
+- NOISE-016 Staging : priorité suivante (aucune tâche ne peut passer « Testée » sans lui).
+- NOISE-025 Scan atomique, après NOISE-024.
+- docs/api.md annonce l'en-tête Idempotency-Key sur POST /orders et POST /payments/initiate, mais l'API ne le gère pas : à implémenter ou à retirer de la doc.
+- NOISE-012 : essai réel vers Cloudinary dès qu'un compte existe.
+- Relancer FedaPay vers le 2026-10-22 sans réponse ; régénérer les clés sandbox exposées.
+- Décisions en attente : DEC-016, DEC-017, DEC-019, montant des frais des virements payants (DEC-027), report des virements et de la vérification d'identité en manuel pour les pilotes (proposition du 2026-10-15).
 
 ## Décisions récentes
 
+- 2026-10-15 — DEC-027 proposée : solde par événement visible en temps réel, un virement gratuit programmé 72 h après l'événement et déclenchable plus tôt, virements suivants payants (frais déduits), numéro de virement confirmé par SMS.
+- 2026-10-12 — DEC-023 précisée (PR #24) : frais sur la capacité déclarée, gratuit jusqu'à 50 participants, différence à payer si la capacité augmente.
+- 2026-10-08 — DEC-018 et DEC-022 à DEC-026 acceptées (PR #19) : identité vérifiée pour organiser, frais d'organisation, commission de 10 %, annulation, e-mail à l'inscription.
+- 2026-10-08 — DEC-011 acceptée : navigation mobile avec Expo Router.
 - 2026-10-06 — DEC-021 acceptée : revue de PR par IA, consultative, validation humaine obligatoire.
-- 2026-10-06 — DEC-022 proposée (PR #5) : parts Noise / partageur / organisateur sur la commande, affiliation optionnelle sur l'événement.
-- 2026-10-01 — DEC-005 complétée : FedaPay choisi comme fournisseur (proposé par Yannis, validé par Orias) ; consignée dans decisions.md par la PR #2, en revue.
-- 2026-09-24 — DEC-001 à DEC-014 et DEC-020 acceptées (plan global validé) ; DEC-011 et DEC-015 proposées ; DEC-016 à DEC-019 en attente.
-- 2026-09-24 — DEC-012 : pas de hook Git local, format des commits vérifié en CI.
+- 2026-10-01 — DEC-005 complétée : FedaPay choisi comme fournisseur.
 
 ## Journal
 
-- 2026-10-07 — NOISE-042 mergée (PR #10, commit 7416a92) ; NOISE-010 mergée (commit 8b0f79e). Revue de #9 (NOISE-039) en cours, #13 (NOISE-019) attend #9. Passage de progress.md en listes pour éviter les conflits de fusion.
-- 2026-10-07 — NOISE-007 mergée (PR #6, commit a6407e5) après vérification locale d'Orias (109 tests API, 26 tests shared). Conflit progress.md de la PR #2 résolu sur la dernière main.
-- 2026-10-06 — NOISE-006 mergée (PR #5, commit 008b61d). Branche NOISE-007 mise à jour avec main (conflits app.ts, server.ts et progress.md résolus).
-- 2026-10-06 — Incident : un commit direct sur main (b20ee61, "Revise progress document...") a remplacé le contenu de progress.md par celui de decisions.md par erreur de copier-coller. decisions.md lui-même n'a pas été touché. Corrigé par Claude via une nouvelle PR après constat.
-- 2026-10-06 — Protection de la branche main activée (NOISE-041 complet) : 1 approbation, dismiss stale, Code Owners, checks CI obligatoires, règle appliquée aux admins.
-- 2026-10-06 — NOISE-041 mergée (PR #4) : revue de PR par IA active, consultative, validation humaine obligatoire.
-- 2026-10-06 — PR #5 (NOISE-006) relue par Orias : schéma de Yannis retenu (comparaison avec la version locale de Claude faite par lecture des fichiers), vérifié en local, conflit progress.md résolu.
-- 2026-10-06 — PR #5 (NOISE-006) ouverte par Yannis, premier jet, revue demandée à Orias.
-- 2026-10-02 — NOISE-017 vérifiée par Orias (Windows), mergée (PR #3).
-- 2026-10-01 — NOISE-010 : FedaPay choisi comme fournisseur après tests sandbox (Yannis), PR #2 ouverte, revue demandée à Orias.
-- 2026-09-26 — NOISE-006 implémentée par Claude sur la branche feat/NOISE-006-prisma-schema (non commitée), vérifiée en local (Postgres 16 Linux).
-- 2026-09-25 — NOISE-000 à NOISE-005 déclarées faites par Orias, non revérifiées par Claude.
-- 2026-09-24 — Espace Notion créé par Claude (NOISE-004). Plan global validé, socle du monorepo créé (NOISE-000), PR #1 mergée.
+- 2026-10-15 — Branches NOISE-013, NOISE-021, NOISE-022, NOISE-049 et DEC-027 poussées par Yannis. Réponse de FedaPay : accusé de réception, dossier en cours. SasPay étudié comme solution de secours (non retenu, à discuter).
+- 2026-10-14 — NOISE-012 (route), NOISE-014 et la fin de NOISE-008 mergées (PR #28, #29, #30, #22).
+- 2026-10-13 — NOISE-019, NOISE-018 (avec NOISE-020), NOISE-044 partie 1, NOISE-047 et NOISE-008 (formulaires) mergées (PR #13, #26, #23, #25, #21). Fixtures de NOISE-018 corrigées après la capacité obligatoire de NOISE-044. Paiement branché sur la création réelle des billets.
+- 2026-10-12 — NOISE-011, NOISE-012 (stockage) et NOISE-026 mergées (PR #15, #11, #12) ; DEC-023 précisée (PR #24).
+- 2026-10-11 — NOISE-008, client API et session persistante, mergée (PR #18).
+- 2026-10-09 — NOISE-008, identité visuelle violette, mergée (PR #20).
+- 2026-10-08 — NOISE-039 et les décisions métier (NOISE-001) mergées (PR #9, #19) ; NOISE-008 socle mobile mergé (PR #17) ; nouvelle règle pour progress.md (PR #16).
+- 2026-10-07 — NOISE-042 et NOISE-010 mergées ; NOISE-007 mergée (PR #6).
+- 2026-10-06 — NOISE-006 mergée (PR #5) ; protection de main activée ; NOISE-041 mergée (PR #4). Incident : un commit direct sur main avait remplacé progress.md par erreur, corrigé par PR.
+- 2026-10-02 — NOISE-017 mergée (PR #3).
+- 2026-10-01 — FedaPay choisi après tests sandbox (NOISE-010).
+- 2026-09-24 — Espace Notion créé (NOISE-004). Plan global validé, socle du monorepo créé (NOISE-000), PR #1 mergée.
