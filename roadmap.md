@@ -309,6 +309,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
   - [ ] Validation partagée (schémas Zod de packages/shared)
   - [ ] Liste « Mes événements » : à venir / passé / annulé
   - [ ] Erreurs réseau gérées avec possibilité de réessayer
+  - [ ] Numéro Mobile Money de virement demandé, prérempli avec celui du compte (DEC-027)
 - Tests :
   - Tests UI : validation des étapes, soumission
   - Test manuel sur appareil
@@ -690,12 +691,12 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Responsable : Orias · Reviewer : Yannis
 - Sprint : S5 · Type : Feature · Domaine : Backend · Priorité : P1 · Estimation : 4 h
 - Dépendances : NOISE-019
-- Statut : À faire
+- Statut : Implémenté (en attente de revue)
 - Fichiers concernés : apps/api/src/modules/admin/*
 - Critères d'acceptation :
-  - [ ] Rôle ADMIN ; suspendre un organisateur ou un événement ; lister paiements et commandes
-  - [ ] Pas de validation des organisateurs (DEC-018) ; suspension d'un organisateur qui ne respecte pas les CGU
-  - [ ] Chaque action admin journalisée
+  - [x] Rôle ADMIN ; suspendre un organisateur ou un événement ; lister paiements et commandes
+  - [x] Pas de validation des organisateurs (DEC-018) ; suspension d'un organisateur qui ne respecte pas les CGU
+  - [x] Chaque action admin journalisée
 - Tests :
   - Intégration : accès refusé aux non-admins
 
@@ -765,7 +766,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 
 #### NOISE-045 — Transferts automatiques FedaPay (reversements et remboursements)
 
-- Objectif : Vérifier en sandbox puis utiliser l'API de transfert de FedaPay pour les reversements quotidiens (DEC-024) et les remboursements d'annulation (DEC-025).
+- Objectif : Vérifier en sandbox puis utiliser l'API de transfert de FedaPay pour les virements aux organisateurs (DEC-027 : à la demande, et versement automatique du reste après l'événement) et les remboursements d'annulation (DEC-025).
 - Responsable : Commun · Reviewer : revue mutuelle (binôme)
 - Sprint : S5 · Type : Feature · Domaine : Backend · Priorité : P1 · Estimation : 8 h
 - Dépendances : NOISE-017, NOISE-039 · Dépend d'un service externe
@@ -774,7 +775,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Critères d'acceptation :
   - [ ] Payouts activés par le support FedaPay ; gratuité vers Mobile Money confirmée par écrit
   - [ ] API de transfert vérifiée en sandbox : délais, statuts, webhooks
-  - [ ] Reversement automatique quotidien (DEC-024) et remboursements après annulation (DEC-025)
+  - [ ] Virements demandés par l'organisateur et versement automatique du reste au plus tard 72 h après l'événement (DEC-027), remboursements après annulation (DEC-025)
   - [ ] Transfert idempotent, rejouable sans double paiement
 - Tests :
   - Intégration avec le fake provider : transfert rejoué, échec puis nouvelle tentative
@@ -816,13 +817,13 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Responsable : à attribuer · Reviewer : l'autre développeur
 - Sprint : S4 · Type : Feature · Domaine : Full stack · Priorité : P0 · Estimation : 8 h
 - Dépendances : NOISE-011, NOISE-037
-- Statut : À faire
+- Statut : API implémentée (en attente de revue) ; écran mobile à faire
 - Fichiers concernés : apps/api/prisma/_, apps/api/src/modules/events/_, apps/api/src/modules/admin/_, apps/mobile/src/features/organizer/_
 - Critères d'acceptation :
-  - [ ] Statut d'identité de l'organisateur : non soumis, en attente, vérifié, refusé (avec motif)
-  - [ ] Envoi d'une photo de pièce d'identité depuis le mobile ; stockage non public, consultable par les seuls administrateurs
-  - [ ] Validation ou refus par un administrateur (action journalisée)
-  - [ ] Création et publication d'événement refusées (403) tant que l'identité n'est pas vérifiée ; message clair dans l'app
+  - [x] Statut d'identité de l'organisateur : non soumis, en attente, vérifié, refusé (avec motif)
+  - [x] API d'envoi d'une photo de pièce d'identité ; stockage non public, consultable par les seuls administrateurs (écran mobile : PR suivante)
+  - [x] Validation ou refus par un administrateur (action journalisée), refus avec délai de 72 h ou immédiat
+  - [x] Création et publication d'événement refusées (403 IDENTITY_REQUIRED) tant que la pièce n'est pas envoyée (précision de DEC-018, 2026-10-16) ; message clair dans l'app (PR mobile)
 - Tests :
   - Intégration : organisateur non vérifié → 403 à la création ; vérifié → 201 ; un non-administrateur ne peut ni voir les pièces ni valider
 
@@ -841,6 +842,75 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
   - [ ] 60 prospects qualifiés après 20 jours de collecte, funnel observé comparé au funnel simulé
 - Tests :
   - Unitaires (script) : formule de score sur le cas de contrôle (79), garde-fous (citation absente, texte court, valeur inconnue, réponse JSON invalide)
+
+#### NOISE-053 — Idempotency-Key sur la commande et le paiement
+
+- Objectif : Une requête renvoyée après une réponse perdue (3G) ne crée pas une seconde commande ni une seconde demande de paiement.
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : S4 · Type : Feature · Domaine : Backend · Priorité : P1 · Estimation : 3 h
+- Dépendances : NOISE-018, NOISE-019
+- Statut : En revue
+- Fichiers concernés : apps/api/src/middlewares/idempotency.ts, apps/api/prisma/schema.prisma, docs/api.md
+- Critères d'acceptation :
+  - [x] En-tête facultatif sur POST /orders et POST /payments/initiate ; réponse rejouée pour la même clé et le même corps
+  - [x] 409 si la clé a servi à une autre requête ou si la première est en cours ; rien de gardé sur une erreur 5xx
+  - [x] Clés propres à chaque compte, gardées 24 heures
+  - [ ] Le mobile envoie une clé par intention d'achat (NOISE-021)
+- Tests :
+  - Intégration : commande et paiement rejoués sans doublon, autre corps, autre compte, erreur 4xx rejouée, requête en cours, 5xx, clé expirée
+
+#### NOISE-050 — Solde de l'organisateur et virements à la demande (API)
+
+- Objectif : Exposer le solde de l'organisateur en temps réel et lui permettre de demander un virement (DEC-027).
+- Responsable : à attribuer · Reviewer : l'autre développeur
+- Sprint : S5 · Type : Feature · Domaine : Backend · Priorité : P1 · Estimation : 10 h
+- Dépendances : NOISE-019, NOISE-039 ; points ouverts de DEC-027 ; transferts réels avec NOISE-045
+- Statut : À faire
+- Fichiers concernés : apps/api/prisma/schema.prisma, apps/api/src/modules/payouts/*, packages/shared/src/schemas/payouts.ts, docs/api.md
+- Critères d'acceptation :
+  - [ ] Modèle Payout (événement, organisateur, montant, frais, statut, identifiant de transfert, clé d'idempotence)
+  - [ ] GET du solde d'un événement : part organisateur des ventes PAID, moins les virements effectués ou en cours ; séparé en disponible (fonds reçus de FedaPay) et en attente
+  - [ ] POST d'une demande de virement : montant ≤ solde disponible, premier virement gratuit (une fois par événement), frais déduits ensuite, verrou contre deux demandes simultanées
+  - [ ] Tâche planifiée : au plus tard 72 h après la fin de l'événement, tout le reste du solde est viré (gratuit si le virement gratuit n'a pas servi, frais déduits sinon)
+  - [ ] Numéro de virement enregistré sur l'événement ; changement confirmé par le mot de passe, puis 24 h sans virement
+  - [ ] Organisateur propriétaire uniquement ; identité vérifiée exigée (DEC-018)
+- Tests :
+  - Unitaires : calcul du solde, frais à partir du deuxième virement
+  - Intégration : 401, 403, montant supérieur au solde, demande rejouée (idempotence)
+  - Concurrence : deux demandes simultanées ne dépassent jamais le solde
+
+#### NOISE-051 — Mobile organisateur : écran « Solde » et demande de virement
+
+- Objectif : Afficher le solde en temps réel et demander un virement depuis l'application (DEC-027).
+- Responsable : à attribuer · Reviewer : l'autre développeur
+- Sprint : S5 · Type : Feature · Domaine : Mobile · Priorité : P1 · Estimation : 6 h
+- Dépendances : NOISE-050, NOISE-008
+- Statut : À faire
+- Fichiers concernés : apps/mobile/src/features/organizer/balance/*
+- Critères d'acceptation :
+  - [ ] Solde de chaque événement affiché (disponible et en attente), mis à jour à l'ouverture et au retour sur l'écran
+  - [ ] Demande de virement : montant libre, frais affichés avant confirmation (« gratuit » pour le premier)
+  - [ ] Historique des virements avec leur statut
+  - [ ] Rappel : virement gratuit programmé au plus tard 72 h après la fin de l'événement, déclenchable plus tôt
+- Tests :
+  - Tests UI : montant supérieur au solde refusé, frais du deuxième virement affichés, erreurs réseau avec « Réessayer »
+
+#### NOISE-052 — Confirmation du numéro de virement (SMS) et de l'e-mail
+
+- Objectif : Confirmer que l'organisateur détient le numéro qui reçoit les virements et son adresse e-mail avant tout virement (DEC-027).
+- Responsable : à attribuer · Reviewer : l'autre développeur
+- Sprint : S5 · Type : Feature · Domaine : Backend · Priorité : P1 · Estimation : 8 h
+- Dépendances : NOISE-047, NOISE-050 ; fournisseur SMS (DEC-017) ; fournisseur d'e-mails à choisir · Dépend d'un service externe
+- Statut : À faire
+- Fichiers concernés : apps/api/src/modules/verification/_, apps/mobile/src/features/organizer/_
+- Critères d'acceptation :
+  - [ ] Code à usage unique envoyé par SMS au numéro de virement, et par e-mail à l'adresse de l'organisateur ; expiration courte, nombre d'essais limité
+  - [ ] Code stocké haché, jamais journalisé (CLAUDE.md section 9)
+  - [ ] Virement refusé tant que le numéro et l'e-mail ne sont pas confirmés ; nouvelle confirmation à chaque changement de numéro
+  - [ ] Limitation de débit sur l'envoi des codes (coût des SMS, abus)
+- Tests :
+  - Intégration : code faux, expiré, rejoué ; envoi limité ; virement refusé avant confirmation
+  - Fournisseurs SMS et e-mail simulés (fake), jamais appelés en test
 
 ### M5 — Google Play
 

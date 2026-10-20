@@ -14,6 +14,17 @@ const FIFTEEN_MINUTES = 15 * 60 * 1000;
 export const AUTH_RATE_LIMIT = { windowMs: FIFTEEN_MINUTES, limit: 5 };
 export const GLOBAL_RATE_LIMIT = { windowMs: FIFTEEN_MINUTES, limit: 300 };
 export const PAYMENT_RATE_LIMIT = { windowMs: 10 * 60 * 1000, limit: 5 };
+/** Scan à l'entrée : 60 par minute et par lien (docs/security.md), un scan par seconde. */
+export const SCANNER_RATE_LIMIT = { windowMs: 60 * 1000, limit: 60 };
+
+/**
+ * Validation des QR (NOISE-025) : exclue de la limite globale par IP. Tout le staff d'une
+ * soirée partage souvent la même box (même IP) et dépasse vite 300 scans en 15 minutes ;
+ * la route a sa propre limite, par lien scanner.
+ */
+export const SCANNER_VALIDATE_PATH = '/api/v1/scanner/validate';
+
+export const IDENTITY_UPLOAD_RATE_LIMIT = { windowMs: 60 * 60 * 1000, limit: 10 };
 
 type LimitOverrides = Partial<Pick<Options, 'windowMs' | 'limit'>>;
 
@@ -55,6 +66,25 @@ export function globalRateLimit(overrides: LimitOverrides = {}): RequestHandler 
     standardHeaders: 'draft-8',
     legacyHeaders: false,
     keyGenerator: clientIp,
+    skip: (req) => req.originalUrl.split('?')[0] === SCANNER_VALIDATE_PATH,
+    handler: rejectWithStandardError,
+  });
+}
+
+/**
+ * POST /scanner/validate : 60 scans par minute et par lien scanner. À placer après
+ * requireScannerLink (le compteur est par lien, donc par membre du staff).
+ */
+export function scannerRateLimit(overrides: LimitOverrides = {}): RequestHandler {
+  return rateLimit({
+    ...SCANNER_RATE_LIMIT,
+    ...overrides,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    keyGenerator: (req, res) => {
+      const link = res.locals.scannerLink as { linkId?: string } | undefined;
+      return link?.linkId ? `scanner:${link.linkId}` : clientIp(req);
+    },
     handler: rejectWithStandardError,
   });
 }
@@ -70,6 +100,18 @@ export function paymentRateLimit(overrides: LimitOverrides = {}): RequestHandler
     standardHeaders: 'draft-8',
     legacyHeaders: false,
     keyGenerator: (req) => `user:${req.auth?.userId ?? clientIp(req)}`,
+    handler: rejectWithStandardError,
+  });
+}
+
+/** Envoi de pièce d'identité : 10 par heure et par compte (après requireAuth). */
+export function identityUploadRateLimit(overrides: LimitOverrides = {}): RequestHandler {
+  return rateLimit({
+    ...IDENTITY_UPLOAD_RATE_LIMIT,
+    ...overrides,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    keyGenerator: (req) => req.auth?.userId ?? clientIp(req),
     handler: rejectWithStandardError,
   });
 }

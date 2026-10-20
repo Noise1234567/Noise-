@@ -56,12 +56,20 @@ export class PaymentsService {
       where: { id: input.orderId, participantId: userId },
       include: {
         participant: { select: { name: true } },
-        ticketType: { select: { name: true, event: { select: { title: true } } } },
+        ticketType: {
+          select: { name: true, event: { select: { title: true, status: true } } },
+        },
       },
     });
     if (!order) throw new HttpError(404, 'NOT_FOUND', 'Commande introuvable');
     if (order.status !== 'PENDING' || order.expiresAt <= now) {
       throw new HttpError(409, 'CONFLICT', 'Cette commande est expirée ou déjà réglée');
+    }
+
+    // Seule l'initiation est bloquée : un paiement déjà lancé doit toujours être confirmé
+    // par le webhook, sinon le client serait débité sans billet.
+    if (order.ticketType.event.status === 'SUSPENDED') {
+      throw new HttpError(409, 'CONFLICT', 'Cet événement est suspendu');
     }
 
     const recentAttempt = await this.prisma.payment.findFirst({

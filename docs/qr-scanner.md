@@ -1,6 +1,6 @@
 # QR codes et scanner
 
-État : scanner web (NOISE-026) implémenté contre une API simulée ; QR signés et billets (NOISE-020) implémentés ; liens (NOISE-024) et validation (NOISE-025) restent à faire.
+État : QR signés et billets (NOISE-020), liens scanner (NOISE-024), validation atomique (NOISE-025) et scanner web (NOISE-026) implémentés. Reste : vérification de bout en bout sur staging (NOISE-016) et génération du lien depuis l'app organisateur.
 
 ## 1. QR token (NOISE-020)
 

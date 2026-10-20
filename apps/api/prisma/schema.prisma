@@ -30,6 +30,8 @@ enum EventStatus {
   DRAFT
   PUBLISHED
   CANCELLED
+  /// Retiré de la vente par un administrateur (NOISE-037) ; les billets déjà vendus restent valables.
+  SUSPENDED
 }
 
 enum OrderStatus {
@@ -79,12 +81,16 @@ model User {
   createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  refreshTokens      RefreshToken[]
-  organizedEvents    Event[]
-  orders             Order[]        @relation("participant")
-  referredOrders     Order[]        @relation("referrer")
-  createdScannerLink ScannerLink[]
-  pushTokens         PushToken[]
+  refreshTokens        RefreshToken[]
+  organizedEvents      Event[]
+  orders               Order[]                @relation("participant")
+  referredOrders       Order[]                @relation("referrer")
+  createdScannerLink   ScannerLink[]
+  pushTokens           PushToken[]
+  adminAuditLogs       AdminAuditLog[]
+  identityVerification IdentityVerification?  @relation("identityOwner")
+  decidedIdentities    IdentityVerification[] @relation("identityDecider")
+  idempotencyKeys      IdempotencyKey[]
 
   @@map("users")
 }
@@ -108,27 +114,31 @@ model RefreshToken {
 
 /// « À venir / passé » est calculé à partir de startsAt / endsAt, pas stocké.
 model Event {
-  id                 String      @id @default(uuid()) @db.Uuid
-  organizerId        String      @map("organizer_id") @db.Uuid
-  title              String      @db.VarChar(120)
-  description        String
+  id                   String      @id @default(uuid()) @db.Uuid
+  organizerId          String      @map("organizer_id") @db.Uuid
+  title                String      @db.VarChar(120)
+  description          String
   /// Styles choisis par l'organisateur (1 à 5, liste EVENT_STYLES du package partagé).
-  styles             String[]    @default([])
-  venue              String      @db.VarChar(120)
-  city               String      @db.VarChar(60)
-  startsAt           DateTime    @map("starts_at") @db.Timestamptz(3)
-  endsAt             DateTime    @map("ends_at") @db.Timestamptz(3)
-  posterUrl          String?     @map("poster_url")
-  status             EventStatus @default(DRAFT)
+  styles               String[]    @default([])
+  venue                String      @db.VarChar(120)
+  city                 String      @db.VarChar(60)
+  startsAt             DateTime    @map("starts_at") @db.Timestamptz(3)
+  endsAt               DateTime    @map("ends_at") @db.Timestamptz(3)
+  posterUrl            String?     @map("poster_url")
+  status               EventStatus @default(DRAFT)
   /// Participants attendus, déclarés par l'organisateur : plafond de la somme des billets et base des frais d'organisation (DEC-023).
-  capacity           Int
+  capacity             Int
   /// Frais d'organisation déjà réglés (FCFA). Le reste dû = frais de la capacité - ce montant.
-  feePaidXof         Int         @default(0) @map("fee_paid_xof")
+  feePaidXof           Int         @default(0) @map("fee_paid_xof")
   /// Affiliation (DEC-022, après le MVP) : 1 % pour le partageur si l'organisateur l'accepte.
-  affiliationEnabled Boolean     @default(false) @map("affiliation_enabled")
-  cancelledAt        DateTime?   @map("cancelled_at") @db.Timestamptz(3)
-  createdAt          DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt          DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  affiliationEnabled   Boolean     @default(false) @map("affiliation_enabled")
+  cancelledAt          DateTime?   @map("cancelled_at") @db.Timestamptz(3)
+  /// Vrai quand l'événement a été suspendu avec son organisateur : la réactivation de celui-ci le republie (NOISE-037).
+  suspendedWithOrg     Boolean     @default(false) @map("suspended_with_organizer")
+  /// Vrai quand l'événement a été retiré de la vente faute de pièce d'identité valide (NOISE-048) ; validée, il est republié.
+  suspendedForIdentity Boolean     @default(false) @map("suspended_for_identity")
+  createdAt            DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   organizer    User          @relation(fields: [organizerId], references: [id], onDelete: Restrict)
   ticketTypes  TicketType[]
@@ -286,4 +296,103 @@ model PushToken {
 
   @@index([userId])
   @@map("push_tokens")
+}
+
+/// PENDING : pièce envoyée, en attente de décision. VERIFIED : validée. REFUSED : refusée avec
+/// motif ; l'organisateur peut renvoyer une pièce jusqu'à resubmitDeadline (NOISE-048).
+/// « Non soumis » = aucune ligne pour l'utilisateur.
+enum IdentityStatus {
+  PENDING
+  VERIFIED
+  REFUSED
+}
+
+enum AdminAction {
+  USER_SUSPENDED
+  USER_REACTIVATED
+  EVENT_SUSPENDED
+  EVENT_REACTIVATED
+  SALES_EXPORTED
+  IDENTITY_VIEWED
+  IDENTITY_APPROVED
+  IDENTITY_REFUSED
+}
+
+enum AdminTargetType {
+  USER
+  EVENT
+}
+
+/// Journal des actions d'administration (DEC-020, NOISE-037) : qui a fait quoi, sur quoi, pourquoi.
+model AdminAuditLog {
+  id         String          @id @default(uuid()) @db.Uuid
+  adminId    String          @map("admin_id") @db.Uuid
+  action     AdminAction
+  targetType AdminTargetType @map("target_type")
+  targetId   String          @map("target_id") @db.Uuid
+  /// Motif saisi par l'administrateur (obligatoire pour une suspension ou une réactivation).
+  reason     String?         @db.VarChar(500)
+  /// Détails de l'action (ex. nombre d'événements suspendus avec l'organisateur).
+  metadata   Json?
+  createdAt  DateTime        @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  admin User @relation(fields: [adminId], references: [id], onDelete: Restrict)
+
+  @@index([targetType, targetId])
+  @@index([adminId, createdAt])
+  @@map("admin_audit_logs")
+}
+
+/// Vérification d'identité d'un organisateur (DEC-018, NOISE-048) : une ligne par organisateur.
+/// La pièce est stockée en privé chez Cloudinary ; seuls l'identifiant et le format sont gardés ici.
+model IdentityVerification {
+  id               String         @id @default(uuid()) @db.Uuid
+  userId           String         @unique @map("user_id") @db.Uuid
+  status           IdentityStatus @default(PENDING)
+  /// Null une fois la pièce supprimée du stockage (refus immédiat, ou conservation de 12 mois écoulée).
+  documentPublicId String?        @map("document_public_id") @db.VarChar(200)
+  documentFormat   String?        @map("document_format") @db.VarChar(10)
+  /// Date à partir de laquelle la pièce doit être supprimée du stockage.
+  documentPurgeAt  DateTime?      @map("document_purge_at") @db.Timestamptz(3)
+  submittedAt      DateTime       @map("submitted_at") @db.Timestamptz(3)
+  decidedAt        DateTime?      @map("decided_at") @db.Timestamptz(3)
+  decidedById      String?        @map("decided_by_id") @db.Uuid
+  refusalReason    String?        @map("refusal_reason") @db.VarChar(500)
+  /// Fin du délai de régularisation après un refus ; passé ce délai, les événements publiés sont retirés.
+  resubmitDeadline DateTime?      @map("resubmit_deadline") @db.Timestamptz(3)
+  /// Renseigné quand les événements publiés ont été retirés de la vente à cause du refus.
+  eventsPulledAt   DateTime?      @map("events_pulled_at") @db.Timestamptz(3)
+  createdAt        DateTime       @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime       @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user      User  @relation("identityOwner", fields: [userId], references: [id], onDelete: Cascade)
+  decidedBy User? @relation("identityDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+
+  @@index([status, submittedAt])
+  @@index([status, resubmitDeadline])
+  @@index([documentPurgeAt])
+  @@map("identity_verifications")
+}
+
+/// Clés d'idempotence (NOISE-053) : une requête renvoyée avec la même clé (réponse perdue en
+/// 3G) reçoit la réponse déjà donnée au lieu d'être traitée une seconde fois. Gardées 24 h.
+model IdempotencyKey {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  key            String   @db.VarChar(128)
+  /// Route protégée (ex. `orders.create`) : une clé ne sert qu'à une seule route.
+  scope          String   @db.VarChar(40)
+  /// SHA-256 du corps de la requête : la même clé avec un autre contenu est refusée.
+  requestHash    String   @map("request_hash") @db.Char(64)
+  /// Vides tant que la première requête est en cours.
+  responseStatus Int?     @map("response_status")
+  responseBody   Json?    @map("response_body")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt      DateTime @map("expires_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+  @@index([expiresAt])
+  @@map("idempotency_keys")
 }

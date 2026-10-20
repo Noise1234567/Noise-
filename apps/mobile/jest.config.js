@@ -5,4 +5,9 @@ module.exports = {
   // est trop juste sur une machine chargée.
   testTimeout: 20000,
   testMatch: ['<rootDir>/src/**/*.test.ts', '<rootDir>/src/**/*.test.tsx'],
+  moduleNameMapper: {
+    // Stockage en mémoire fourni par la bibliothèque : pas de module natif dans les tests.
+    '^@react-native-async-storage/async-storage$':
+      '@react-native-async-storage/async-storage/jest/async-storage-mock',
+  },
 };

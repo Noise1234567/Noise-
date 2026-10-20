@@ -20,6 +20,8 @@ export default function ParticipantLayout() {
       <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
       {/* Détail d'un événement : plein écran, hors de la barre d'onglets (maquette 7). */}
       <Tabs.Screen name="event/[id]" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      {/* Billet en plein écran avec son QR (NOISE-022). */}
+      <Tabs.Screen name="ticket/[id]" options={{ href: null, tabBarStyle: { display: 'none' } }} />
     </Tabs>
   );
 }
