@@ -222,6 +222,14 @@ Styles : un événement porte `styles`, de 1 à 5 valeurs choisies par l'organis
 - Erreurs : 400 `VALIDATION_ERROR` (identifiant invalide, aucun fichier, mauvais champ, format refusé, plus de 5 Mo) ; 401 ; 403 (pas organisateur, ou événement d'un autre) ; 404 ; 409 événement annulé ; 500 `INTERNAL_ERROR` si Cloudinary est indisponible (l'affiche existante est conservée).
 - Configuration : `CLOUDINARY_URL` (obligatoire en staging et en production). Sans elle, en développement, les affiches sont simulées : l'URL renvoyée ne pointe vers aucune image.
 
+### Annulation par l'organisateur (NOISE-029, DEC-025)
+
+Organisateur propriétaire uniquement (403 sinon) ; 404 si l'événement n'existe pas ; 409 s'il est déjà annulé ou terminé.
+
+- `GET /api/v1/events/:id/cancellation` : calcul affiché avant la confirmation, sans rien modifier. Réponse `{ cancellation }` (`CancellationSummaryDto`, `packages/shared/src/schemas/cancellation.ts`) : billets vendus, ventes, remboursements (100 % du prix, hors frais de paiement), frais d'annulation (la commission de 10 %), sommes déjà reversées (0 tant que les virements de DEC-027 n'existent pas), part retenue, montant dû par l'organisateur (frais + sommes reversées), échéance (annulation + 10 jours).
+- `POST /api/v1/events/:id/cancel`, corps `{ reason? }` (3 à 500 caractères) : en une transaction, l'événement passe `CANCELLED`, ses billets aussi, les commandes payées passent `CANCELLED` (à rembourser), celles en attente `EXPIRED` (places libérées) et les liens scanner sont révoqués ; les montants sont figés dans `event_cancellations`. Réponse `{ cancellation }` (`CancellationResultDto`) avec en plus les nombres de billets, commandes et liens touchés. Les types de billets sont verrouillés comme lors d'une commande : une commande en cours de création est expirée, jamais laissée en attente. Les acheteurs seront prévenus par notification avec NOISE-028 ; un échec d'envoi n'annule pas l'annulation.
+- `GET /api/v1/admin/events/:eventId/refunds` (rôle ADMIN) : `EventRefundsResponse`, la liste des remboursements à effectuer (nom, numéro complet pour le transfert, montant), le total, le montant dû par l'organisateur et l'échéance ; 404 si l'événement n'a pas été annulé. Chaque consultation est journalisée.
+
 ## 5. Commandes (NOISE-018)
 
 Une commande réserve des places d'un type de billet pour 15 minutes. Elle est réservée au rôle `PARTICIPANT`, et chaque participant ne voit que ses propres commandes.
