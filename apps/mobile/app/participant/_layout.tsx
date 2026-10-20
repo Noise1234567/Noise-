@@ -25,6 +25,8 @@ export default function ParticipantLayout() {
         name="checkout/[eventId]"
         options={{ href: null, tabBarStyle: { display: 'none' } }}
       />
+      {/* Billet en plein écran avec son QR (NOISE-022). */}
+      <Tabs.Screen name="ticket/[id]" options={{ href: null, tabBarStyle: { display: 'none' } }} />
     </Tabs>
   );
 }

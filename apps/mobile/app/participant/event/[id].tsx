@@ -124,6 +124,9 @@ export default function EventDetail() {
           <Text variant="title" style={styles.title}>
             {event.title}
           </Text>
+          <Text variant="caption" muted style={styles.organizer}>
+            {`par ${event.organizerName}`}
+          </Text>
 
           {event.status === 'CANCELLED' ? (
             <View style={styles.banner}>
@@ -244,7 +247,8 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   chipText: { fontSize: 12, lineHeight: 16 },
-  title: { marginBottom: spacing.lg },
+  title: { marginBottom: spacing.xs },
+  organizer: { marginBottom: spacing.lg },
   banner: { marginBottom: spacing.lg },
   infoRow: {
     flexDirection: 'row',

@@ -2,6 +2,7 @@ import type { AuthSession } from '@noise/shared';
 import axios from 'axios';
 
 import { accessTokenStore } from '../api/token-storage';
+import { ticketCache } from '../features/participant/tickets/ticket-cache';
 import { useSession } from '../state/session';
 import { clearSession, completeSignIn, hydrateSession } from './session-service';
 
@@ -92,11 +93,83 @@ describe('service de session', () => {
     expect(mockStore.get('noise.refreshToken')).toBe('old');
   });
 
+  it('réseau coupé au lancement avec un profil connu : session rouverte pour les billets hors ligne', async () => {
+    await completeSignIn(session);
+    useSession.setState({ status: 'loading', user: null, roles: [], activeRole: null });
+    jest
+      .mocked(axios.post)
+      .mockRejectedValue(Object.assign(new Error('net'), { isAxiosError: true }));
+    await hydrateSession();
+    expect(useSession.getState().status).toBe('signedIn');
+    expect(useSession.getState().user?.id).toBe(session.user.id);
+    expect(mockStore.has('noise.refreshToken')).toBe(true);
+  });
+
+  it('réseau coupé au lancement : la session rouverte reprend la dernière vue utilisée', async () => {
+    await completeSignIn(session);
+    mockStore.set('noise.activeRole', 'u:ORGANIZER');
+    useSession.setState({ status: 'loading', user: null, roles: [], activeRole: null });
+    jest
+      .mocked(axios.post)
+      .mockRejectedValue(Object.assign(new Error('net'), { isAxiosError: true }));
+    await hydrateSession();
+    expect(useSession.getState().activeRole).toBe('ORGANIZER');
+  });
+
+  it('déconnexion volontaire : billets enregistrés effacés ; session expirée : conservés', async () => {
+    await ticketCache.save(session.user.id, [], new Date());
+    await clearSession(true);
+    expect(await ticketCache.load(session.user.id)).not.toBeNull();
+    await clearSession();
+    expect(await ticketCache.load(session.user.id)).toBeNull();
+  });
+
   it('clearSession efface tout', async () => {
     await completeSignIn(session);
     await clearSession();
     expect(accessTokenStore.get()).toBeNull();
-    expect(mockStore.size).toBe(0);
+    expect(mockStore.has('noise.refreshToken')).toBe(false);
     expect(useSession.getState().status).toBe('signedOut');
+  });
+});
+
+describe('dernière vue utilisée (compte participant + organisateur)', () => {
+  const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+  it('retient la vue choisie avec le sélecteur de rôle', async () => {
+    await completeSignIn(session, 'PARTICIPANT');
+    useSession.getState().switchRole('ORGANIZER');
+    await flush();
+    expect(mockStore.get('noise.activeRole')).toBe('u:ORGANIZER');
+  });
+
+  it('relancement : reprend la dernière vue au lieu du premier rôle', async () => {
+    mockStore.set('noise.refreshToken', 'r');
+    mockStore.set('noise.activeRole', 'u:ORGANIZER');
+    jest.mocked(axios.post).mockResolvedValue({ data: session });
+    await hydrateSession();
+    expect(useSession.getState().activeRole).toBe('ORGANIZER');
+  });
+
+  it('connexion sans rôle demandé : reprend aussi la dernière vue', async () => {
+    mockStore.set('noise.activeRole', 'u:ORGANIZER');
+    await completeSignIn(session);
+    expect(useSession.getState().activeRole).toBe('ORGANIZER');
+  });
+
+  it('ignore la vue retenue d’un autre compte ou d’un rôle que le compte n’a pas', async () => {
+    mockStore.set('noise.activeRole', 'autre:ORGANIZER');
+    await completeSignIn(session);
+    expect(useSession.getState().activeRole).toBe('PARTICIPANT');
+
+    mockStore.set('noise.activeRole', 'u:ORGANIZER');
+    await completeSignIn({ ...session, user: { ...session.user, roles: ['PARTICIPANT'] } });
+    expect(useSession.getState().activeRole).toBe('PARTICIPANT');
+  });
+
+  it('un rôle demandé explicitement (inscription) prime sur la vue retenue', async () => {
+    mockStore.set('noise.activeRole', 'u:ORGANIZER');
+    await completeSignIn(session, 'PARTICIPANT');
+    expect(useSession.getState().activeRole).toBe('PARTICIPANT');
   });
 });

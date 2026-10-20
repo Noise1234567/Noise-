@@ -1,5 +1,6 @@
 import { initiatePaymentSchema } from '@noise/shared';
 import express, { Router, type RequestHandler } from 'express';
+import type { Idempotency } from '../../middlewares/idempotency.js';
 import { z } from 'zod';
 import { HttpError } from '../../lib/http-error.js';
 import { requireAuth } from '../../middlewares/auth.js';
@@ -19,8 +20,14 @@ export function createPaymentWebhookRouter(service: PaymentsService): Router {
   return router;
 }
 
-/** /api/v1/payments */
-export function createPaymentsRouter(service: PaymentsService, accessTokenSecret: string): Router {
+const passThrough: RequestHandler = (_req, _res, next) => next();
+
+/** /api/v1/payments ; `idempotent` : Idempotency-Key (NOISE-053), absent dans certains tests. */
+export function createPaymentsRouter(
+  service: PaymentsService,
+  accessTokenSecret: string,
+  idempotent?: Idempotency,
+): Router {
   const controller = createPaymentsController(service);
   const router = Router();
   router.post(
@@ -28,6 +35,7 @@ export function createPaymentsRouter(service: PaymentsService, accessTokenSecret
     requireAuth(accessTokenSecret),
     paymentRateLimit(),
     validateBody(initiatePaymentSchema),
+    idempotent ? idempotent('payments.initiate') : passThrough,
     controller.initiate,
   );
   return router;

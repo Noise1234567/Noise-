@@ -15,6 +15,9 @@ export function createTestPrisma(): PrismaClient {
 }
 
 const TABLES = [
+  'idempotency_keys',
+  'identity_verifications',
+  'admin_audit_logs',
   'scan_logs',
   'scanner_links',
   'tickets',
@@ -38,13 +41,32 @@ let phoneCounter = 0;
 
 /** Petites fabriques : des données valides, à modifier test par test. */
 export const factories = {
-  user: (prisma: PrismaClient, roles: ('PARTICIPANT' | 'ORGANIZER')[] = ['PARTICIPANT']) =>
+  user: (
+    prisma: PrismaClient,
+    roles: ('PARTICIPANT' | 'ORGANIZER' | 'ADMIN')[] = ['PARTICIPANT'],
+  ) =>
     prisma.user.create({
       data: {
         name: 'Utilisateur Test',
         phone: `+22901${String(++phoneCounter).padStart(8, '0')}`,
         passwordHash: 'hash-de-test',
         roles,
+      },
+    }),
+
+  /** Pièce d'identité d'un organisateur (NOISE-048) : par défaut vérifiée, donc il peut organiser. */
+  identity: (
+    prisma: PrismaClient,
+    userId: string,
+    status: 'PENDING' | 'VERIFIED' | 'REFUSED' = 'VERIFIED',
+  ) =>
+    prisma.identityVerification.create({
+      data: {
+        userId,
+        status,
+        submittedAt: new Date(),
+        documentPublicId: `noise/identity/${userId}`,
+        documentFormat: 'jpg',
       },
     }),
 

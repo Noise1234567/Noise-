@@ -149,6 +149,9 @@ export class OrdersService {
     if (ticketType.event.status === 'CANCELLED') {
       throw new HttpError(409, 'CONFLICT', 'Cet événement est annulé');
     }
+    if (ticketType.event.status === 'SUSPENDED') {
+      throw new HttpError(409, 'CONFLICT', 'Cet événement est suspendu');
+    }
     if (ticketType.event.endsAt <= now) {
       throw new HttpError(409, 'CONFLICT', 'Cet événement est terminé');
     }
