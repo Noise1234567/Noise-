@@ -148,11 +148,20 @@ export const isLongDescription = (text: string) =>
 export type PurchaseState =
   | { kind: 'OPEN'; label: 'Choisir mes billets' }
   | { kind: 'SOLD_OUT'; label: 'Complet'; hint: string }
-  | { kind: 'CANCELLED'; label: 'Achat impossible'; hint: string };
+  | { kind: 'CANCELLED'; label: 'Achat impossible'; hint: string }
+  | { kind: 'SUSPENDED'; label: 'Achat impossible'; hint: string };
 
 export function purchaseState(event: Pick<EventDto, 'status' | 'ticketTypes'>): PurchaseState {
   if (event.status === 'CANCELLED') {
     return { kind: 'CANCELLED', label: 'Achat impossible', hint: 'Cet événement a été annulé.' };
+  }
+  if (event.status === 'SUSPENDED') {
+    // Retiré de la vente par l'administration (DEC-020) : les billets déjà achetés restent valides.
+    return {
+      kind: 'SUSPENDED',
+      label: 'Achat impossible',
+      hint: 'Cet événement est momentanément indisponible.',
+    };
   }
   if (!hasPurchasableTicket(event)) {
     return {

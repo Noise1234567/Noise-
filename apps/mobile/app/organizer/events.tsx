@@ -1,11 +1,24 @@
-import { Placeholder } from '../../src/components/Placeholder';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
 
-/** Écran 19 : Mes événements. */
+import { RoleHeader } from '../../src/components/RoleHeader';
+import { Screen } from '../../src/components/Screen';
+import { eventsApi } from '../../src/features/participant/events-api';
+import { MyEventsList } from '../../src/features/organizer/my-events/MyEventsList';
+
+/** Écran 19 : Mes événements (à venir / passés / annulés), rechargé à chaque retour. */
 export default function MyEvents() {
+  const router = useRouter();
+  const [refreshKey, setRefreshKey] = useState(0);
+  useFocusEffect(useCallback(() => setRefreshKey((k) => k + 1), []));
   return (
-    <Placeholder
-      title="Mes événements"
-      note="La liste de vos événements arrive avec la gestion des événements."
-    />
+    <Screen>
+      <RoleHeader />
+      <MyEventsList
+        api={eventsApi}
+        refreshKey={refreshKey}
+        onCreate={() => router.push('/organizer/create-event')}
+      />
+    </Screen>
   );
 }

@@ -17,8 +17,11 @@ const app = createApp(env, createLogger('silent'), { prisma });
 beforeEach(() => resetDatabase(prisma));
 afterAll(() => prisma.$disconnect());
 
-const bearer = async (roles: ('ADMIN' | 'ORGANIZER' | 'PARTICIPANT')[]) =>
-  `Bearer ${await createAccessToken({ userId: '00000000-0000-0000-0000-000000000001', roles }, SECRET)}`;
+/** Vrai compte en base : chaque export laisse une ligne d'audit liée à l'admin (FK). */
+const bearer = async (roles: ('ADMIN' | 'ORGANIZER' | 'PARTICIPANT')[]) => {
+  const user = await factories.user(prisma, roles);
+  return `Bearer ${await createAccessToken({ userId: user.id, roles }, SECRET)}`;
+};
 
 /** Événement avec deux types de billets et des commandes de tous statuts. */
 async function eventWithSales() {
