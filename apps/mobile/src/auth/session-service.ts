@@ -5,7 +5,13 @@ import { createAuthApi } from '../api/auth';
 import { createApiClient } from '../api/client';
 import { API_BASE_URL } from '../api/config';
 import { toApiError } from '../api/errors';
-import { accessTokenStore, activeRoleStorage, refreshTokenStorage } from '../api/token-storage';
+import {
+  accessTokenStore,
+  activeRoleStorage,
+  lastUserStorage,
+  refreshTokenStorage,
+} from '../api/token-storage';
+import { ticketCache } from '../features/participant/tickets/ticket-cache';
 import { type AppRole, useSession } from '../state/session';
 
 const appRoles = (roles: AuthSession['user']['roles']): AppRole[] =>
@@ -22,6 +28,7 @@ const isAppRole = (value: string | null): value is AppRole =>
 export async function completeSignIn(session: AuthSession, preferredRole?: AppRole): Promise<void> {
   accessTokenStore.set(session.accessToken);
   await refreshTokenStorage.set(session.refreshToken);
+  await lastUserStorage.set(session.user).catch(() => undefined);
   const stored = preferredRole
     ? null
     : await activeRoleStorage.get(session.user.id).catch(() => null);
@@ -41,10 +48,16 @@ useSession.subscribe((state, previous) => {
   void activeRoleStorage.set(state.user.id, state.activeRole).catch(() => undefined);
 });
 
-/** Efface les jetons et revient à l'écran de connexion. Ne contacte pas le serveur. */
+/**
+ * Efface les jetons et revient à l'écran de connexion. Ne contacte pas le serveur.
+ * Une déconnexion volontaire efface aussi les billets enregistrés (téléphone prêté ou partagé) ;
+ * une session expirée les garde, pour que l'utilisateur les retrouve après reconnexion.
+ */
 export async function clearSession(expired = false): Promise<void> {
   accessTokenStore.set(null);
   await refreshTokenStorage.clear().catch(() => undefined);
+  await lastUserStorage.clear().catch(() => undefined);
+  if (!expired) await ticketCache.clearAll().catch(() => undefined);
   useSession.getState().signOut(expired);
 }
 
@@ -70,8 +83,8 @@ export async function logout(): Promise<void> {
 
 /**
  * Au lancement : si un refresh token est stocké, on ouvre une session avec (rotation côté serveur).
- * Refus (401) : jeton effacé. Réseau coupé : on reste déconnecté sans effacer le jeton,
- * l'utilisateur pourra se reconnecter et le prochain lancement réessaiera.
+ * Refus (401) : jeton effacé. Réseau coupé : la session est rouverte avec le dernier profil
+ * connu (billets hors ligne, NOISE-022), sinon on reste déconnecté sans effacer le jeton.
  */
 export async function hydrateSession(): Promise<void> {
   const refreshToken = await refreshTokenStorage.get().catch(() => null);
@@ -87,7 +100,20 @@ export async function hydrateSession(): Promise<void> {
     );
     await completeSignIn(data);
   } catch (error) {
-    if (toApiError(error).status === 401) await clearSession(true);
-    else useSession.getState().hydrate();
+    if (toApiError(error).status === 401) {
+      await clearSession(true);
+      return;
+    }
+    // Pas de réseau : la session est rouverte avec le dernier profil connu (billets hors
+    // ligne, NOISE-022). Le jeton sera rafraîchi à la première requête qui aboutit.
+    const lastUser = await lastUserStorage.get();
+    if (lastUser && appRoles(lastUser.roles).length > 0) {
+      const stored = await activeRoleStorage.get(lastUser.id).catch(() => null);
+      useSession
+        .getState()
+        .signIn(appRoles(lastUser.roles), isAppRole(stored) ? stored : undefined, lastUser);
+    } else {
+      useSession.getState().hydrate();
+    }
   }
 }

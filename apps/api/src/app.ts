@@ -8,6 +8,7 @@ import { pinoHttp } from 'pino-http';
 import type { Logger } from 'pino';
 import type { Env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middlewares/error-handler.js';
+import { createIdempotency } from './middlewares/idempotency.js';
 import { globalRateLimit } from './middlewares/rate-limit.js';
 import type { PrismaClient } from './lib/prisma.js';
 import { createAdminRouter } from './modules/admin/admin.routes.js';
@@ -26,7 +27,8 @@ import { createTicketIssuer, type TicketIssuer } from './modules/tickets/ticket-
 import { createTicketsRouter } from './modules/tickets/tickets.routes.js';
 import { TicketsService } from './modules/tickets/tickets.service.js';
 import { ScannerLinksService } from './modules/scanner/scanner-links.service.js';
-import { createScannerLinksRouter } from './modules/scanner/scanner.routes.js';
+import { ScanService } from './modules/scanner/scan.service.js';
+import { createScanRouter, createScannerLinksRouter } from './modules/scanner/scanner.routes.js';
 import { createEventsRouter } from './modules/events/events.routes.js';
 import {
   CloudinaryImageStorage,
@@ -123,6 +125,8 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
   });
 
   if (deps.prisma && env.JWT_ACCESS_SECRET) {
+    // Idempotency-Key sur la création de commande et le paiement (NOISE-053).
+    const idempotent = createIdempotency(deps.prisma);
     const auth = new AuthService(deps.prisma, env.JWT_ACCESS_SECRET);
     app.use('/api/v1/auth', createAuthRouter(auth, env.JWT_ACCESS_SECRET));
     const identityStorage = deps.identityStorage ?? createIdentityStorage(env.CLOUDINARY_URL);
@@ -145,7 +149,10 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
       ),
     );
     if (payments) {
-      app.use('/api/v1/payments', createPaymentsRouter(payments, env.JWT_ACCESS_SECRET));
+      app.use(
+        '/api/v1/payments',
+        createPaymentsRouter(payments, env.JWT_ACCESS_SECRET, idempotent),
+      );
       app.use('/api/v1/orders', createOrderStatusRouter(payments, env.JWT_ACCESS_SECRET));
     }
     app.use(
@@ -161,6 +168,7 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
       createOrdersRouter(
         new OrdersService(deps.prisma, undefined, issueTickets),
         env.JWT_ACCESS_SECRET,
+        idempotent,
       ),
     );
     // Sans QR_SIGNING_SECRET (tests seulement), la route des billets est absente.
@@ -175,13 +183,19 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
     }
     // Sans SCANNER_JWT_SECRET (tests seulement), les liens scanner ne sont pas montés.
     if (env.SCANNER_JWT_SECRET) {
-      app.use(
-        '/api/v1',
-        createScannerLinksRouter(
-          new ScannerLinksService(deps.prisma, env.SCANNER_JWT_SECRET, env.SCANNER_URL ?? null),
-          env.JWT_ACCESS_SECRET,
-        ),
+      const scannerLinks = new ScannerLinksService(
+        deps.prisma,
+        env.SCANNER_JWT_SECRET,
+        env.SCANNER_URL ?? null,
       );
+      app.use('/api/v1', createScannerLinksRouter(scannerLinks, env.JWT_ACCESS_SECRET));
+      // Validation des QR à l'entrée (NOISE-025) : il faut aussi le secret des QR.
+      if (env.QR_SIGNING_SECRET) {
+        app.use(
+          '/api/v1',
+          createScanRouter(scannerLinks, new ScanService(deps.prisma, env.QR_SIGNING_SECRET)),
+        );
+      }
     }
   }
 
