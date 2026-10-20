@@ -12,3 +12,4 @@ export * from './schemas/identity.js';
 export * from './schemas/orders.js';
 export * from './schemas/tickets.js';
 export * from './schemas/scanner-links.js';
+export * from './schemas/cancellation.js';
