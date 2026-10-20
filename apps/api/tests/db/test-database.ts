@@ -15,6 +15,7 @@ export function createTestPrisma(): PrismaClient {
 }
 
 const TABLES = [
+  'idempotency_keys',
   'identity_verifications',
   'admin_audit_logs',
   'scan_logs',

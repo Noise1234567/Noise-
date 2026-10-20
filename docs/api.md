@@ -12,8 +12,20 @@
 | Scanner     | `Authorization: Bearer <scannerJwt>`, accepté uniquement sur `/scanner/validate`      |
 | Pagination  | `?cursor=<id>&limit=20` ; réponse `{ data: [...], nextCursor: string \| null }`       |
 | Validation  | Zod sur body, query et params ; échec → 400 `VALIDATION_ERROR` avec `details`         |
-| Idempotence | En-tête `Idempotency-Key` accepté sur `POST /orders` et `POST /payments/initiate`     |
+| Idempotence | En-tête `Idempotency-Key` facultatif (section Idempotence ci-dessous)                 |
 | Traçabilité | Chaque réponse d'erreur contient `requestId` (même valeur que dans les logs)          |
+
+### Idempotence (NOISE-053)
+
+En 3G, une réponse peut se perdre alors que le serveur a bien créé la commande. Le mobile envoie alors la même requête avec la même clé `Idempotency-Key` (8 à 128 caractères : lettres, chiffres, `-`, `_` ; un identifiant aléatoire par intention d'achat) :
+
+- même clé, même corps, réponse connue : la réponse déjà donnée est renvoyée telle quelle (même statut, même corps, y compris une erreur 4xx), avec l'en-tête `Idempotent-Replayed: true` ; rien n'est recréé ;
+- même clé avec un autre corps ou sur une autre route : 409 `CONFLICT` ;
+- même clé pendant que la première requête est en cours : 409 `CONFLICT`, à réessayer un peu plus tard ;
+- erreur serveur (5xx) : rien n'est gardé, un nouvel essai est traité normalement ;
+- clé au mauvais format : 400 `VALIDATION_ERROR`.
+
+Les clés sont propres à chaque compte (table `idempotency_keys`) et gardées 24 heures. Sans en-tête, la requête est traitée comme avant.
 
 ## 2. Format d'erreur
 
