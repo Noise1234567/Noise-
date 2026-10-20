@@ -91,6 +91,7 @@ model User {
   identityVerification IdentityVerification?  @relation("identityOwner")
   decidedIdentities    IdentityVerification[] @relation("identityDecider")
   cancelledEvents      EventCancellation[]
+  idempotencyKeys      IdempotencyKey[]
 
   @@map("users")
 }
@@ -397,4 +398,26 @@ model EventCancellation {
 
   @@index([returnDueAt])
   @@map("event_cancellations")
+}
+/// Clés d'idempotence (NOISE-053) : une requête renvoyée avec la même clé (réponse perdue en
+/// 3G) reçoit la réponse déjà donnée au lieu d'être traitée une seconde fois. Gardées 24 h.
+model IdempotencyKey {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  key            String   @db.VarChar(128)
+  /// Route protégée (ex. `orders.create`) : une clé ne sert qu'à une seule route.
+  scope          String   @db.VarChar(40)
+  /// SHA-256 du corps de la requête : la même clé avec un autre contenu est refusée.
+  requestHash    String   @map("request_hash") @db.Char(64)
+  /// Vides tant que la première requête est en cours.
+  responseStatus Int?     @map("response_status")
+  responseBody   Json?    @map("response_body")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt      DateTime @map("expires_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+  @@index([expiresAt])
+  @@map("idempotency_keys")
 }

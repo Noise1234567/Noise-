@@ -12,8 +12,20 @@
 | Scanner     | `Authorization: Bearer <scannerJwt>`, accepté uniquement sur `/scanner/validate`      |
 | Pagination  | `?cursor=<id>&limit=20` ; réponse `{ data: [...], nextCursor: string \| null }`       |
 | Validation  | Zod sur body, query et params ; échec → 400 `VALIDATION_ERROR` avec `details`         |
-| Idempotence | En-tête `Idempotency-Key` accepté sur `POST /orders` et `POST /payments/initiate`     |
+| Idempotence | En-tête `Idempotency-Key` facultatif (section Idempotence ci-dessous)                 |
 | Traçabilité | Chaque réponse d'erreur contient `requestId` (même valeur que dans les logs)          |
+
+### Idempotence (NOISE-053)
+
+En 3G, une réponse peut se perdre alors que le serveur a bien créé la commande. Le mobile envoie alors la même requête avec la même clé `Idempotency-Key` (8 à 128 caractères : lettres, chiffres, `-`, `_` ; un identifiant aléatoire par intention d'achat) :
+
+- même clé, même corps, réponse connue : la réponse déjà donnée est renvoyée telle quelle (même statut, même corps, y compris une erreur 4xx), avec l'en-tête `Idempotent-Replayed: true` ; rien n'est recréé ;
+- même clé avec un autre corps ou sur une autre route : 409 `CONFLICT` ;
+- même clé pendant que la première requête est en cours : 409 `CONFLICT`, à réessayer un peu plus tard ;
+- erreur serveur (5xx) : rien n'est gardé, un nouvel essai est traité normalement ;
+- clé au mauvais format : 400 `VALIDATION_ERROR`.
+
+Les clés sont propres à chaque compte (table `idempotency_keys`) et gardées 24 heures. Sans en-tête, la requête est traitée comme avant.
 
 ## 2. Format d'erreur
 
@@ -271,3 +283,23 @@ Réponse 200 : `{ links: ScannerLinkDto[] }`, le plus récent d'abord. Le jeton 
 Réponse 200 : `{ link }` avec `status: REVOKED`. Rejouer la révocation renvoie le même résultat, sans changer la date.
 
 Configuration : `SCANNER_JWT_SECRET` (32 caractères minimum, différent de `JWT_ACCESS_SECRET`) est obligatoire hors tests ; `SCANNER_URL` est facultative. La partie mobile (générer et partager le lien) reste à faire.
+
+## 8. Validation des QR à l'entrée (NOISE-025)
+
+### `POST /api/v1/scanner/validate`
+
+Appelé par le scanner web du staff. Authentification : `Authorization: Bearer <jeton du lien scanner>` ; un lien absent, expiré, révoqué ou falsifié renvoie 401. Corps : `{ qrCode }` (contenu brut lu dans le QR, 512 caractères au plus ; 400 sinon). Contrat partagé : `packages/shared/src/schemas/scanner.ts`.
+
+Réponse 200 `{ result, holderName?, ticketTypeName?, usedAt? }`, quel que soit le résultat :
+
+| `result`       | Cas                                                            | Champs ajoutés                   |
+| -------------- | -------------------------------------------------------------- | -------------------------------- |
+| `ACCEPTED`     | Billet valable : il passe à `USED`, l'heure d'entrée est notée | nom, type de billet              |
+| `ALREADY_USED` | Billet déjà scanné (capture d'écran, deuxième passage)         | nom, type, `usedAt` (1re entrée) |
+| `INVALID`      | QR falsifié, abîmé ou billet inconnu                           | aucun                            |
+| `CANCELLED`    | Billet annulé (événement annulé, remboursement)                | nom, type de billet              |
+| `WRONG_EVENT`  | Billet d'un autre événement que celui du lien                  | nom, type de billet              |
+
+Le billet est verrouillé (`SELECT ... FOR UPDATE`) puis mis à jour dans la même transaction : plusieurs téléphones qui scannent le même QR au même instant ne laissent entrer qu'une personne. Chaque tentative est inscrite dans `ScanLog`. Ordre exact des contrôles : `docs/qr-scanner.md` section 3.
+
+Limitation : 60 validations par minute et par lien (429 au-delà). La route n'est pas soumise à la limite globale par IP, car tout le staff d'une soirée partage souvent la même connexion. Configuration : `SCANNER_JWT_SECRET` et `QR_SIGNING_SECRET`.

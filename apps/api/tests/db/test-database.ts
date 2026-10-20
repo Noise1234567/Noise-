@@ -16,6 +16,7 @@ export function createTestPrisma(): PrismaClient {
 
 const TABLES = [
   'event_cancellations',
+  'idempotency_keys',
   'identity_verifications',
   'admin_audit_logs',
   'scan_logs',
