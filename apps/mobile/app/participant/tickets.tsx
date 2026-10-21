@@ -1,7 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 
-import { RoleHeader } from '../../src/components/RoleHeader';
 import { Screen } from '../../src/components/Screen';
 import { MyTickets } from '../../src/features/participant/tickets/MyTickets';
 import { ticketCache } from '../../src/features/participant/tickets/ticket-cache';
@@ -16,7 +15,6 @@ export default function Tickets() {
   useFocusEffect(useCallback(() => setFocusKey((k) => k + 1), []));
   return (
     <Screen>
-      <RoleHeader />
       <MyTickets
         fetcher={ticketsApi.listMine}
         cache={ticketCache}

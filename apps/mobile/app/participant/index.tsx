@@ -5,7 +5,6 @@ import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 
 import { Banner } from '../../src/components/Banner';
 import { Button } from '../../src/components/Button';
-import { RoleHeader } from '../../src/components/RoleHeader';
 import { Screen } from '../../src/components/Screen';
 import { Text } from '../../src/components/Text';
 import { EventCard } from '../../src/features/participant/EventCard';
@@ -48,9 +47,6 @@ export default function Home() {
   return (
     <Screen>
       <View style={styles.header}>
-        <View style={styles.switcher}>
-          <RoleHeader />
-        </View>
         <Ionicons
           name="notifications-outline"
           size={24}
@@ -151,8 +147,7 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  switcher: { flex: 1, marginRight: spacing.lg },
+  header: { flexDirection: 'row', justifyContent: 'flex-end' },
   subtitle: { marginTop: spacing.xs, marginBottom: spacing.lg },
   pills: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   offline: { marginBottom: spacing.md },

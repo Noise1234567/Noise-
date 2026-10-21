@@ -25,7 +25,7 @@ export const phoneSchema = z
 /** Longueur maximale d'une adresse e-mail (RFC 5321). */
 export const EMAIL_MAX_LENGTH = 254;
 
-/** E-mail demandé à l'inscription (DEC-026) : espaces retirés, minuscules, un seul compte par adresse. */
+/** E-mail demandé à l'inscription (DEC-026) : espaces retirés, minuscules, un seul compte par adresse et par rôle. */
 export const emailSchema = z
   .string()
   .trim()
@@ -49,8 +49,15 @@ export const registerSchema = z.object({
   role: signupRoleSchema,
 });
 
+/**
+ * Rôle du compte auquel se connecter (DEC-028) : un même numéro peut porter un compte
+ * participant et un compte organisateur. ADMIN : comptes créés par script (NOISE-055).
+ */
+export const loginRoleSchema = z.enum(['PARTICIPANT', 'ORGANIZER', 'ADMIN']);
+
 export const loginSchema = z.object({
   phone: phoneSchema,
+  role: loginRoleSchema,
   // Pas de règle de longueur à la connexion : le message d'erreur reste générique.
   password: z.string().min(1).max(PASSWORD_MAX_LENGTH),
 });
@@ -59,9 +66,6 @@ export const refreshSchema = z.object({
   refreshToken: z.string().min(1),
 });
 
-/** PATCH /api/v1/me/roles : activer le second rôle (CDC 3.1, NOISE-015). */
-export const activateRoleSchema = z.object({ role: signupRoleSchema });
-
 /** Utilisateur renvoyé par l'API : jamais le hash du mot de passe. */
 export interface PublicUser {
   id: string;
@@ -69,7 +73,8 @@ export interface PublicUser {
   phone: string;
   /** null pour les comptes créés avant DEC-026 (e-mail à renseigner plus tard). */
   email: string | null;
-  roles: ('PARTICIPANT' | 'ORGANIZER' | 'ADMIN')[];
+  /** Un compte, un rôle (DEC-028). */
+  role: 'PARTICIPANT' | 'ORGANIZER' | 'ADMIN';
 }
 
 /** Réponse de register, login et refresh. */

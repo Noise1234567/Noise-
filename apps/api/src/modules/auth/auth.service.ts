@@ -18,7 +18,7 @@ const toPublicUser = (user: User): PublicUser => ({
   name: user.name,
   phone: user.phone,
   email: user.email,
-  roles: user.roles,
+  role: user.role,
 });
 
 /** Erreur Prisma « valeur déjà utilisée » (contrainte d'unicité). */
@@ -35,7 +35,10 @@ export class AuthService {
     const passwordHash = await hashPassword(input.password);
     // Vérification explicite pour dire quel champ pose problème ; la contrainte d'unicité de la
     // base reste le garde-fou si deux inscriptions identiques arrivent en même temps.
-    const emailTaken = await this.prisma.user.findUnique({ where: { email: input.email } });
+    // Unicité par rôle (DEC-028) : le même numéro ou e-mail peut avoir un compte de l'autre rôle.
+    const emailTaken = await this.prisma.user.findUnique({
+      where: { email_role: { email: input.email, role: input.role } },
+    });
     if (emailTaken) {
       throw new HttpError(409, 'CONFLICT', 'Un compte existe déjà avec cette adresse e-mail');
     }
@@ -46,7 +49,7 @@ export class AuthService {
           phone: input.phone,
           email: input.email,
           passwordHash,
-          roles: [input.role],
+          role: input.role,
         },
       });
       return await this.openSession(user);
@@ -59,7 +62,9 @@ export class AuthService {
   }
 
   async login(input: LoginInput): Promise<AuthSession> {
-    const user = await this.prisma.user.findUnique({ where: { phone: input.phone } });
+    const user = await this.prisma.user.findUnique({
+      where: { phone_role: { phone: input.phone, role: input.role } },
+    });
     // Vérification même si le compte n'existe pas : même temps de réponse (password.ts).
     const valid = await verifyPassword(user?.passwordHash ?? null, input.password);
     if (!user || !valid) throw new HttpError(401, 'UNAUTHENTICATED', INVALID_CREDENTIALS);
@@ -130,25 +135,6 @@ export class AuthService {
     return toPublicUser(user);
   }
 
-  /**
-   * Active le second rôle (participant ou organisateur, CDC 3.1). Renvoie un nouvel access
-   * token, puisque les rôles y sont inscrits ; le refresh token ne change pas.
-   */
-  async activateRole(
-    userId: string,
-    role: 'PARTICIPANT' | 'ORGANIZER',
-  ): Promise<{ accessToken: string; user: PublicUser }> {
-    const current = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!current) throw new HttpError(404, 'NOT_FOUND', 'Compte introuvable');
-    const user = current.roles.includes(role)
-      ? current
-      : await this.prisma.user.update({
-          where: { id: userId },
-          data: { roles: { push: role } },
-        });
-    return { accessToken: await this.accessTokenFor(user), user: toPublicUser(user) };
-  }
-
   private async openSession(user: User): Promise<AuthSession> {
     const { token, tokenHash, expiresAt } = generateRefreshToken();
     await this.prisma.refreshToken.create({ data: { userId: user.id, tokenHash, expiresAt } });
@@ -160,7 +146,7 @@ export class AuthService {
   }
 
   private accessTokenFor(user: User) {
-    return createAccessToken({ userId: user.id, roles: user.roles }, this.accessTokenSecret);
+    return createAccessToken({ userId: user.id, roles: [user.role] }, this.accessTokenSecret);
   }
 
   private async revokeAllSessions(userId: string, now: Date) {

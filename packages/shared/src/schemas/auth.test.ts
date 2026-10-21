@@ -41,9 +41,17 @@ describe('registerSchema', () => {
 
 describe('loginSchema', () => {
   it('normalise le numéro et accepte un mot de passe court (message générique)', () => {
-    expect(loginSchema.parse({ phone: '97454547', password: 'x' })).toEqual({
+    expect(loginSchema.parse({ phone: '97454547', password: 'x', role: 'ORGANIZER' })).toEqual({
       phone: '+2290197454547',
       password: 'x',
+      role: 'ORGANIZER',
     });
+  });
+
+  it('exige le rôle du compte (DEC-028)', () => {
+    expect(loginSchema.safeParse({ phone: '97454547', password: 'x' }).success).toBe(false);
+    expect(
+      loginSchema.safeParse({ phone: '97454547', password: 'x', role: 'SUPER_ADMIN' }).success,
+    ).toBe(false);
   });
 });

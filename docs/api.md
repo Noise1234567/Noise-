@@ -66,7 +66,6 @@ Base : CDC section 7, complétée par les décisions.
 | POST      | `/auth/refresh`             | Public (refresh token)    | NOISE-007            |
 | POST      | `/auth/logout`              | Auth                      | NOISE-007            |
 | GET       | `/me`                       | Auth                      | NOISE-007            |
-| PATCH     | `/me/roles`                 | Auth                      | NOISE-015            |
 | GET       | `/events`                   | Auth                      | NOISE-011 (existe)   |
 | GET       | `/events/:id`               | Auth                      | NOISE-011 (existe)   |
 | POST      | `/events`                   | Organisateur              | NOISE-011 (existe)   |
@@ -96,16 +95,17 @@ Chaque endpoint, une fois implémenté, est documenté ici avec : corps de requ�
 
 ### Authentification (NOISE-007)
 
-Format des numéros : toute écriture béninoise est acceptée (`01 97 45 45 47`, `+229…`, ancien format à 8 chiffres) et convertie en E.164 (`+2290197454547`). Réponse de session (`AuthSession`) : `{ accessToken, refreshToken, user: { id, name, phone, email, roles } }` (`email` est nul pour un compte créé avant DEC-026). Contrats partagés : `packages/shared/src/schemas/auth.ts`.
+Format des numéros : toute écriture béninoise est acceptée (`01 97 45 45 47`, `+229…`, ancien format à 8 chiffres) et convertie en E.164 (`+2290197454547`). Réponse de session (`AuthSession`) : `{ accessToken, refreshToken, user: { id, name, phone, email, role } }` (`email` est nul pour un compte créé avant DEC-026).
 
-| Endpoint                     | Corps                                                                                 | Réponse                                                                    | Erreurs                                                                                                              |
-| ---------------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `POST /api/v1/auth/register` | `name`, `phone`, `email`, `password` (8 à 128), `role` (`PARTICIPANT` ou `ORGANIZER`) | 201 `AuthSession`                                                          | 400 ; 409 numéro ou e-mail déjà utilisé ; 429 (5 essais / 15 min par IP et numéro)                                   |
-| `POST /api/v1/auth/login`    | `phone`, `password`                                                                   | 200 `AuthSession`                                                          | 400 ; 401 « Numéro ou mot de passe incorrect » (même message dans les deux cas) ; 403 compte suspendu ; 429          |
-| `POST /api/v1/auth/refresh`  | `refreshToken`                                                                        | 200 `AuthSession` (nouveaux jetons)                                        | 401 jeton inconnu, expiré ou déjà utilisé (dans ce dernier cas, toutes les sessions de l'utilisateur sont révoquées) |
-| `POST /api/v1/auth/logout`   | `refreshToken` ; access token requis                                                  | 204                                                                        | 401                                                                                                                  |
-| `GET /api/v1/me`             | access token requis                                                                   | 200 `{ user }`                                                             | 401                                                                                                                  |
-| `PATCH /api/v1/me/roles`     | `role` (`PARTICIPANT` ou `ORGANIZER`)                                                 | 200 `{ accessToken, user }` : nouvel access token contenant le rôle ajouté | 400 (ADMIN refusé) ; 401                                                                                             |
+Un compte, un rôle (DEC-028, NOISE-060) : un même numéro, ou un même e-mail, peut porter un compte participant et un compte organisateur, distincts (mot de passe, commandes, événements), jamais deux comptes du même rôle. La connexion se fait dans le rôle demandé ; il n'y a plus d'activation d'un second rôle (`PATCH /me/roles` retiré, 404). L'access token garde la liste `roles` (un seul élément) lue par les contrôles d'accès. Contrats partagés : `packages/shared/src/schemas/auth.ts`.
+
+| Endpoint                     | Corps                                                                                 | Réponse                             | Erreurs                                                                                                              |
+| ---------------------------- | ------------------------------------------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/v1/auth/register` | `name`, `phone`, `email`, `password` (8 à 128), `role` (`PARTICIPANT` ou `ORGANIZER`) | 201 `AuthSession`                   | 400 ; 409 numéro ou e-mail déjà utilisé pour ce rôle ; 429 (5 essais / 15 min par IP et numéro)                      |
+| `POST /api/v1/auth/login`    | `phone`, `password`, `role` (`PARTICIPANT`, `ORGANIZER` ou `ADMIN`)                   | 200 `AuthSession`                   | 400 ; 401 « Numéro ou mot de passe incorrect » (aussi sans compte dans ce rôle) ; 403 compte suspendu ; 429          |
+| `POST /api/v1/auth/refresh`  | `refreshToken`                                                                        | 200 `AuthSession` (nouveaux jetons) | 401 jeton inconnu, expiré ou déjà utilisé (dans ce dernier cas, toutes les sessions de l'utilisateur sont révoquées) |
+| `POST /api/v1/auth/logout`   | `refreshToken` ; access token requis                                                  | 204                                 | 401                                                                                                                  |
+| `GET /api/v1/me`             | access token requis                                                                   | 200 `{ user }`                      | 401                                                                                                                  |
 
 À l'attention du mobile (NOISE-008) : ne jamais lancer deux `refresh` en parallèle avec le même jeton. Le second est traité comme une réutilisation et déconnecte l'utilisateur partout. L'intercepteur Axios doit mettre les requêtes en attente pendant un rafraîchissement.
 

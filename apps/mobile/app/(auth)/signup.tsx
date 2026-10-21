@@ -25,6 +25,12 @@ const roleLabel: Record<AppRole, string> = {
   ORGANIZER: 'Organisateur',
 };
 
+/** Un même numéro peut avoir un compte de chaque rôle (DEC-028) : le message dit lequel existe. */
+const roleNoun: Record<AppRole, string> = {
+  PARTICIPANT: 'participant',
+  ORGANIZER: 'organisateur',
+};
+
 /** Écran 3 (et variantes 3b–3d) : inscription. */
 export default function Signup() {
   const router = useRouter();
@@ -58,14 +64,14 @@ export default function Signup() {
         password,
         role,
       });
-      await completeSignIn(session, role);
+      await completeSignIn(session);
     } catch (e) {
       const error = toApiError(e);
       if (error.status === 409 && /e-mail/i.test(error.message)) {
-        setErrors({ email: 'Cette adresse e-mail a déjà un compte.' });
+        setErrors({ email: `Cette adresse e-mail a déjà un compte ${roleNoun[role]}.` });
       } else if (error.status === 409) {
         setPhoneTaken(true);
-        setErrors({ phone: 'Ce numéro a déjà un compte.' });
+        setErrors({ phone: `Ce numéro a déjà un compte ${roleNoun[role]}.` });
       } else if (error.status === 429) {
         setBanner(
           'Trop de tentatives. Par sécurité, patientez quelques minutes avant de réessayer.',
@@ -179,7 +185,7 @@ export default function Signup() {
               <Button
                 variant="secondary"
                 label="Mode démo (développement)"
-                onPress={() => signIn(['PARTICIPANT', 'ORGANIZER'], role)}
+                onPress={() => signIn(role)}
               />
             ) : null}
           </View>

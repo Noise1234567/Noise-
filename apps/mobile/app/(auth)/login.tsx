@@ -14,18 +14,29 @@ import {
 import { formatClock, useCountdown } from '../../src/auth/useCountdown';
 import { Banner } from '../../src/components/Banner';
 import { Button } from '../../src/components/Button';
+import { RoleSwitcher } from '../../src/components/RoleSwitcher';
 import { Screen } from '../../src/components/Screen';
 import { Text } from '../../src/components/Text';
 import { TextField } from '../../src/components/TextField';
-import { useSession } from '../../src/state/session';
+import { useSession, type AppRole } from '../../src/state/session';
 import { spacing } from '../../src/theme';
 
 /** Valeur de repli quand l'API ne précise pas le délai : la fenêtre de 15 minutes (docs/security.md). */
 const DEFAULT_LOCK_SECONDS = 15 * 60;
 
-/** Écran 4 (et variantes 4b–4d) : connexion. */
+const roleNoun: Record<AppRole, string> = {
+  PARTICIPANT: 'participant',
+  ORGANIZER: 'organisateur',
+};
+
+/**
+ * Écran 4 (et variantes 4b–4d) : connexion. Un compte, un rôle (DEC-028) : on choisit le compte
+ * auquel se connecter, participant ou organisateur (même numéro possible pour les deux).
+ */
 export default function Login() {
   const router = useRouter();
+  const pendingRole = useSession((s) => s.pendingRole);
+  const [role, setRole] = useState<AppRole>(pendingRole ?? 'PARTICIPANT');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<FieldErrors<LoginField>>({});
@@ -43,7 +54,7 @@ export default function Login() {
 
     setLoading(true);
     try {
-      const session = await authApi.login({ phone: toApiPhone(phone), password });
+      const session = await authApi.login({ phone: toApiPhone(phone), password, role });
       await completeSignIn(session);
     } catch (e) {
       const error = toApiError(e);
@@ -53,8 +64,8 @@ export default function Login() {
         const left = error.remainingAttempts;
         setBanner(
           left !== undefined && left > 0
-            ? `Numéro ou mot de passe incorrect. Il vous reste ${left} ${left > 1 ? 'essais' : 'essai'}.`
-            : 'Numéro ou mot de passe incorrect.',
+            ? `Numéro ou mot de passe incorrect pour un compte ${roleNoun[role]}. Il vous reste ${left} ${left > 1 ? 'essais' : 'essai'}.`
+            : `Numéro ou mot de passe incorrect pour un compte ${roleNoun[role]}.`,
         );
       } else if (error.status === 403) {
         setBanner('Ce compte est suspendu. Contactez le support de Noise.');
@@ -85,6 +96,7 @@ export default function Login() {
           ) : null}
 
           <View style={styles.form}>
+            <RoleSwitcher active={role} onSelect={setRole} />
             <TextField
               label="Numéro de téléphone"
               prefix="+229"

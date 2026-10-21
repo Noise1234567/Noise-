@@ -36,11 +36,11 @@ afterAll(() => prisma.$disconnect());
 const HOUR = 60 * 60_000;
 const inHours = (hours: number) => new Date(Date.now() + hours * HOUR);
 
-const as = async (user: { id: string; roles: UserRole[] }) => ({
-  Authorization: `Bearer ${await createAccessToken({ userId: user.id, roles: user.roles }, SECRET)}`,
+const as = async (user: { id: string; role: UserRole }) => ({
+  Authorization: `Bearer ${await createAccessToken({ userId: user.id, roles: [user.role] }, SECRET)}`,
 });
 const organizer = async () => {
-  const user = await factories.user(prisma, ['ORGANIZER']);
+  const user = await factories.user(prisma, 'ORGANIZER');
   return { user, headers: await as(user) };
 };
 
@@ -173,7 +173,7 @@ describe('création d’un lien', () => {
     expect(
       (await request(app).post('/api/v1/scanner/links').send({ eventId: event.id })).status,
     ).toBe(401);
-    const participant = await factories.user(prisma, ['PARTICIPANT']);
+    const participant = await factories.user(prisma, 'PARTICIPANT');
     expect((await create(await as(participant), { eventId: event.id })).status).toBe(403);
   });
 });
@@ -223,7 +223,7 @@ describe('liste des liens d’un événement', () => {
 
     expect((await list(other.headers, event.id)).status).toBe(403);
     expect((await list(owner.headers, '3f2b8a0e-7c1d-4e55-9a10-2b6f5c0d9e11')).status).toBe(404);
-    const participant = await factories.user(prisma, ['PARTICIPANT']);
+    const participant = await factories.user(prisma, 'PARTICIPANT');
     expect((await list(await as(participant), event.id)).status).toBe(403);
     expect((await request(app).get(`/api/v1/events/${event.id}/scanner-links`)).status).toBe(401);
   });

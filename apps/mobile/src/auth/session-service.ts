@@ -5,48 +5,29 @@ import { createAuthApi } from '../api/auth';
 import { createApiClient } from '../api/client';
 import { API_BASE_URL } from '../api/config';
 import { toApiError } from '../api/errors';
-import {
-  accessTokenStore,
-  activeRoleStorage,
-  lastUserStorage,
-  refreshTokenStorage,
-} from '../api/token-storage';
+import { accessTokenStore, lastUserStorage, refreshTokenStorage } from '../api/token-storage';
 import { ticketCache } from '../features/participant/tickets/ticket-cache';
-import { type AppRole, useSession } from '../state/session';
+import { isAppRole, useSession } from '../state/session';
 
-const appRoles = (roles: AuthSession['user']['roles']): AppRole[] =>
-  roles.filter((r): r is AppRole => r === 'PARTICIPANT' || r === 'ORGANIZER');
-
-const isAppRole = (value: string | null): value is AppRole =>
-  value === 'PARTICIPANT' || value === 'ORGANIZER';
+/** Compte sans vue mobile (administrateur, DEC-020) : la connexion est refusée sur l'app. */
+export class NoMobileAccessError extends Error {
+  constructor() {
+    super("Ce compte n'a pas accès à l'application mobile.");
+  }
+}
 
 /**
- * Enregistre la session reçue : jetons d'abord (stockage), puis état de l'app.
- * Sans rôle demandé (connexion, relancement), on reprend la dernière vue de ce compte ; si elle
- * n'existe pas ou n'est plus activée, `signIn` retombe sur le premier rôle du compte.
+ * Enregistre la session reçue : jetons d'abord (stockage), puis état de l'app. La vue est celle
+ * du rôle du compte (DEC-028).
  */
-export async function completeSignIn(session: AuthSession, preferredRole?: AppRole): Promise<void> {
+export async function completeSignIn(session: AuthSession): Promise<void> {
+  const { role } = session.user;
+  if (!isAppRole(role)) throw new NoMobileAccessError();
   accessTokenStore.set(session.accessToken);
   await refreshTokenStorage.set(session.refreshToken);
   await lastUserStorage.set(session.user).catch(() => undefined);
-  const stored = preferredRole
-    ? null
-    : await activeRoleStorage.get(session.user.id).catch(() => null);
-  useSession
-    .getState()
-    .signIn(
-      appRoles(session.user.roles),
-      preferredRole ?? (isAppRole(stored) ? stored : undefined),
-      session.user,
-    );
+  useSession.getState().signIn(role, session.user);
 }
-
-// Chaque changement de vue (sélecteur de rôle) est retenu pour le prochain lancement.
-useSession.subscribe((state, previous) => {
-  if (state.status !== 'signedIn' || !state.user || !state.activeRole) return;
-  if (state.activeRole === previous.activeRole && state.user.id === previous.user?.id) return;
-  void activeRoleStorage.set(state.user.id, state.activeRole).catch(() => undefined);
-});
 
 /**
  * Efface les jetons et revient à l'écran de connexion. Ne contacte pas le serveur.
@@ -64,11 +45,7 @@ export async function clearSession(expired = false): Promise<void> {
 export const api = createApiClient(API_BASE_URL, {
   getAccessToken: accessTokenStore.get,
   getRefreshToken: refreshTokenStorage.get,
-  // Le rôle affiché reste celui de l'utilisateur pendant un rafraîchissement silencieux.
-  onSession: async (session) => {
-    const { activeRole } = useSession.getState();
-    await completeSignIn(session, activeRole ?? undefined);
-  },
+  onSession: completeSignIn,
   onSessionExpired: () => clearSession(true),
 });
 
@@ -107,11 +84,8 @@ export async function hydrateSession(): Promise<void> {
     // Pas de réseau : la session est rouverte avec le dernier profil connu (billets hors
     // ligne, NOISE-022). Le jeton sera rafraîchi à la première requête qui aboutit.
     const lastUser = await lastUserStorage.get();
-    if (lastUser && appRoles(lastUser.roles).length > 0) {
-      const stored = await activeRoleStorage.get(lastUser.id).catch(() => null);
-      useSession
-        .getState()
-        .signIn(appRoles(lastUser.roles), isAppRole(stored) ? stored : undefined, lastUser);
+    if (lastUser && isAppRole(lastUser.role)) {
+      useSession.getState().signIn(lastUser.role, lastUser);
     } else {
       useSession.getState().hydrate();
     }

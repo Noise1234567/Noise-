@@ -30,8 +30,11 @@ const aminata = {
   role: 'PARTICIPANT',
 };
 const register = (body: object = aminata) => request(app).post('/api/v1/auth/register').send(body);
-const login = (phone: string, password: string) =>
-  request(app).post('/api/v1/auth/login').send({ phone, password });
+const login = (phone: string, password: string, role: string = 'PARTICIPANT') =>
+  request(app).post('/api/v1/auth/login').send({ phone, password, role });
+const participantWithPhone = (phone: string) => ({
+  where: { phone_role: { phone, role: 'PARTICIPANT' as const } },
+});
 const refresh = (refreshToken: string) =>
   request(app).post('/api/v1/auth/refresh').send({ refreshToken });
 
@@ -44,7 +47,7 @@ describe('inscription', () => {
       name: 'Aminata Sossou',
       phone: '+2290197454547',
       email: 'aminata@example.com',
-      roles: ['PARTICIPANT'],
+      role: 'PARTICIPANT',
     });
     expect(res.body.user).not.toHaveProperty('passwordHash');
     expect(await verifyAccessToken(res.body.accessToken, SECRET)).toEqual({
@@ -52,24 +55,34 @@ describe('inscription', () => {
       roles: ['PARTICIPANT'],
     });
 
-    const stored = await prisma.user.findUniqueOrThrow({ where: { phone: '+2290197454547' } });
+    const stored = await prisma.user.findUniqueOrThrow(participantWithPhone('+2290197454547'));
     expect(stored.passwordHash).toMatch(/^\$argon2id\$/);
     const token = await prisma.refreshToken.findFirstOrThrow({ where: { userId: stored.id } });
     expect(token.tokenHash).not.toBe(res.body.refreshToken); // seul le hash est stocké
   });
 
-  it('refuse un numéro déjà utilisé, même écrit autrement (409)', async () => {
+  it('refuse un numéro déjà utilisé pour le même rôle, même écrit autrement (409)', async () => {
     await register();
     const res = await register({ ...aminata, phone: '+229 01 97 45 45 47' });
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe('CONFLICT');
   });
 
+  it('même numéro et même e-mail : un compte organisateur distinct est autorisé (DEC-028)', async () => {
+    const participant = await register();
+    const organizer = await register({ ...aminata, role: 'ORGANIZER' });
+    expect(organizer.status).toBe(201);
+    expect(organizer.body.user).toMatchObject({ role: 'ORGANIZER', phone: '+2290197454547' });
+    expect(organizer.body.user.id).not.toBe(participant.body.user.id);
+    // Un troisième compte du même rôle reste refusé.
+    expect((await register({ ...aminata, role: 'ORGANIZER' })).status).toBe(409);
+  });
+
   it('enregistre l’e-mail en minuscules, sans espaces', async () => {
     const res = await register({ ...aminata, email: '  Aminata@Example.COM ' });
     expect(res.status).toBe(201);
     expect(res.body.user.email).toBe('aminata@example.com');
-    const stored = await prisma.user.findUniqueOrThrow({ where: { phone: '+2290197454547' } });
+    const stored = await prisma.user.findUniqueOrThrow(participantWithPhone('+2290197454547'));
     expect(stored.email).toBe('aminata@example.com');
   });
 
@@ -130,6 +143,38 @@ describe('inscription', () => {
 });
 
 describe('connexion', () => {
+  it('se connecte au compte du rôle demandé (DEC-028)', async () => {
+    const participant = (await register()).body.user;
+    const organizer = (
+      await register({ ...aminata, role: 'ORGANIZER', password: 'autremotdepasse' })
+    ).body.user;
+
+    const asParticipant = await login('0197454547', 'motdepasse', 'PARTICIPANT');
+    expect(asParticipant.body.user.id).toBe(participant.id);
+    const asOrganizer = await login('0197454547', 'autremotdepasse', 'ORGANIZER');
+    expect(asOrganizer.body.user.id).toBe(organizer.id);
+    expect((await verifyAccessToken(asOrganizer.body.accessToken, SECRET))?.roles).toEqual([
+      'ORGANIZER',
+    ]);
+    // Chaque compte a son propre mot de passe.
+    expect((await login('0197454547', 'motdepasse', 'ORGANIZER')).status).toBe(401);
+  });
+
+  it('pas de compte dans ce rôle : même refus qu’un mauvais mot de passe (401)', async () => {
+    await register();
+    const res = await login('0197454547', 'motdepasse', 'ORGANIZER');
+    expect(res.status).toBe(401);
+    expect(res.body.error.message).toBe('Numéro ou mot de passe incorrect');
+  });
+
+  it('le rôle est obligatoire (400)', async () => {
+    await register();
+    const res = await request(app)
+      .post('/api/v1/auth/login')
+      .send({ phone: '0197454547', password: 'motdepasse' });
+    expect(res.status).toBe(400);
+  });
+
   it('connecte avec le bon mot de passe, quelle que soit l’écriture du numéro', async () => {
     await register();
     const res = await login('97454547', 'motdepasse');
@@ -149,7 +194,10 @@ describe('connexion', () => {
 
   it('refuse un compte suspendu (403)', async () => {
     await register();
-    await prisma.user.update({ where: { phone: '+2290197454547' }, data: { status: 'SUSPENDED' } });
+    await prisma.user.update({
+      ...participantWithPhone('+2290197454547'),
+      data: { status: 'SUSPENDED' },
+    });
     expect((await login('0197454547', 'motdepasse')).status).toBe(403);
   });
 
@@ -245,26 +293,12 @@ describe('/me', () => {
     expect((await request(app).get('/api/v1/me')).status).toBe(401);
   });
 
-  it('active le second rôle et renvoie un access token qui le contient', async () => {
+  it('plus d’activation d’un second rôle : PATCH /me/roles n’existe plus (DEC-028)', async () => {
     const session = (await register()).body;
     const res = await request(app)
       .patch('/api/v1/me/roles')
       .set('Authorization', `Bearer ${session.accessToken}`)
       .send({ role: 'ORGANIZER' });
-    expect(res.status).toBe(200);
-    expect(res.body.user.roles).toEqual(['PARTICIPANT', 'ORGANIZER']);
-    expect((await verifyAccessToken(res.body.accessToken, SECRET))?.roles).toEqual([
-      'PARTICIPANT',
-      'ORGANIZER',
-    ]);
-  });
-
-  it('ne permet jamais de devenir ADMIN (400)', async () => {
-    const session = (await register()).body;
-    const res = await request(app)
-      .patch('/api/v1/me/roles')
-      .set('Authorization', `Bearer ${session.accessToken}`)
-      .send({ role: 'ADMIN' });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(404);
   });
 });

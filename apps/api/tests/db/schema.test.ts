@@ -11,7 +11,7 @@ beforeEach(() => resetDatabase(prisma));
 afterAll(() => prisma.$disconnect());
 
 async function setup() {
-  const organizer = await factories.user(prisma, ['ORGANIZER']);
+  const organizer = await factories.user(prisma, 'ORGANIZER');
   const participant = await factories.user(prisma);
   const event = await factories.event(prisma, organizer.id);
   const ticketType = await factories.ticketType(prisma, event.id);
@@ -25,18 +25,34 @@ describe('connexion', () => {
 });
 
 describe('unicité', () => {
-  it('un numéro de téléphone = un seul compte', async () => {
+  it('un numéro de téléphone = un seul compte par rôle (DEC-028)', async () => {
     const user = await factories.user(prisma);
     await expect(
       prisma.user.create({
-        data: { name: 'Doublon', phone: user.phone, passwordHash: 'x', roles: [] },
+        data: { name: 'Doublon', phone: user.phone, passwordHash: 'x', role: 'PARTICIPANT' },
       }),
     ).rejects.toThrow();
+    // Même numéro, autre rôle : un compte organisateur distinct est autorisé.
+    const organizer = await prisma.user.create({
+      data: { name: 'Orga', phone: user.phone, passwordHash: 'x', role: 'ORGANIZER' },
+    });
+    expect(organizer.id).not.toBe(user.id);
+  });
+
+  it('une adresse e-mail = un seul compte par rôle (DEC-028)', async () => {
+    const data = { name: 'A', passwordHash: 'x', email: 'a@example.com' };
+    await prisma.user.create({ data: { ...data, phone: '+2290100000101', role: 'PARTICIPANT' } });
+    await expect(
+      prisma.user.create({ data: { ...data, phone: '+2290100000102', role: 'PARTICIPANT' } }),
+    ).rejects.toThrow();
+    await expect(
+      prisma.user.create({ data: { ...data, phone: '+2290100000103', role: 'ORGANIZER' } }),
+    ).resolves.toBeTruthy();
   });
 
   it('accepte un numéro E.164 béninois complet (14 caractères, non-régression)', async () => {
     const user = await prisma.user.create({
-      data: { name: 'Kofi', phone: '+2290197454547', passwordHash: 'x', roles: ['PARTICIPANT'] },
+      data: { name: 'Kofi', phone: '+2290197454547', passwordHash: 'x', role: 'PARTICIPANT' },
     });
     expect(user.phone).toHaveLength(14);
   });

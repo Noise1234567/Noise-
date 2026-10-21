@@ -11,7 +11,7 @@ type Props = {
   onSelect: (role: AppRole) => void;
 };
 
-/** Contrôle segmenté en haut de l'écran principal de chaque vue. Segment actif : plein #E8E8E8, texte noir. */
+/** Choix du compte (participant ou organisateur) à la connexion, DEC-028. Segment actif : plein #E8E8E8, texte noir. */
 export function RoleSwitcher({ active, onSelect }: Props) {
   return (
     <View style={styles.track} accessibilityRole="tablist">

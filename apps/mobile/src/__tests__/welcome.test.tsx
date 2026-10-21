@@ -12,7 +12,7 @@ jest.mock('react-native-safe-area-context', () => ({
 
 beforeEach(() => {
   mockPush.mockClear();
-  useSession.setState({ status: 'signedOut', roles: [], activeRole: null, pendingRole: null });
+  useSession.setState({ status: 'signedOut', role: null, pendingRole: null });
 });
 
 describe('écran de bienvenue', () => {
@@ -30,7 +30,7 @@ describe('écran de bienvenue', () => {
     expect(mockPush).toHaveBeenCalledWith('/signup');
   });
 
-  it("« J'ai déjà un compte » ouvre la connexion sans choisir de rôle", async () => {
+  it("« J'ai déjà un compte » ouvre la connexion (le profil s'y choisit)", async () => {
     await render(<Welcome />);
     await fireEvent.press(screen.getByRole('button', { name: "J'ai déjà un compte" }));
     expect(mockPush).toHaveBeenCalledWith('/login');

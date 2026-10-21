@@ -21,7 +21,7 @@ export const lastUserStorage = {
     try {
       const raw = await SecureStore.getItemAsync(LAST_USER_KEY);
       const user = raw ? (JSON.parse(raw) as Partial<PublicUser>) : null;
-      return user && typeof user.id === 'string' && Array.isArray(user.roles)
+      return user && typeof user.id === 'string' && typeof user.role === 'string'
         ? (user as PublicUser)
         : null;
     } catch {
@@ -30,23 +30,6 @@ export const lastUserStorage = {
   },
   set: (user: PublicUser) => SecureStore.setItemAsync(LAST_USER_KEY, JSON.stringify(user)),
   clear: () => SecureStore.deleteItemAsync(LAST_USER_KEY),
-};
-
-const ACTIVE_ROLE_KEY = 'noise.activeRole';
-
-/**
- * Dernière vue utilisée (participant ou organisateur) par un compte qui a les deux rôles.
- * Stockée avec l'identifiant du compte : un autre compte sur le même appareil ne la reprend pas.
- */
-export const activeRoleStorage = {
-  get: async (userId: string): Promise<string | null> => {
-    const value = await SecureStore.getItemAsync(ACTIVE_ROLE_KEY);
-    const [owner, role] = value?.split(':') ?? [];
-    return owner === userId && role ? role : null;
-  },
-  set: (userId: string, role: string) =>
-    SecureStore.setItemAsync(ACTIVE_ROLE_KEY, `${userId}:${role}`),
-  clear: () => SecureStore.deleteItemAsync(ACTIVE_ROLE_KEY),
 };
 
 // L'access token (15 min) reste en mémoire : il disparaît à la fermeture de l'app, c'est voulu.

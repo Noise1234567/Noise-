@@ -36,15 +36,15 @@ const user = {
   name: 'Awa Dossou',
   phone: '+22901020304',
   email: 'awa@mail.com',
-  roles: [] as never[],
+  role: 'PARTICIPANT' as const,
 };
 
 function signInAs(role: 'PARTICIPANT' | 'ORGANIZER') {
-  useSession.getState().signIn(['PARTICIPANT', 'ORGANIZER'], role, user);
+  useSession.getState().signIn(role, { ...user, role });
 }
 
 beforeEach(() => {
-  useSession.setState({ status: 'signedOut', user: null, roles: [], activeRole: null });
+  useSession.setState({ status: 'signedOut', user: null, role: null });
 });
 
 describe('redirection selon le rôle', () => {
@@ -86,17 +86,13 @@ describe('accueils vides', () => {
     expect(screen.getByText('Aucun événement créé')).toBeTruthy();
   });
 
-  it('compte à un seul rôle : pas de sélecteur de rôle', async () => {
-    useSession.getState().signIn(['PARTICIPANT'], 'PARTICIPANT', user);
-    await render(<Home />);
-    expect(screen.queryByRole('tab', { name: 'Organisateur' })).toBeNull();
-  });
-
-  it('le sélecteur de rôle bascule la vue sans reconnexion', async () => {
+  it('plus de sélecteur de rôle dans les vues (un compte, un rôle : DEC-028)', async () => {
     signInAs('PARTICIPANT');
     await render(<Home />);
-    await fireEvent.press(screen.getByRole('tab', { name: 'Organisateur' }));
-    expect(useSession.getState().activeRole).toBe('ORGANIZER');
+    expect(screen.queryByRole('tab', { name: 'Organisateur' })).toBeNull();
+    signInAs('ORGANIZER');
+    await render(<Dashboard />);
+    expect(screen.queryByRole('tab', { name: 'Participant' })).toBeNull();
   });
 });
 

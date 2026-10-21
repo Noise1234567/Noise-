@@ -18,14 +18,14 @@ beforeEach(() => resetDatabase(prisma));
 afterAll(() => prisma.$disconnect());
 
 /** Vrai compte en base : chaque export laisse une ligne d'audit liée à l'admin (FK). */
-const bearer = async (roles: ('ADMIN' | 'ORGANIZER' | 'PARTICIPANT')[]) => {
-  const user = await factories.user(prisma, roles);
-  return `Bearer ${await createAccessToken({ userId: user.id, roles }, SECRET)}`;
+const bearer = async (role: 'ADMIN' | 'ORGANIZER' | 'PARTICIPANT') => {
+  const user = await factories.user(prisma, role);
+  return `Bearer ${await createAccessToken({ userId: user.id, roles: [role] }, SECRET)}`;
 };
 
 /** Événement avec deux types de billets et des commandes de tous statuts. */
 async function eventWithSales() {
-  const organizer = await factories.user(prisma, ['ORGANIZER']);
+  const organizer = await factories.user(prisma, 'ORGANIZER');
   const participant = await factories.user(prisma);
   const event = await prisma.event.create({
     data: {
@@ -88,7 +88,7 @@ describe('GET /api/v1/admin/events/:eventId/sales', () => {
     const { event } = await eventWithSales();
     const res = await request(app)
       .get(`/api/v1/admin/events/${event.id}/sales`)
-      .set('Authorization', await bearer(['ADMIN']));
+      .set('Authorization', await bearer('ADMIN'));
 
     expect(res.status).toBe(200);
     expect(res.body.lines).toEqual([
@@ -119,23 +119,23 @@ describe('GET /api/v1/admin/events/:eventId/sales', () => {
     });
     const res = await request(app)
       .get(`/api/v1/admin/events/${event.id}/sales`)
-      .set('Authorization', await bearer(['ADMIN']));
+      .set('Authorization', await bearer('ADMIN'));
     expect(res.status).toBe(409);
   });
 
   it.each([
     ['sans jeton', undefined, 401],
-    ['organisateur', ['ORGANIZER'] as const, 403],
-    ['participant', ['PARTICIPANT'] as const, 403],
+    ['organisateur', 'ORGANIZER' as const, 403],
+    ['participant', 'PARTICIPANT' as const, 403],
   ])('réservé aux administrateurs : %s → %i', async (_label, roles, status) => {
     const { event } = await eventWithSales();
     const req = request(app).get(`/api/v1/admin/events/${event.id}/sales`);
-    const res = await (roles ? req.set('Authorization', await bearer([...roles])) : req);
+    const res = await (roles ? req.set('Authorization', await bearer(roles)) : req);
     expect(res.status).toBe(status);
   });
 
   it('404 pour un événement inconnu, 400 pour un identifiant invalide', async () => {
-    const admin = await bearer(['ADMIN']);
+    const admin = await bearer('ADMIN');
     const unknown = await request(app)
       .get('/api/v1/admin/events/00000000-0000-0000-0000-000000000000/sales')
       .set('Authorization', admin);
@@ -152,7 +152,7 @@ describe('GET /api/v1/admin/events/:eventId/sales.csv', () => {
     const { event } = await eventWithSales();
     const res = await request(app)
       .get(`/api/v1/admin/events/${event.id}/sales.csv`)
-      .set('Authorization', await bearer(['ADMIN']))
+      .set('Authorization', await bearer('ADMIN'))
       .buffer(true)
       .parse((response, done) => {
         let body = '';

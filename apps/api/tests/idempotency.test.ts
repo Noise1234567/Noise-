@@ -32,11 +32,11 @@ beforeEach(async () => {
 });
 afterAll(() => prisma.$disconnect());
 
-const bearer = async (user: { id: string; roles: UserRole[] }) =>
-  `Bearer ${await createAccessToken({ userId: user.id, roles: user.roles }, SECRET)}`;
+const bearer = async (user: { id: string; role: UserRole }) =>
+  `Bearer ${await createAccessToken({ userId: user.id, roles: [user.role] }, SECRET)}`;
 
 async function ticketType(quantityTotal = 10) {
-  const organizer = await factories.user(prisma, ['ORGANIZER']);
+  const organizer = await factories.user(prisma, 'ORGANIZER');
   const event = await prisma.event.create({
     data: {
       organizerId: organizer.id,
@@ -57,7 +57,7 @@ async function ticketType(quantityTotal = 10) {
 }
 
 async function participant() {
-  const user = await factories.user(prisma, ['PARTICIPANT']);
+  const user = await factories.user(prisma, 'PARTICIPANT');
   return { user, auth: await bearer(user) };
 }
 
@@ -173,7 +173,7 @@ describe('Idempotency-Key sur POST /api/v1/payments/initiate', () => {
 
 describe('cas limites du middleware', () => {
   function testApp(handler: express.RequestHandler) {
-    const user = factories.user(prisma, ['PARTICIPANT']);
+    const user = factories.user(prisma, 'PARTICIPANT');
     const idempotent = createIdempotency(prisma);
     const test = express();
     test.use(express.json());

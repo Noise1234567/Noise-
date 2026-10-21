@@ -1,5 +1,4 @@
 import { Greeting } from '../../src/components/Greeting';
-import { RoleHeader } from '../../src/components/RoleHeader';
 import { Screen } from '../../src/components/Screen';
 import { StateView } from '../../src/components/StateView';
 
@@ -7,7 +6,6 @@ import { StateView } from '../../src/components/StateView';
 export default function Dashboard() {
   return (
     <Screen>
-      <RoleHeader />
       <Greeting />
       <StateView
         kind="empty"

@@ -130,13 +130,13 @@ export class ModerationService {
   private async organizerOrFail(tx: Prisma.TransactionClient, userId: string) {
     const user = await tx.user.findUnique({
       where: { id: userId },
-      select: { status: true, roles: true },
+      select: { status: true, role: true },
     });
     if (!user) throw new HttpError(404, 'NOT_FOUND', 'Utilisateur introuvable');
-    if (user.roles.includes('ADMIN')) {
+    if (user.role === 'ADMIN') {
       throw new HttpError(403, 'FORBIDDEN', 'Un administrateur ne peut pas être suspendu');
     }
-    if (!user.roles.includes('ORGANIZER')) {
+    if (user.role !== 'ORGANIZER') {
       throw new HttpError(409, 'CONFLICT', 'Ce compte n’est pas un organisateur');
     }
     return user;

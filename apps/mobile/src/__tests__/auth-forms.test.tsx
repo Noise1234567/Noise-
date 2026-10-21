@@ -35,7 +35,7 @@ const authSession = {
     name: 'Awa Dossou',
     phone: '+2290197452138',
     email: 'awa@mail.com',
-    roles: ['ORGANIZER'],
+    role: 'ORGANIZER',
   },
 };
 
@@ -52,8 +52,7 @@ beforeEach(() => {
     status: 'signedOut',
     user: null,
     sessionExpired: false,
-    roles: [],
-    activeRole: null,
+    role: null,
     pendingRole: 'ORGANIZER',
   });
 });
@@ -89,7 +88,7 @@ describe('inscription', () => {
       role: 'ORGANIZER',
     });
     expect(useSession.getState().status).toBe('signedIn');
-    expect(useSession.getState().activeRole).toBe('ORGANIZER');
+    expect(useSession.getState().role).toBe('ORGANIZER');
     expect(mockStore.get('noise.refreshToken')).toBe('r');
   });
 
@@ -98,7 +97,7 @@ describe('inscription', () => {
       .onPost('/auth/register')
       .reply(409, { error: { code: 'CONFLICT', message: 'x', requestId: 'r1' } });
     await submitSignup();
-    expect(await screen.findByText('Ce numéro a déjà un compte.')).toBeTruthy();
+    expect(await screen.findByText('Ce numéro a déjà un compte organisateur.')).toBeTruthy();
     await fireEvent.press(screen.getByText('Se connecter'));
     expect(mockReplace).toHaveBeenCalledWith('/login');
     expect(useSession.getState().status).toBe('signedOut');
@@ -115,8 +114,10 @@ describe('inscription : e-mail', () => {
       },
     });
     await submitSignup();
-    expect(await screen.findByText('Cette adresse e-mail a déjà un compte.')).toBeTruthy();
-    expect(screen.queryByText('Ce numéro a déjà un compte.')).toBeNull();
+    expect(
+      await screen.findByText('Cette adresse e-mail a déjà un compte organisateur.'),
+    ).toBeTruthy();
+    expect(screen.queryByText('Ce numéro a déjà un compte organisateur.')).toBeNull();
   });
 
   it("n'appelle pas l'API sans e-mail", async () => {
@@ -138,12 +139,31 @@ describe('connexion', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'Se connecter' }));
   }
 
-  it('ouvre la session avec les rôles du compte', async () => {
+  it('se connecte au compte du profil choisi à la bienvenue et ouvre sa vue', async () => {
     mock.onPost('/auth/login').reply(200, authSession);
     await submitLogin();
     await act(async () => {});
+    expect(JSON.parse(mock.history.post[0]!.data as string)).toEqual({
+      phone: '+2290197452138',
+      password: 'motdepasse1',
+      role: 'ORGANIZER',
+    });
     expect(useSession.getState().status).toBe('signedIn');
-    expect(useSession.getState().activeRole).toBe('ORGANIZER');
+    expect(useSession.getState().role).toBe('ORGANIZER');
+  });
+
+  it('le profil se change sur l’écran de connexion (DEC-028)', async () => {
+    mock
+      .onPost('/auth/login')
+      .reply(200, { ...authSession, user: { ...authSession.user, role: 'PARTICIPANT' } });
+    await render(<Login />);
+    await fireEvent.press(screen.getByRole('tab', { name: 'Participant' }));
+    await fill('Numéro de téléphone', '0197452138');
+    await fill('Mot de passe', 'motdepasse1');
+    await fireEvent.press(screen.getByRole('button', { name: 'Se connecter' }));
+    await act(async () => {});
+    expect(JSON.parse(mock.history.post[0]!.data as string).role).toBe('PARTICIPANT');
+    expect(useSession.getState().role).toBe('PARTICIPANT');
   });
 
   it('identifiants refusés : message et essais restants', async () => {
@@ -156,7 +176,9 @@ describe('connexion', () => {
       );
     await submitLogin();
     expect(
-      await screen.findByText('Numéro ou mot de passe incorrect. Il vous reste 3 essais.'),
+      await screen.findByText(
+        'Numéro ou mot de passe incorrect pour un compte organisateur. Il vous reste 3 essais.',
+      ),
     ).toBeTruthy();
     expect(useSession.getState().status).toBe('signedOut');
   });

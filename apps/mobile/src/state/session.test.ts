@@ -1,7 +1,7 @@
-import { useSession } from './session';
+import { isAppRole, useSession } from './session';
 
 beforeEach(() => {
-  useSession.setState({ status: 'loading', roles: [], activeRole: null, pendingRole: null });
+  useSession.setState({ status: 'loading', role: null, pendingRole: null });
 });
 
 describe('session', () => {
@@ -16,43 +16,26 @@ describe('session', () => {
     expect(useSession.getState().pendingRole).toBe('ORGANIZER');
   });
 
-  it('connecte sur le rôle préféré, sinon sur le premier rôle', () => {
-    useSession.getState().signIn(['PARTICIPANT', 'ORGANIZER'], 'ORGANIZER');
+  it('connecte dans le rôle du compte (un compte, un rôle : DEC-028)', () => {
+    useSession.getState().setPendingRole('PARTICIPANT');
+    useSession.getState().signIn('ORGANIZER');
     expect(useSession.getState()).toMatchObject({
       status: 'signedIn',
-      activeRole: 'ORGANIZER',
+      role: 'ORGANIZER',
       pendingRole: null,
     });
+  });
 
+  it('la déconnexion efface le rôle', () => {
+    useSession.getState().signIn('PARTICIPANT');
     useSession.getState().signOut();
-    useSession.getState().signIn(['PARTICIPANT'], 'ORGANIZER');
-    expect(useSession.getState().activeRole).toBe('PARTICIPANT');
+    expect(useSession.getState()).toMatchObject({ status: 'signedOut', role: null });
   });
 
-  it('ne connecte pas un compte sans rôle', () => {
-    useSession.getState().signIn([]);
-    expect(useSession.getState().status).toBe('loading');
-  });
-
-  it('bascule entre deux rôles activés sans changer de session', () => {
-    useSession.getState().signIn(['PARTICIPANT', 'ORGANIZER'], 'PARTICIPANT');
-    expect(useSession.getState().switchRole('ORGANIZER')).toBe(true);
-    expect(useSession.getState()).toMatchObject({ status: 'signedIn', activeRole: 'ORGANIZER' });
-  });
-
-  it('refuse de basculer vers un rôle non activé', () => {
-    useSession.getState().signIn(['PARTICIPANT']);
-    expect(useSession.getState().switchRole('ORGANIZER')).toBe(false);
-    expect(useSession.getState().activeRole).toBe('PARTICIPANT');
-  });
-
-  it('la déconnexion efface les rôles', () => {
-    useSession.getState().signIn(['PARTICIPANT', 'ORGANIZER']);
-    useSession.getState().signOut();
-    expect(useSession.getState()).toMatchObject({
-      status: 'signedOut',
-      roles: [],
-      activeRole: null,
-    });
+  it('seuls participant et organisateur ont une vue mobile', () => {
+    expect(isAppRole('PARTICIPANT')).toBe(true);
+    expect(isAppRole('ORGANIZER')).toBe(true);
+    expect(isAppRole('ADMIN')).toBe(false);
+    expect(isAppRole(undefined)).toBe(false);
   });
 });

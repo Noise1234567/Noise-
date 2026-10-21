@@ -36,7 +36,7 @@ async function main() {
       phone: ORGANIZER_PHONE,
       email: 'kofi.demo@noise.test',
       passwordHash: DEMO_PASSWORD_HASH,
-      roles: ['ORGANIZER', 'PARTICIPANT'],
+      role: 'ORGANIZER',
     },
   });
   await prisma.user.create({
@@ -45,7 +45,7 @@ async function main() {
       phone: PARTICIPANT_PHONE,
       email: 'aminata.demo@noise.test',
       passwordHash: DEMO_PASSWORD_HASH,
-      roles: ['PARTICIPANT'],
+      role: 'PARTICIPANT',
     },
   });
 

@@ -72,11 +72,12 @@ model User {
   id           String     @id @default(uuid()) @db.Uuid
   name         String     @db.VarChar(80)
   /// E.164 : +229 suivi de 10 chiffres, soit 14 caractères (normalisé par packages/shared/src/phone.ts).
-  phone        String     @unique @db.VarChar(16)
+  phone        String     @db.VarChar(16)
   /// Minuscules (CHECK en base). Nul pour les comptes créés avant DEC-026 ; obligatoire à l'inscription.
-  email        String?    @unique @db.VarChar(254)
+  email        String?    @db.VarChar(254)
   passwordHash String     @map("password_hash")
-  roles        UserRole[]
+  /// Un compte, un rôle (DEC-028) : participant, organisateur ou administrateur.
+  role         UserRole
   status       UserStatus @default(ACTIVE)
   createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
@@ -93,6 +94,10 @@ model User {
   cancelledEvents      EventCancellation[]
   idempotencyKeys      IdempotencyKey[]
 
+  /// Un même numéro (ou e-mail) peut porter un compte participant et un compte organisateur,
+  /// jamais deux comptes du même rôle (DEC-028).
+  @@unique([phone, role])
+  @@unique([email, role])
   @@map("users")
 }
 

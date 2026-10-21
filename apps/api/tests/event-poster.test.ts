@@ -28,11 +28,11 @@ beforeEach(async () => {
 });
 afterAll(() => prisma.$disconnect());
 
-const as = async (user: { id: string; roles: UserRole[] }) =>
-  `Bearer ${await createAccessToken({ userId: user.id, roles: user.roles }, SECRET)}`;
+const as = async (user: { id: string; role: UserRole }) =>
+  `Bearer ${await createAccessToken({ userId: user.id, roles: [user.role] }, SECRET)}`;
 
 async function ownedEvent() {
-  const owner = await factories.user(prisma, ['ORGANIZER']);
+  const owner = await factories.user(prisma, 'ORGANIZER');
   const event = await factories.event(prisma, owner.id);
   return { owner, event, auth: await as(owner) };
 }
@@ -57,7 +57,7 @@ describe('POST /api/v1/events/:id/poster', () => {
 
   it('un autre organisateur ne peut pas écraser l’affiche (403, rien n’est envoyé)', async () => {
     const { event } = await ownedEvent();
-    const intruder = await factories.user(prisma, ['ORGANIZER']);
+    const intruder = await factories.user(prisma, 'ORGANIZER');
     const res = await upload(event.id, await as(intruder));
 
     expect(res.status).toBe(403);
@@ -69,7 +69,7 @@ describe('POST /api/v1/events/:id/poster', () => {
 
   it('un participant est refusé (403), sans jeton 401', async () => {
     const { event } = await ownedEvent();
-    const participant = await factories.user(prisma, ['PARTICIPANT']);
+    const participant = await factories.user(prisma, 'PARTICIPANT');
     expect((await upload(event.id, await as(participant))).status).toBe(403);
     expect((await upload(event.id, null)).status).toBe(401);
     expect(storage.uploads).toHaveLength(0);

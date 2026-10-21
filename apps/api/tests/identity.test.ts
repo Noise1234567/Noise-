@@ -33,15 +33,15 @@ beforeEach(async () => {
 });
 afterAll(() => prisma.$disconnect());
 
-const as = async (user: { id: string; roles: UserRole[] }) => ({
-  Authorization: `Bearer ${await createAccessToken({ userId: user.id, roles: user.roles }, SECRET)}`,
+const as = async (user: { id: string; role: UserRole }) => ({
+  Authorization: `Bearer ${await createAccessToken({ userId: user.id, roles: [user.role] }, SECRET)}`,
 });
 const organizer = async () => {
-  const user = await factories.user(prisma, ['ORGANIZER']);
+  const user = await factories.user(prisma, 'ORGANIZER');
   return { user, headers: await as(user) };
 };
 const admin = async () => {
-  const user = await factories.user(prisma, ['ADMIN']);
+  const user = await factories.user(prisma, 'ADMIN');
   return { user, headers: await as(user) };
 };
 const sendDocument = (headers: Record<string, string>, file: Buffer = JPEG) =>
@@ -91,7 +91,7 @@ describe('côté organisateur (GET et POST /me/identity)', () => {
 
   it('401 sans jeton, 403 pour un participant', async () => {
     expect((await request(app).get('/api/v1/me/identity')).status).toBe(401);
-    const participant = await factories.user(prisma, ['PARTICIPANT']);
+    const participant = await factories.user(prisma, 'PARTICIPANT');
     const res = await request(app)
       .get('/api/v1/me/identity')
       .set(await as(participant));

@@ -48,12 +48,12 @@ const event = (over: Partial<EventDto> = {}): EventDto =>
 
 beforeEach(() => {
   list.mockReset();
-  useSession.getState().signIn(['PARTICIPANT'], 'PARTICIPANT', {
+  useSession.getState().signIn('PARTICIPANT', {
     id: 'u',
     name: 'Awa Dossou',
     phone: '+22901020304',
     email: 'awa@mail.com',
-    roles: ['PARTICIPANT'],
+    role: 'PARTICIPANT',
   });
 });
 

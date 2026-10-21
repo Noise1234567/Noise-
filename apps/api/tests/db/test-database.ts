@@ -42,16 +42,13 @@ let phoneCounter = 0;
 
 /** Petites fabriques : des données valides, à modifier test par test. */
 export const factories = {
-  user: (
-    prisma: PrismaClient,
-    roles: ('PARTICIPANT' | 'ORGANIZER' | 'ADMIN')[] = ['PARTICIPANT'],
-  ) =>
+  user: (prisma: PrismaClient, role: 'PARTICIPANT' | 'ORGANIZER' | 'ADMIN' = 'PARTICIPANT') =>
     prisma.user.create({
       data: {
         name: 'Utilisateur Test',
         phone: `+22901${String(++phoneCounter).padStart(8, '0')}`,
         passwordHash: 'hash-de-test',
-        roles,
+        role,
       },
     }),
 

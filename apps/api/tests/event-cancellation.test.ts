@@ -24,8 +24,8 @@ beforeEach(async () => {
 afterAll(() => prisma.$disconnect());
 
 const DAY = 86_400_000;
-const bearer = async (user: { id: string; roles: UserRole[] }) =>
-  `Bearer ${await createAccessToken({ userId: user.id, roles: user.roles }, SECRET)}`;
+const bearer = async (user: { id: string; role: UserRole }) =>
+  `Bearer ${await createAccessToken({ userId: user.id, roles: [user.role] }, SECRET)}`;
 
 async function paidOrder(
   participantId: string,
@@ -58,7 +58,7 @@ async function paidOrder(
  * 4 billets, une commande en attente et un lien scanner actif.
  */
 async function scenario(options: { endsInDays?: number } = {}) {
-  const organizer = await factories.user(prisma, ['ORGANIZER']);
+  const organizer = await factories.user(prisma, 'ORGANIZER');
   const event = await prisma.event.create({
     data: {
       organizerId: organizer.id,
@@ -85,8 +85,8 @@ async function scenario(options: { endsInDays?: number } = {}) {
   const vip = await prisma.ticketType.create({
     data: { eventId: event.id, name: 'VIP', priceXof: 10_000, quantityTotal: 10, quantitySold: 1 },
   });
-  const aminata = await factories.user(prisma, ['PARTICIPANT']);
-  const koffi = await factories.user(prisma, ['PARTICIPANT']);
+  const aminata = await factories.user(prisma, 'PARTICIPANT');
+  const koffi = await factories.user(prisma, 'PARTICIPANT');
   const a = await paidOrder(aminata.id, standard.id, 3, 5000);
   const k = await paidOrder(koffi.id, vip.id, 1, 10_000);
   for (const [order, type, count] of [
@@ -189,7 +189,7 @@ describe('POST /api/v1/events/:id/cancel', () => {
   it('plus aucune commande possible ensuite', async () => {
     const { event, standard, auth } = await scenario();
     await cancel(auth, event.id);
-    const buyer = await factories.user(prisma, ['PARTICIPANT']);
+    const buyer = await factories.user(prisma, 'PARTICIPANT');
     const res = await request(app)
       .post('/api/v1/orders')
       .set('Authorization', await bearer(buyer))
@@ -208,8 +208,8 @@ describe('POST /api/v1/events/:id/cancel', () => {
 
   it('autre organisateur 403, participant 403, inconnu 404, sans jeton 401 ; rien ne change', async () => {
     const { event } = await scenario();
-    const other = await factories.user(prisma, ['ORGANIZER']);
-    const participant = await factories.user(prisma, ['PARTICIPANT']);
+    const other = await factories.user(prisma, 'ORGANIZER');
+    const participant = await factories.user(prisma, 'PARTICIPANT');
     expect((await cancel(await bearer(other), event.id)).status).toBe(403);
     expect((await cancel(await bearer(participant), event.id)).status).toBe(403);
     expect((await cancel(await bearer(other), crypto.randomUUID())).status).toBe(404);
@@ -239,7 +239,7 @@ describe('POST /api/v1/events/:id/cancel', () => {
     // tient le verrou du type de billet et insère une commande en attente, pas encore validée.
     // L'annulation doit attendre ce verrou, puis voir la commande et l'expirer.
     const { event, standard, auth } = await scenario();
-    const buyer = await factories.user(prisma, ['PARTICIPANT']);
+    const buyer = await factories.user(prisma, 'PARTICIPANT');
     let release!: () => void;
     const released = new Promise<void>((resolve) => (release = resolve));
     let markInserted!: () => void;
@@ -280,7 +280,7 @@ describe('GET /api/v1/admin/events/:eventId/refunds', () => {
     const { event, auth } = await scenario();
     await cancel(auth, event.id);
     const admin = await prisma.user.create({
-      data: { name: 'Admin', phone: '+2290199999999', passwordHash: 'x', roles: ['ADMIN'] },
+      data: { name: 'Admin', phone: '+2290199999999', passwordHash: 'x', role: 'ADMIN' },
     });
     const res = await request(app)
       .get(`/api/v1/admin/events/${event.id}/refunds`)
@@ -305,7 +305,7 @@ describe('GET /api/v1/admin/events/:eventId/refunds', () => {
       ).status,
     ).toBe(403);
     const admin = await prisma.user.create({
-      data: { name: 'Admin', phone: '+2290199999998', passwordHash: 'x', roles: ['ADMIN'] },
+      data: { name: 'Admin', phone: '+2290199999998', passwordHash: 'x', role: 'ADMIN' },
     });
     expect(
       (

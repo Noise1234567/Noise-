@@ -13,13 +13,13 @@ void SplashScreen.preventAutoHideAsync();
 
 /**
  * Pile racine. Trois zones, une seule visible à la fois selon la session :
- * authentification, vue Participant, vue Organisateur. Basculer de rôle change la zone visible,
- * sans reconnexion (le jeton reste le même).
+ * authentification, vue Participant, vue Organisateur. Un compte n'a qu'un rôle (DEC-028) : la
+ * vue est celle du compte connecté.
  */
 export default function RootLayout() {
   const [fontsLoaded] = useFonts(fontAssets);
   const status = useSession((s) => s.status);
-  const activeRole = useSession((s) => s.activeRole);
+  const role = useSession((s) => s.role);
 
   useEffect(() => {
     if (fontsLoaded) void hydrateSession();
@@ -42,10 +42,10 @@ export default function RootLayout() {
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && activeRole === 'PARTICIPANT'}>
+        <Stack.Protected guard={signedIn && role === 'PARTICIPANT'}>
           <Stack.Screen name="participant" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && activeRole === 'ORGANIZER'}>
+        <Stack.Protected guard={signedIn && role === 'ORGANIZER'}>
           <Stack.Screen name="organizer" />
         </Stack.Protected>
       </Stack>

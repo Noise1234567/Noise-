@@ -1,7 +1,6 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 
-import { RoleHeader } from '../../src/components/RoleHeader';
 import { Screen } from '../../src/components/Screen';
 import { eventsApi } from '../../src/features/participant/events-api';
 import { MyEventsList } from '../../src/features/organizer/my-events/MyEventsList';
@@ -13,7 +12,6 @@ export default function MyEvents() {
   useFocusEffect(useCallback(() => setRefreshKey((k) => k + 1), []));
   return (
     <Screen>
-      <RoleHeader />
       <MyEventsList
         api={eventsApi}
         refreshKey={refreshKey}
