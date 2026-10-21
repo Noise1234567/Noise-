@@ -8,6 +8,7 @@ import { Button } from '../../../components/Button';
 import { StateView } from '../../../components/StateView';
 import { Text } from '../../../components/Text';
 import { colors, radii, spacing } from '../../../theme';
+import { canCancelEvent } from '../cancel-event/cancel-rules';
 import {
   TAB_LABELS,
   formatCotonouDateTime,
@@ -19,6 +20,8 @@ import {
 type Props = {
   api: Pick<EventsApi, 'listMine'>;
   onCreate: () => void;
+  /** Ouvre l'annulation d'un événement publié (NOISE-029). */
+  onCancel?: (eventId: string) => void;
   /** Change à chaque retour sur l'écran : la liste est rechargée (après une création). */
   refreshKey?: number;
 };
@@ -38,7 +41,7 @@ const statusLabel: Record<EventDto['status'], string> = {
 };
 
 /** Écran 19 : « Mes événements », classés à venir / passés / annulés (NOISE-013). */
-export function MyEventsList({ api, onCreate, refreshKey = 0 }: Props) {
+export function MyEventsList({ api, onCreate, onCancel, refreshKey = 0 }: Props) {
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
   const [tab, setTab] = useState<EventTab>('upcoming');
   const [loadingMore, setLoadingMore] = useState(false);
@@ -119,7 +122,7 @@ export function MyEventsList({ api, onCreate, refreshKey = 0 }: Props) {
             Aucun événement dans cette catégorie.
           </Text>
         ) : (
-          shown.map((event) => <EventRow key={event.id} event={event} />)
+          shown.map((event) => <EventRow key={event.id} event={event} onCancel={onCancel} />)
         )}
         {load.nextCursor ? (
           <Button
@@ -134,7 +137,7 @@ export function MyEventsList({ api, onCreate, refreshKey = 0 }: Props) {
   );
 }
 
-function EventRow({ event }: { event: EventDto }) {
+function EventRow({ event, onCancel }: { event: EventDto; onCancel?: (eventId: string) => void }) {
   const { sold, total } = salesProgress(event);
   return (
     <View style={styles.card} accessibilityLabel={`${event.title}, ${statusLabel[event.status]}`}>
@@ -155,6 +158,9 @@ function EventRow({ event }: { event: EventDto }) {
       <Text variant="caption">
         {sold} / {total} billets vendus
       </Text>
+      {onCancel && canCancelEvent(event) ? (
+        <Button variant="text" label="Annuler l’événement" onPress={() => onCancel(event.id)} />
+      ) : null}
     </View>
   );
 }
