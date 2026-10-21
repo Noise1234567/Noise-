@@ -899,7 +899,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 
 ### Manques identifiés le 2026-10-21 (ordre Pareto)
 
-Éléments indispensables qui n'étaient couverts par aucune tâche. Ils sont classés par rapport valeur / effort : les premiers apportent beaucoup pour peu de travail. Toutes confiées à Yannis le 2026-10-21, Orias finissant ses propres tâches ; Orias relit. Avant les organisateurs pilotes : NOISE-055 à NOISE-066 ; avant Google Play : NOISE-067 et NOISE-068.
+Éléments indispensables qui n'étaient couverts par aucune tâche. Contact de l'équipe Noise : noise.bj@gmail.com (pas de WhatsApp). Ils sont classés par rapport valeur / effort : les premiers apportent beaucoup pour peu de travail. Toutes confiées à Yannis le 2026-10-21, Orias finissant ses propres tâches ; Orias relit. Avant les organisateurs pilotes : NOISE-055 à NOISE-066 ; avant Google Play : NOISE-067 et NOISE-068.
 
 #### NOISE-055 — Création du premier compte administrateur
 
@@ -932,18 +932,19 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 
 #### NOISE-057 — Contact du support dans l'app
 
-- Objectif : Un participant ou un organisateur en difficulté (débité sans billet, question) peut joindre l'équipe Noise en un geste.
+- Objectif : Un participant ou un organisateur en difficulté (débité sans billet, question) peut écrire à l'équipe Noise en un geste.
 - Responsable : Yannis · Reviewer : Orias
 - Sprint : S5 · Type : Feature · Domaine : Mobile · Priorité : P0 · Estimation : 1 h
 - Dépendances : NOISE-021, NOISE-022
-- Statut : À faire
-- Fichiers concernés : apps/mobile/src/components/SupportButton.tsx, apps/mobile/src/api/config.ts
+- Statut : En revue
+- Fichiers concernés : apps/mobile/src/components/SupportButton.tsx, apps/mobile/src/components/support.ts
 - Critères d'acceptation :
-  - [ ] Bouton « Contacter le support » (ouvre WhatsApp avec un message prérempli) dans les deux profils et sur les écrans « Paiement non abouti » et « Réservation expirée »
-  - [ ] Le message prérempli contient la référence utile (identifiant de commande) sans donnée sensible
-  - [ ] Numéro du support en configuration publique (EXPO_PUBLIC_SUPPORT_WHATSAPP), pas en dur
+  - [x] Bouton « Contacter le support » : ouvre l'application mail vers noise.bj@gmail.com, dans les deux profils et sur les écrans « Paiement non abouti » et « Réservation expirée »
+  - [x] Sujet et message préremplis avec la référence utile (identifiant de commande), sans donnée sensible
+  - [x] Adresse en configuration publique (EXPO_PUBLIC_SUPPORT_EMAIL), l'adresse de l'équipe par défaut
 - Tests :
-  - Tests UI : lien WhatsApp construit avec la référence de commande
+  - Tests UI : lien mailto construit avec la référence de commande
+- Note : Noise n'a pas de WhatsApp. Le WhatsApp de l'organisateur, pour que les participants le contactent, est dans NOISE-061.
 
 #### NOISE-058 — Données de démo complètes dans le seed
 
@@ -960,20 +961,22 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Tests :
   - Seed rejouable sans erreur sur une base vide
 
-#### NOISE-059 — Alertes de paiement envoyées à l'équipe
+#### NOISE-059 — E-mails à l'équipe : soirée publiée et client à rembourser
 
-- Objectif : Aucun client débité sans billet ne passe inaperçu : les alertes de paiement écrites dans les journaux arrivent à l'équipe.
+- Objectif : L'équipe Noise est prévenue par e-mail (noise.bj@gmail.com) quand une soirée est publiée, et quand un client a payé sans recevoir de billet.
 - Responsable : Yannis · Reviewer : Orias
 - Sprint : S5 · Type : Feature · Domaine : Backend · Priorité : P0 · Estimation : 3 h
-- Dépendances : NOISE-019 ; canal à choisir (e-mail, WhatsApp, Telegram, Slack)
+- Dépendances : NOISE-011, NOISE-019 ; fournisseur d'envoi d'e-mails à décider (proposé : Gmail avec un mot de passe d'application, gratuit, sans nom de domaine ; il servira aussi à NOISE-052)
 - Statut : À faire
-- Fichiers concernés : apps/api/src/lib/alerts.ts, apps/api/src/modules/payments/payments.service.ts
+- Fichiers concernés : apps/api/src/lib/mailer.ts, apps/api/src/modules/events/events.service.ts, apps/api/src/modules/payments/payments.service.ts, apps/api/src/config/env.ts
 - Critères d'acceptation :
-  - [ ] Paiement reçu sur une commande expirée, paiement en double et montant incohérent envoient une alerte (commande, montant, heure ; numéro masqué)
-  - [ ] Un échec d'envoi n'empêche jamais la confirmation ni le rejet du paiement
-  - [ ] Visibles aussi dans l'administration (NOISE-065)
+  - [ ] Soirée publiée : e-mail avec le titre, l'organisateur, la date, le lieu, la capacité et les prix
+  - [ ] Client à rembourser : e-mail pour un paiement reçu sur une commande expirée, un paiement en double ou un montant incohérent (commande, montant, heure ; numéro masqué)
+  - [ ] Envoi après la validation ; un échec d'envoi n'empêche jamais la publication ni le traitement du paiement, et il est journalisé
+  - [ ] Identifiants d'envoi uniquement dans .env et Railway ; en test, envoi simulé
 - Tests :
-  - Intégration avec un canal simulé : chaque cas déclenche une alerte, une seule par paiement
+  - Intégration avec un envoi simulé : un e-mail par publication, un par paiement à rembourser, aucun sur un webhook rejoué
+- Note : les notifications de vente pour l'organisateur (« Nouvelle vente », à chaque achat) sont des notifications de l'app : NOISE-063.
 
 #### NOISE-060 — Un compte par rôle (selon DEC-028)
 
