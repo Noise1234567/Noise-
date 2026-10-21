@@ -19,6 +19,8 @@ import {
 type Props = {
   api: Pick<EventsApi, 'listMine'>;
   onCreate: () => void;
+  /** Ouvre le détail d'un événement (NOISE-054). */
+  onOpen?: (eventId: string) => void;
   /** Change à chaque retour sur l'écran : la liste est rechargée (après une création). */
   refreshKey?: number;
 };
@@ -38,7 +40,7 @@ const statusLabel: Record<EventDto['status'], string> = {
 };
 
 /** Écran 19 : « Mes événements », classés à venir / passés / annulés (NOISE-013). */
-export function MyEventsList({ api, onCreate, refreshKey = 0 }: Props) {
+export function MyEventsList({ api, onCreate, onOpen, refreshKey = 0 }: Props) {
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
   const [tab, setTab] = useState<EventTab>('upcoming');
   const [loadingMore, setLoadingMore] = useState(false);
@@ -119,7 +121,13 @@ export function MyEventsList({ api, onCreate, refreshKey = 0 }: Props) {
             Aucun événement dans cette catégorie.
           </Text>
         ) : (
-          shown.map((event) => <EventRow key={event.id} event={event} />)
+          shown.map((event) => (
+            <EventRow
+              key={event.id}
+              event={event}
+              onPress={onOpen ? () => onOpen(event.id) : undefined}
+            />
+          ))
         )}
         {load.nextCursor ? (
           <Button
@@ -134,10 +142,16 @@ export function MyEventsList({ api, onCreate, refreshKey = 0 }: Props) {
   );
 }
 
-function EventRow({ event }: { event: EventDto }) {
+function EventRow({ event, onPress }: { event: EventDto; onPress?: () => void }) {
   const { sold, total } = salesProgress(event);
   return (
-    <View style={styles.card} accessibilityLabel={`${event.title}, ${statusLabel[event.status]}`}>
+    <Pressable
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={`${event.title}, ${statusLabel[event.status]}`}
+      disabled={!onPress}
+      onPress={onPress}
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+    >
       <View style={styles.cardHeader}>
         <Text variant="button" style={styles.flex}>
           {event.title}
@@ -155,7 +169,7 @@ function EventRow({ event }: { event: EventDto }) {
       <Text variant="caption">
         {sold} / {total} billets vendus
       </Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -188,4 +202,5 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   badgeLive: { borderColor: colors.accent },
+  pressed: { opacity: 0.85 },
 });

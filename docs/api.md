@@ -282,7 +282,7 @@ Réponse 200 : `{ links: ScannerLinkDto[] }`, le plus récent d'abord. Le jeton 
 
 Réponse 200 : `{ link }` avec `status: REVOKED`. Rejouer la révocation renvoie le même résultat, sans changer la date.
 
-Configuration : `SCANNER_JWT_SECRET` (32 caractères minimum, différent de `JWT_ACCESS_SECRET`) est obligatoire hors tests ; `SCANNER_URL` est facultative. La partie mobile (générer et partager le lien) reste à faire.
+Configuration : `SCANNER_JWT_SECRET` (32 caractères minimum, différent de `JWT_ACCESS_SECRET`) est obligatoire hors tests ; `SCANNER_URL` est facultative ; sans elle, le mobile construit l'adresse `<origine de l'API>/scan/#<jeton>`. Côté mobile, le détail d'un événement (NOISE-054) crée le lien, l'envoie par le partage du téléphone (WhatsApp, SMS…) et permet de le révoquer.
 
 ## 8. Validation des QR à l'entrée (NOISE-025)
 
