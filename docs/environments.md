@@ -53,3 +53,12 @@ Production (NOISE-035) :
 5. Rollback : redéployer le tag précédent ; les migrations doivent rester compatibles avec la version N-1.
 
 Aucun déploiement production le vendredi soir ni la veille d'un événement pilote.
+
+## 4. Compte administrateur (NOISE-055)
+
+L'inscription publique ne crée jamais de compte ADMIN. Le premier compte (et les suivants) se crée à la main, avec le script `src/scripts/create-admin.ts`, une fois par environnement :
+
+- en local : `ADMIN_NAME=… ADMIN_PHONE=… ADMIN_EMAIL=… ADMIN_PASSWORD=… pnpm --filter @noise/api admin:create:dev` (lit `DATABASE_URL` dans `apps/api/.env`) ;
+- en staging ou en production : depuis le service API sur Railway (après un build), `pnpm --filter @noise/api admin:create` avec les mêmes variables passées pour cette seule commande.
+
+Règles : mot de passe de 12 caractères minimum ; les variables `ADMIN_*` ne sont jamais enregistrées dans un fichier versionné ni laissées dans les variables du service ; le script refuse un numéro ou un e-mail déjà utilisé et n'affiche que le numéro masqué. Qui crée un compte admin le note dans le journal de `progress.md` (date, environnement, personne), sans aucun secret.
