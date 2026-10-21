@@ -534,11 +534,11 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Responsable : Orias · Reviewer : Yannis
 - Sprint : S4 · Type : Feature · Domaine : Full stack · Priorité : P1 · Estimation : 6 h
 - Dépendances : NOISE-020, NOISE-025
-- Statut : À faire
+- Statut : API en revue (partie 1) ; écran mobile à faire après la fusion de NOISE-054
 - Fichiers concernés : apps/api/src/modules/stats/_, apps/mobile/src/features/organizer/stats/_
 - Critères d'acceptation :
-  - [ ] GET /events/:id/stats : billets vendus par type, revenus bruts et nets estimés (DEC-009), scans
-  - [ ] Écran mobile avec rafraîchissement périodique (30 s)
+  - [x] GET /events/:id/stats : billets vendus par type, revenus bruts et nets estimés (DEC-009), scans, entrées par heure
+  - [ ] Écran mobile avec rafraîchissement périodique (30 s), section de l'écran de détail de NOISE-054
 - Tests :
   - Intégration : exactitude des agrégats, accès limité au propriétaire
 
