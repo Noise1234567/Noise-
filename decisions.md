@@ -35,7 +35,7 @@ Statuts : Proposée · Acceptée · En attente (bloquée par une information ou 
 | DEC-025 | Annulation par l'organisateur : frais de 10 %, retour des sommes reversées sous 10 jours      | Acceptée                | 2026-10-08 |
 | DEC-026 | E-mail demandé à l'inscription (tous les comptes)                                             | Acceptée                | 2026-10-08 |
 | DEC-027 | Solde de l'organisateur, virements à la demande, reste versé sous 72 h après l'événement      | Acceptée                | 2026-10-15 |
-| DEC-028 | Un compte par rôle : plus de sélecteur participant / organisateur                             | Proposée                | 2026-10-21 |
+| DEC-028 | Un compte par rôle : plus de sélecteur participant / organisateur                             | Acceptée (Yannis)       | 2026-10-21 |
 
 ---
 
@@ -273,12 +273,13 @@ Choix du fournisseur (NOISE-010, 2026-10-01) — statut : Acceptée (proposée p
   - gratuité des transferts FedaPay vers Mobile Money et possibilité de virer des fonds encore en attente : à confirmer par écrit (NOISE-045).
 - Personnes : Yannis, Orias (et l'équipe).
 
-## DEC-028 — Un compte par rôle (proposée)
+## DEC-028 — Un compte par rôle
 
 - Contexte : le cahier des charges prévoit qu'un même compte puisse être participant et organisateur, avec un sélecteur de vue (NOISE-015). En pratique, mélanger les deux rôles complique l'app, le support et la vérification d'identité (DEC-018), qui ne concerne que les organisateurs.
 - Proposition (Yannis, 2026-10-21) : un compte n'a qu'un rôle. Le sélecteur participant / organisateur est retiré ; pour l'autre rôle, on crée un autre compte. Écart au cahier des charges.
-- Point à trancher : aujourd'hui un numéro de téléphone ne peut porter qu'un compte. Un organisateur qui veut acheter un billet aurait donc besoin d'un second numéro.
-  - Option A (recommandée) : un même numéro peut porter un compte participant et un compte organisateur, distincts ; la connexion se fait dans le rôle choisi à l'écran de bienvenue (numéro unique par rôle).
-  - Option B : un numéro, un compte, un rôle ; l'organisateur qui achète utilise un autre numéro.
+- Numéro de téléphone : aujourd'hui un numéro ne peut porter qu'un compte, ce qui obligerait un organisateur à avoir un second numéro pour acheter un billet.
+  - Option retenue (Yannis, 2026-10-21) : un même numéro peut porter un compte participant et un compte organisateur, distincts, mais jamais deux comptes du même rôle (numéro unique par rôle). La connexion se fait dans le rôle choisi à l'écran de bienvenue.
+  - Option écartée : un numéro, un compte, un rôle (l'organisateur qui achète devrait utiliser un autre numéro).
+- Statut : option retenue par Yannis, à confirmer par Orias à la relecture (décision commune).
 - Conséquences : tâche NOISE-060 ; changement de schéma (unicité du numéro) pour l'option A ; comptes existants à deux rôles à traiter ; tests de session et de redirection à revoir.
 - Personnes : Yannis, Orias (décision commune : métier et schéma).

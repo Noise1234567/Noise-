@@ -899,12 +899,12 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 
 ### Manques identifiés le 2026-10-21 (ordre Pareto)
 
-Éléments indispensables qui n'étaient couverts par aucune tâche. Ils sont classés par rapport valeur / effort : les premiers apportent beaucoup pour peu de travail. Les responsables sont à répartir en équipe (CLAUDE.md section 11). Avant les organisateurs pilotes : NOISE-055 à NOISE-066 ; avant Google Play : NOISE-067 et NOISE-068.
+Éléments indispensables qui n'étaient couverts par aucune tâche. Ils sont classés par rapport valeur / effort : les premiers apportent beaucoup pour peu de travail. Toutes confiées à Yannis le 2026-10-21, Orias finissant ses propres tâches ; Orias relit. Avant les organisateurs pilotes : NOISE-055 à NOISE-066 ; avant Google Play : NOISE-067 et NOISE-068.
 
 #### NOISE-055 — Création du premier compte administrateur
 
 - Objectif : Pouvoir créer un compte ADMIN en staging et en production, sans passer par l'inscription.
-- Responsable : à attribuer · Reviewer : l'autre développeur
+- Responsable : Yannis · Reviewer : Orias
 - Sprint : S5 · Type : Chore · Domaine : Backend · Priorité : P0 · Estimation : 1 h
 - Dépendances : NOISE-037
 - Statut : À faire
@@ -919,7 +919,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 #### NOISE-056 — Déclarer l'index des styles dans le schéma Prisma
 
 - Objectif : Empêcher chaque nouvelle migration de supprimer l'index GIN `events_styles_idx` (déjà arrivé deux fois, NOISE-053 et NOISE-029).
-- Responsable : à attribuer · Reviewer : l'autre développeur
+- Responsable : Yannis · Reviewer : Orias
 - Sprint : S5 · Type : Dette technique · Domaine : Backend · Priorité : P1 · Estimation : 30 min
 - Dépendances : NOISE-014
 - Statut : À faire
@@ -933,7 +933,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 #### NOISE-057 — Contact du support dans l'app
 
 - Objectif : Un participant ou un organisateur en difficulté (débité sans billet, question) peut joindre l'équipe Noise en un geste.
-- Responsable : à attribuer · Reviewer : l'autre développeur
+- Responsable : Yannis · Reviewer : Orias
 - Sprint : S5 · Type : Feature · Domaine : Mobile · Priorité : P0 · Estimation : 1 h
 - Dépendances : NOISE-021, NOISE-022
 - Statut : À faire
@@ -948,7 +948,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 #### NOISE-058 — Données de démo complètes dans le seed
 
 - Objectif : Tester et montrer l'app sans tout recréer : événements avec affiche et ventes, participant avec billets, compte admin de développement.
-- Responsable : à attribuer · Reviewer : l'autre développeur
+- Responsable : Yannis · Reviewer : Orias
 - Sprint : S5 · Type : Chore · Domaine : Backend · Priorité : P1 · Estimation : 1 h
 - Dépendances : NOISE-020, NOISE-055
 - Statut : À faire
@@ -963,7 +963,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 #### NOISE-059 — Alertes de paiement envoyées à l'équipe
 
 - Objectif : Aucun client débité sans billet ne passe inaperçu : les alertes de paiement écrites dans les journaux arrivent à l'équipe.
-- Responsable : à attribuer · Reviewer : l'autre développeur
+- Responsable : Yannis · Reviewer : Orias
 - Sprint : S5 · Type : Feature · Domaine : Backend · Priorité : P0 · Estimation : 3 h
 - Dépendances : NOISE-019 ; canal à choisir (e-mail, WhatsApp, Telegram, Slack)
 - Statut : À faire
@@ -978,15 +978,15 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 #### NOISE-060 — Un compte par rôle (selon DEC-028)
 
 - Objectif : Séparer les comptes participant et organisateur, et retirer le sélecteur de rôle de l'app.
-- Responsable : à attribuer · Reviewer : l'autre développeur
+- Responsable : Yannis · Reviewer : Orias
 - Sprint : S5 · Type : Feature · Domaine : Full stack · Priorité : P1 · Estimation : 4 h
-- Dépendances : DEC-028 (proposée), NOISE-015
-- Statut : Bloqué (DEC-028 à trancher)
+- Dépendances : DEC-028 (option retenue, à confirmer par Orias), NOISE-015
+- Statut : À faire
 - Fichiers concernés : apps/api/prisma/schema.prisma, apps/api/src/modules/auth/*, apps/mobile/src/components/RoleHeader.tsx, apps/mobile/src/state/session.ts
 - Critères d'acceptation :
   - [ ] Plus de sélecteur ni d'activation du second rôle ; PATCH /me/roles retiré ou réservé
   - [ ] Inscription et connexion dans le rôle choisi à l'écran de bienvenue
-  - [ ] Selon l'option retenue : même numéro autorisé pour un compte de chaque rôle, ou numéro unique
+  - [ ] Même numéro autorisé pour un compte participant et un compte organisateur, jamais deux comptes du même rôle
   - [ ] Comptes existants à deux rôles traités (migration documentée)
 - Tests :
   - Intégration : inscription et connexion par rôle ; tests mobile de redirection mis à jour
@@ -994,7 +994,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 #### NOISE-061 — Profil organisateur : WhatsApp, réseaux sociaux, identité
 
 - Objectif : L'organisateur complète son profil (WhatsApp, réseaux sociaux) ; les participants le contactent depuis la page de l'événement ; il voit l'état de sa pièce d'identité.
-- Responsable : à attribuer · Reviewer : l'autre développeur
+- Responsable : Yannis · Reviewer : Orias
 - Sprint : S5 · Type : Feature · Domaine : Full stack · Priorité : P0 · Estimation : 5 h
 - Dépendances : NOISE-048 (écran d'envoi de la pièce, #40), NOISE-014
 - Statut : À faire
@@ -1009,7 +1009,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 #### NOISE-062 — Profil participant
 
 - Objectif : Remplacer l'écran vide par un vrai profil.
-- Responsable : à attribuer · Reviewer : l'autre développeur
+- Responsable : Yannis · Reviewer : Orias
 - Sprint : S5 · Type : Feature · Domaine : Mobile · Priorité : P1 · Estimation : 3 h
 - Dépendances : NOISE-008
 - Statut : À faire
@@ -1023,7 +1023,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 #### NOISE-063 — Notification à l'organisateur à chaque vente
 
 - Objectif : Comme une nouvelle vente sur Shopify : l'organisateur reçoit une notification à chaque billet acheté, pour suivre ses ventes et revenir dans l'app.
-- Responsable : à attribuer · Reviewer : l'autre développeur
+- Responsable : Yannis · Reviewer : Orias
 - Sprint : S5 · Type : Feature · Domaine : Full stack · Priorité : P0 · Estimation : 3 h
 - Dépendances : NOISE-028 (infrastructure des notifications push), NOISE-019
 - Statut : À faire
@@ -1039,7 +1039,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 #### NOISE-064 — Mise à jour de l'application
 
 - Objectif : Les utilisateurs d'un APK installé par lien reçoivent les corrections.
-- Responsable : à attribuer · Reviewer : l'autre développeur
+- Responsable : Yannis · Reviewer : Orias
 - Sprint : S5 · Type : Feature · Domaine : Mobile · Priorité : P0 · Estimation : 3 h
 - Dépendances : NOISE-009
 - Statut : À faire
@@ -1054,7 +1054,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 #### NOISE-065 — Interface d'administration
 
 - Objectif : Une interface web pour l'équipe Noise : statistiques, validation des pièces d'identité, suivi des paiements, alertes, annulations et remboursements, suspension. Remplace l'usage direct des routes d'administration (écart à DEC-020, décision à consigner).
-- Responsable : à attribuer · Reviewer : l'autre développeur
+- Responsable : Yannis · Reviewer : Orias
 - Sprint : S5 · Type : Feature · Domaine : Full stack · Priorité : P0 · Estimation : 2 à 3 jours
 - Dépendances : NOISE-037, NOISE-048, NOISE-055, NOISE-059 ; conception à présenter avant de commencer
 - Statut : À faire
@@ -1071,7 +1071,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 #### NOISE-066 — Marquer un remboursement comme effectué
 
 - Objectif : Après une annulation, suivre les remboursements un par un pour n'en oublier aucun et n'en faire aucun deux fois.
-- Responsable : à attribuer · Reviewer : l'autre développeur
+- Responsable : Yannis · Reviewer : Orias
 - Sprint : S5 · Type : Feature · Domaine : Backend · Priorité : P1 · Estimation : 3 h
 - Dépendances : NOISE-029
 - Statut : À faire
@@ -1086,7 +1086,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 #### NOISE-067 — Supprimer son compte depuis l'app
 
 - Objectif : Exigence de Google Play pour toute app avec des comptes, et droit à l'effacement.
-- Responsable : à attribuer · Reviewer : l'autre développeur
+- Responsable : Yannis · Reviewer : Orias
 - Sprint : Post-MVP · Type : Feature · Domaine : Full stack · Priorité : P1 · Estimation : 4 h
 - Dépendances : NOISE-062, NOISE-043
 - Statut : À faire
@@ -1100,7 +1100,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 #### NOISE-068 — Changer son mot de passe
 
 - Objectif : Un utilisateur connecté peut changer son mot de passe (le mot de passe oublié reste NOISE-040).
-- Responsable : à attribuer · Reviewer : l'autre développeur
+- Responsable : Yannis · Reviewer : Orias
 - Sprint : Post-MVP · Type : Feature · Domaine : Full stack · Priorité : P2 · Estimation : 2 h
 - Dépendances : NOISE-007, NOISE-062
 - Statut : À faire
@@ -1113,7 +1113,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 #### NOISE-069 — Purge planifiée des données expirées
 
 - Objectif : Supprimer régulièrement les clés d'idempotence expirées et les jetons de rafraîchissement périmés.
-- Responsable : à attribuer · Reviewer : l'autre développeur
+- Responsable : Yannis · Reviewer : Orias
 - Sprint : Post-MVP · Type : Dette technique · Domaine : Backend · Priorité : P2 · Estimation : 1 h
 - Dépendances : NOISE-053
 - Statut : À faire
