@@ -49,7 +49,7 @@ Tout retard sur NOISE-002, NOISE-006 ou NOISE-019 décale directement la release
 | Réalisables immédiatement      | NOISE-001, NOISE-002, NOISE-003                                                                                                                                                                                                                                                                                                                                                                                                  |
 | Dépendantes d'une autre tâche  | NOISE-005, NOISE-006, NOISE-007, NOISE-008, NOISE-009, NOISE-010, NOISE-011, NOISE-012, NOISE-013, NOISE-014, NOISE-015, NOISE-016, NOISE-017, NOISE-018, NOISE-019, NOISE-020, NOISE-021, NOISE-022, NOISE-023, NOISE-024, NOISE-025, NOISE-026, NOISE-027, NOISE-028, NOISE-029, NOISE-030, NOISE-031, NOISE-032, NOISE-033, NOISE-035, NOISE-036, NOISE-037, NOISE-038, NOISE-039, NOISE-043, NOISE-044, NOISE-045, NOISE-046 |
 | Bloquées (décision ou externe) | NOISE-034, NOISE-040 — NOISE-034 : KYC (DEC-016) ; NOISE-040 : DEC-017                                                                                                                                                                                                                                                                                                                                                           |
-| Yannis                         | NOISE-003, NOISE-005, NOISE-007, NOISE-010, NOISE-012, NOISE-013, NOISE-017, NOISE-021, NOISE-022, NOISE-025, NOISE-026, NOISE-029, NOISE-033, NOISE-035, NOISE-039, NOISE-040                                                                                                                                                                                                                                                   |
+| Yannis                         | NOISE-003, NOISE-005, NOISE-007, NOISE-010, NOISE-012, NOISE-013, NOISE-017, NOISE-021, NOISE-022, NOISE-025, NOISE-026, NOISE-029, NOISE-033, NOISE-035, NOISE-039, NOISE-040, NOISE-049                                                                                                                                                                                                                                        |
 | Orias                          | NOISE-008, NOISE-009, NOISE-011, NOISE-014, NOISE-015, NOISE-018, NOISE-020, NOISE-024, NOISE-027, NOISE-028, NOISE-031, NOISE-037                                                                                                                                                                                                                                                                                               |
 | Les deux (binôme / décision)   | NOISE-001, NOISE-002, NOISE-006, NOISE-016, NOISE-019, NOISE-023, NOISE-030, NOISE-032, NOISE-034, NOISE-036, NOISE-038                                                                                                                                                                                                                                                                                                          |
 | Intervention externe           | NOISE-002, NOISE-005, NOISE-009, NOISE-010, NOISE-016, NOISE-023, NOISE-028, NOISE-030, NOISE-034, NOISE-035, NOISE-036, NOISE-038                                                                                                                                                                                                                                                                                               |
@@ -827,6 +827,22 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
   - [x] Création et publication d'événement refusées (403 IDENTITY_REQUIRED) tant que la pièce n'est pas envoyée (précision de DEC-018, 2026-10-16) ; message clair dans l'app (PR mobile)
 - Tests :
   - Intégration : organisateur non vérifié → 403 à la création ; vérifié → 201 ; un non-administrateur ne peut ni voir les pièces ni valider
+
+#### NOISE-049 — Mission de prospection des organisateurs à Cotonou
+
+- Objectif : Trouver et qualifier au moins 3 prospects organisateurs par jour, suivre la prospection et mesurer combien deviennent un événement publié.
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : S4 à post-MVP · Type : Business · Domaine : Prospection · Priorité : P1 · Estimation : à définir
+- Dépendances : aucune pour la collecte ; NOISE-034 pour qu'un prospect publie un événement payant
+- Statut : En cours
+- Fichiers concernés : prospection/\*
+- Critères d'acceptation :
+  - [ ] Brief de mission relu et validé par les deux développeurs (prospection/mission-cotonou/docs/brief.md)
+  - [ ] Classeur de suivi en place, copie remplie hors de Git
+  - [ ] Script d'analyse locale avec garde-fous et tests sur une fausse réponse du modèle
+  - [ ] 60 prospects qualifiés après 20 jours de collecte, funnel observé comparé au funnel simulé
+- Tests :
+  - Unitaires (script) : formule de score sur le cas de contrôle (79), garde-fous (citation absente, texte court, valeur inconnue, réponse JSON invalide)
 
 #### NOISE-053 — Idempotency-Key sur la commande et le paiement
 
