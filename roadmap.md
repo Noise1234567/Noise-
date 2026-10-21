@@ -840,7 +840,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
   - [x] En-tête facultatif sur POST /orders et POST /payments/initiate ; réponse rejouée pour la même clé et le même corps
   - [x] 409 si la clé a servi à une autre requête ou si la première est en cours ; rien de gardé sur une erreur 5xx
   - [x] Clés propres à chaque compte, gardées 24 heures
-  - [ ] Le mobile envoie une clé par intention d'achat (NOISE-021)
+  - [x] Le mobile envoie une clé par intention d'achat (NOISE-021)
 - Tests :
   - Intégration : commande et paiement rejoués sans doublon, autre corps, autre compte, erreur 4xx rejouée, requête en cours, 5xx, clé expirée
 
