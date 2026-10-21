@@ -1,23 +1,28 @@
 /**
- * Contact du support Noise par WhatsApp (NOISE-057). Le numéro est public (configuration
- * EXPO_PUBLIC_SUPPORT_WHATSAPP, embarquée dans l'APK) : sans lui, aucun bouton n'est affiché.
+ * Contact du support Noise par e-mail (NOISE-057). L'adresse est publique : configuration
+ * EXPO_PUBLIC_SUPPORT_EMAIL (embarquée dans l'APK), avec l'adresse de l'équipe par défaut.
  */
 
-/** « +229 01 97 00 00 00 » ou « 2290197000000 » → « 2290197000000 » ; vide si invalide. */
-export function supportNumber(raw: string | undefined): string {
-  const digits = (raw ?? '').replace(/\D/g, '');
-  return /^229\d{10}$/.test(digits) ? digits : '';
+export const DEFAULT_SUPPORT_EMAIL = 'noise.bj@gmail.com';
+
+/** Adresse e-mail plausible, sinon vide (et alors aucun bouton). */
+export function supportEmail(raw: string | undefined): string {
+  const email = (raw ?? '').trim();
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '';
 }
 
 /**
- * Lien wa.me avec un message prérempli. `reference` (identifiant de commande, titre d'événement)
- * aide le support à retrouver le dossier ; jamais de donnée sensible (pas de QR, pas de jeton).
+ * Lien mailto avec sujet et message préremplis. `reference` (identifiant de commande) aide le
+ * support à retrouver le dossier ; jamais de donnée sensible (pas de QR, pas de jeton).
  */
-export function supportWhatsAppUrl(number: string, reference?: string): string {
-  const message = reference
-    ? `Bonjour Noise, j'ai besoin d'aide (${reference}).`
-    : "Bonjour Noise, j'ai besoin d'aide.";
-  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
+export function supportMailUrl(email: string, reference?: string): string {
+  const subject = reference ? `Aide Noise : ${reference}` : 'Aide Noise';
+  const body = reference
+    ? `Bonjour Noise,\n\nJ'ai besoin d'aide (${reference}).\n\n`
+    : "Bonjour Noise,\n\nJ'ai besoin d'aide.\n\n";
+  return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
-export const SUPPORT_WHATSAPP = supportNumber(process.env.EXPO_PUBLIC_SUPPORT_WHATSAPP);
+export const SUPPORT_EMAIL = supportEmail(
+  process.env.EXPO_PUBLIC_SUPPORT_EMAIL || DEFAULT_SUPPORT_EMAIL,
+);

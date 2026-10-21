@@ -3,12 +3,12 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 
 import { SupportButton } from '../components/SupportButton';
-import { supportNumber, supportWhatsAppUrl } from '../components/support';
+import { supportEmail, supportMailUrl } from '../components/support';
 import { Checkout } from '../features/participant/checkout/Checkout';
 
 jest.mock('../components/support', () => ({
   ...jest.requireActual('../components/support'),
-  SUPPORT_WHATSAPP: '2290197000000',
+  SUPPORT_EMAIL: 'noise.bj@gmail.com',
 }));
 
 let openURL: jest.SpyInstance;
@@ -18,20 +18,21 @@ beforeEach(() => {
 afterEach(() => openURL.mockRestore());
 
 describe('contact du support', () => {
-  it('numéro : chiffres seulement, +229 et 10 chiffres, sinon vide', () => {
-    expect(supportNumber('+229 01 97 00 00 00')).toBe('2290197000000');
-    expect(supportNumber('0197000000')).toBe('');
-    expect(supportNumber(undefined)).toBe('');
+  it('adresse : valide ou vide', () => {
+    expect(supportEmail(' noise.bj@gmail.com ')).toBe('noise.bj@gmail.com');
+    expect(supportEmail('pas-une-adresse')).toBe('');
+    expect(supportEmail(undefined)).toBe('');
   });
 
-  it('lien WhatsApp avec la référence du dossier', () => {
-    expect(supportWhatsAppUrl('2290197000000', 'commande abc')).toBe(
-      `https://wa.me/2290197000000?text=${encodeURIComponent("Bonjour Noise, j'ai besoin d'aide (commande abc).")}`,
-    );
+  it('lien mailto avec la référence du dossier dans le sujet et le message', () => {
+    const url = supportMailUrl('noise.bj@gmail.com', 'commande abc');
+    expect(url.startsWith('mailto:noise.bj@gmail.com?subject=')).toBe(true);
+    expect(url).toContain(encodeURIComponent('Aide Noise : commande abc'));
+    expect(url).toContain(encodeURIComponent("J'ai besoin d'aide (commande abc)."));
   });
 
-  it('sans numéro configuré : aucun bouton', async () => {
-    await render(<SupportButton number="" />);
+  it('sans adresse : aucun bouton', async () => {
+    await render(<SupportButton email="" />);
     expect(screen.queryByText('Contacter le support')).toBeNull();
   });
 
