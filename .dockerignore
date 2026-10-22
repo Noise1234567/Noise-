@@ -1,0 +1,19 @@
+# Le contexte de build est la racine du dépôt : on n'envoie à Docker que ce dont l'image a besoin.
+.git
+**/node_modules
+**/dist
+**/coverage
+**/.expo
+
+# Secrets : jamais dans une image
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Hors de l'API et du scanner
+apps/mobile
+prospection
+docs
+scripts
+deploy

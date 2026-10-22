@@ -344,20 +344,20 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Tests :
   - Test UI du sélecteur ; tests du service de session (vue retenue)
 
-#### NOISE-016 — Environnement staging sur Railway
+#### NOISE-016 — Environnement staging sur Hetzner
 
 - Objectif : Déployer automatiquement main sur staging (binôme).
 - Responsable : Commun · Reviewer : revue mutuelle (binôme)
 - Sprint : S2 · Type : Chore · Domaine : DevOps · Priorité : P0 · Estimation : 4 h
 - Dépendances : NOISE-002, NOISE-005, NOISE-006 · Dépend d'un service ou d'une validation externe
-- Statut : À faire
-- Fichiers concernés : docs/environments.md, apps/mobile/eas.json
+- Statut : En cours (fichiers de déploiement prêts, mise en place du serveur à faire, DEC-028)
+- Fichiers concernés : docs/environments.md, apps/api/Dockerfile, deploy/staging/*, .github/workflows/deploy-staging.yml, apps/mobile/eas.json
 - Critères d'acceptation :
   - [ ] Service API + Postgres staging ; migrations appliquées au déploiement (prisma migrate deploy)
-  - [ ] Variables d'environnement staging renseignées dans Railway (aucune dans Git)
+  - [ ] Variables d'environnement staging renseignées sur le serveur (aucune dans Git)
   - [ ] URL HTTPS staging ; /health/ready OK
-  - [ ] Profil EAS preview pointant vers staging
-  - [ ] docs/environments.md complété
+  - [x] Profil EAS preview pointant vers staging
+  - [x] docs/environments.md complété
 - Tests :
   - Smoke test automatique après déploiement (/health/ready)
 
@@ -564,14 +564,14 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Responsable : Yannis · Reviewer : Orias
 - Sprint : S4 · Type : Feature · Domaine : Full stack · Priorité : P1 · Estimation : 5 h
 - Dépendances : NOISE-020, NOISE-028
-- Statut : API en revue (NOISE-029, partie 1) ; écran organisateur et notification push à faire
+- Statut : API fusionnée (partie 1) ; écran organisateur fait (partie 2, en revue) ; notification push à faire avec NOISE-028
 - Fichiers concernés : apps/api/src/modules/events/*
 - Critères d'acceptation :
   - [x] POST /events/:id/cancel (organisateur propriétaire)
   - [x] Billets → CANCELLED, commandes → CANCELLED, liens scanner révoqués
   - [ ] Push aux acheteurs (point d'accroche prêt, envoi avec NOISE-028)
   - [x] Liste des remboursements à effectuer : 100 % du prix des billets, hors frais de paiement (DEC-025)
-  - [x] Calcul renvoyé par l'API avant confirmation : frais d'annulation (10 % des ventes), sommes déjà reversées à renvoyer sous 10 jours, part retenue (écran mobile à faire)
+  - [x] Calcul renvoyé par l'API avant confirmation : frais d'annulation (10 % des ventes), sommes déjà reversées à renvoyer sous 10 jours, part retenue (affiché par l'écran mobile « Annuler l'événement », confirmation en deux temps)
   - [x] Échéance de retour (annulation + 10 jours) enregistrée et visible par l'admin
 - Tests :
   - Intégration : scan d'un billet annulé → CANCELLED
