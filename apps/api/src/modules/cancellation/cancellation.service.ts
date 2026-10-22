@@ -105,8 +105,10 @@ export class CancellationService {
         where: { id: eventId },
         data: { status: 'CANCELLED', cancelledAt: now },
       });
+      // Seuls les billets valides sont annulés. Un billet déjà scanné reste USED : il garde son
+      // heure d'entrée (contrainte tickets_used_has_time) et sa commande est remboursée.
       const tickets = await tx.ticket.updateMany({
-        where: { eventId, status: { not: 'CANCELLED' } },
+        where: { eventId, status: 'VALID' },
         data: { status: 'CANCELLED' },
       });
       const paid = await tx.order.updateMany({
