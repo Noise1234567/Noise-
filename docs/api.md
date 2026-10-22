@@ -75,7 +75,7 @@ Base : CDC section 7, complétée par les décisions.
 | POST      | `/events/:id/poster`        | Organisateur propriétaire | NOISE-012            |
 | POST      | `/events/:id/cancel`        | Organisateur propriétaire | NOISE-029            |
 | GET       | `/organizer/events`         | Organisateur              | NOISE-013            |
-| GET       | `/events/:id/stats`         | Organisateur propriétaire | NOISE-027            |
+| GET       | `/events/:id/stats`         | Organisateur propriétaire | NOISE-027 (existe)   |
 | POST      | `/orders`                   | Participant               | NOISE-018            |
 | GET       | `/orders/:id`               | Participant propriétaire  | NOISE-018            |
 | GET       | `/orders/:id/status`        | Participant propriétaire  | NOISE-019            |
@@ -221,6 +221,15 @@ Styles : un événement porte `styles`, de 1 à 5 valeurs choisies par l'organis
 - Réponse : 200 `{ event: EventDto }` ; `posterUrl` est une URL HTTPS limitée à 1080 px de large, qualité et format automatiques (WebP ou AVIF selon le téléphone), avec la version dans l'URL pour qu'une affiche remplacée ne reste pas en cache.
 - Erreurs : 400 `VALIDATION_ERROR` (identifiant invalide, aucun fichier, mauvais champ, format refusé, plus de 5 Mo) ; 401 ; 403 (pas organisateur, ou événement d'un autre) ; 404 ; 409 événement annulé ; 500 `INTERNAL_ERROR` si Cloudinary est indisponible (l'affiche existante est conservée).
 - Configuration : `CLOUDINARY_URL` (obligatoire en staging et en production). Sans elle, en développement, les affiches sont simulées : l'URL renvoyée ne pointe vers aucune image.
+
+### Statistiques de l'événement (NOISE-027)
+
+`GET /api/v1/events/:id/stats`, organisateur propriétaire uniquement (401 sans jeton, 403 pour un participant ou un autre organisateur, 404 si l'événement n'existe pas, 400 si l'identifiant n'est pas un UUID). Lecture seule. Réponse `{ stats }` (`EventStatsDto`, `packages/shared/src/schemas/stats.ts`) :
+
+- `sales` : billets vendus, total payé (`grossXof`, hors frais de l'agrégateur), part de l'organisateur après la commission de Noise (`organizerNetXof`) et commission (`noiseFeeXof`). Seules les commandes `PAID` comptent ; les parts viennent du registre des commandes (DEC-022). Pour une commande payée sans répartition enregistrée, la répartition standard (sans partageur) est utilisée plutôt qu'un montant faux.
+- `byType` : par type de billet, vendus, restants à la vente et revenu brut.
+- `entries` : billets entrés (`checkedIn`), valides pas encore entrés, annulés, heure de la dernière entrée, scans refusés (dont billet déjà utilisé) et `arrivals`, les entrées par heure (début de l'heure en UTC, heures creuses à zéro, liste vide tant que personne n'est entré). Le Bénin est en UTC+1 toute l'année : les tranches tombent à l'heure pile en heure locale.
+- `status` et `generatedAt` : l'état de l'événement (un événement annulé garde ses billets entrés, ses ventes remboursées ne comptent plus) et l'heure du calcul. Le mobile rafraîchit toutes les 30 secondes.
 
 ### Annulation par l'organisateur (NOISE-029, DEC-025)
 
