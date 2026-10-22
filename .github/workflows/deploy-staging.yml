@@ -1,0 +1,90 @@
+name: Deploy staging
+
+# NOISE-016, DEC-028 : chaque fusion sur main dont la CI est verte est déployée sur le serveur de staging.
+# Le code est envoyé par SSH (git archive), l'image est construite sur le serveur (ARM), puis un test
+# de fumée vérifie /health/ready. Mise en place du serveur et des secrets : docs/environments.md.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  # Redéploiement manuel (onglet Actions) : utile après une modification du fichier .env du serveur.
+  workflow_dispatch:
+
+# Un seul déploiement à la fois, sans en interrompre un en cours.
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Déployer sur le staging
+    # Seulement après un push sur main dont la CI a réussi (pas pour les pull requests).
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Environnement GitHub « staging » : c'est lui qui porte les secrets et les variables ci-dessous.
+    environment: staging
+    env:
+      SSH_HOST: ${{ vars.STAGING_SSH_HOST }}
+      SSH_USER: ${{ vars.STAGING_SSH_USER }}
+      STAGING_HOST: ${{ vars.STAGING_HOST }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Préparer la connexion SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.STAGING_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.STAGING_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          # L'empreinte du serveur est fournie par nous : pas de confiance aveugle à la première connexion.
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Envoyer le code sur le serveur
+        run: |
+          git archive --format=tar HEAD | ssh "$SSH_USER@$SSH_HOST" '
+            set -euo pipefail
+            cd /opt/noise-staging
+            rm -rf app.new
+            mkdir app.new
+            tar -x -C app.new
+          '
+
+      - name: Construire et démarrer
+        run: |
+          ssh "$SSH_USER@$SSH_HOST" '
+            set -euo pipefail
+            cd /opt/noise-staging
+            # Le fichier .env (secrets) reste sur le serveur ; on le relie à la nouvelle version.
+            ln -sf /opt/noise-staging/.env app.new/deploy/staging/.env
+            rm -rf app.old
+            if [ -d app ]; then mv app app.old; fi
+            mv app.new app
+            cd app/deploy/staging
+            docker compose up -d --build --remove-orphans
+            docker image prune -f
+            docker builder prune -f --filter until=72h
+          '
+
+      - name: Test de fumée
+        run: |
+          curl --fail --silent --show-error --retry 20 --retry-delay 6 --retry-all-errors \
+            "https://$STAGING_HOST/health/ready"
+          echo
+          curl --fail --silent --show-error --output /dev/null "https://$STAGING_HOST/scan/"
+          echo "Staging en ligne : https://$STAGING_HOST"
+
+      - name: Journaux de l'API en cas d'échec
+        if: failure()
+        run: |
+          ssh "$SSH_USER@$SSH_HOST" 'cd /opt/noise-staging/app/deploy/staging && docker compose logs --tail 80 api' || true
