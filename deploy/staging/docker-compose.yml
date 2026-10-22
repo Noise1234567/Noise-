@@ -1,0 +1,72 @@
+# Staging Noise (NOISE-016, DEC-028) : API + Postgres + Caddy (HTTPS automatique).
+#
+# Lancé sur le serveur par le workflow « Deploy staging ». Le fichier .env (secrets) vit sur le
+# serveur uniquement, jamais dans Git : modèle dans env.example. Pas à pas : docs/environments.md.
+name: noise-staging
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: noise
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD manquant dans .env}
+      POSTGRES_DB: noise_staging
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    # Aucun port publié : seule l'API, sur le réseau interne de Docker, atteint la base.
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U noise -d noise_staging']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+    image: noise-api:staging
+    restart: unless-stopped
+    init: true
+    env_file: .env
+    environment:
+      NODE_ENV: staging
+      PORT: '3000'
+      DATABASE_URL: postgresql://noise:${POSTGRES_PASSWORD}@db:5432/noise_staging
+    depends_on:
+      db:
+        condition: service_healthy
+    # Pas de port publié non plus : Caddy est le seul point d'entrée.
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      STAGING_HOST: ${STAGING_HOST:?STAGING_HOST manquant dans .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Les certificats obtenus sont conservés : pas de nouvelle demande à chaque déploiement.
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

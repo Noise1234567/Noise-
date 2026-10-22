@@ -344,20 +344,20 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Tests :
   - Test UI du sélecteur ; tests du service de session (vue retenue)
 
-#### NOISE-016 — Environnement staging sur Railway
+#### NOISE-016 — Environnement staging sur Hetzner
 
 - Objectif : Déployer automatiquement main sur staging (binôme).
 - Responsable : Commun · Reviewer : revue mutuelle (binôme)
 - Sprint : S2 · Type : Chore · Domaine : DevOps · Priorité : P0 · Estimation : 4 h
 - Dépendances : NOISE-002, NOISE-005, NOISE-006 · Dépend d'un service ou d'une validation externe
-- Statut : À faire
-- Fichiers concernés : docs/environments.md, apps/mobile/eas.json
+- Statut : En cours (fichiers de déploiement prêts, mise en place du serveur à faire, DEC-028)
+- Fichiers concernés : docs/environments.md, apps/api/Dockerfile, deploy/staging/*, .github/workflows/deploy-staging.yml, apps/mobile/eas.json
 - Critères d'acceptation :
   - [ ] Service API + Postgres staging ; migrations appliquées au déploiement (prisma migrate deploy)
-  - [ ] Variables d'environnement staging renseignées dans Railway (aucune dans Git)
+  - [ ] Variables d'environnement staging renseignées sur le serveur (aucune dans Git)
   - [ ] URL HTTPS staging ; /health/ready OK
-  - [ ] Profil EAS preview pointant vers staging
-  - [ ] docs/environments.md complété
+  - [x] Profil EAS preview pointant vers staging
+  - [x] docs/environments.md complété
 - Tests :
   - Smoke test automatique après déploiement (/health/ready)
 
