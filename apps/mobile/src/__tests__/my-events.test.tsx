@@ -113,4 +113,20 @@ describe('Mes événements', () => {
     expect(screen.getByText('Seconde')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Charger plus' })).toBeNull();
   });
+  it('propose d’annuler seulement un événement publié et pas encore terminé', async () => {
+    const onCancel = jest.fn();
+    const listMine = jest.fn(async () =>
+      page([
+        event('Afro Night', { id: 'e1' }),
+        event('Soirée brouillon', { id: 'e2', status: 'DRAFT' }),
+      ]),
+    );
+    await render(<MyEventsList api={{ listMine }} onCreate={jest.fn()} onCancel={onCancel} />);
+    await act(async () => {});
+
+    const buttons = screen.getAllByRole('button', { name: 'Annuler l’événement' });
+    expect(buttons.length).toBe(1);
+    await fireEvent.press(buttons[0]!);
+    expect(onCancel).toHaveBeenCalledWith('e1');
+  });
 });

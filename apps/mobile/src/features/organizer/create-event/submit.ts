@@ -1,7 +1,21 @@
 import type { CreateEventInput, CreateTicketTypeInput } from '@noise/shared';
 
 import type { EventWriteApi } from '../../../api/events';
-import { toApiError } from '../../../api/errors';
+import { toApiError, type ApiError } from '../../../api/errors';
+
+/**
+ * Message affiché sous le bouton « Publier ». Le serveur écrit parfois au tutoiement (DEC-018,
+ * IDENTITY_REQUIRED) : l'app s'adresse toujours à l'utilisateur au vouvoiement.
+ */
+export function describeSubmitError(error: ApiError): string {
+  if (error.code === 'IDENTITY_REQUIRED') {
+    return 'Pour organiser des événements, nous devons vérifier votre identité. Envoyez votre pièce d’identité (si elle a déjà été refusée, envoyez-en une nouvelle), puis réessayez.';
+  }
+  if (error.isNetwork) {
+    return `${error.message} Ce qui a déjà été enregistré ne sera pas renvoyé.`;
+  }
+  return error.message;
+}
 
 /**
  * Ce qui a déjà été enregistré par le serveur. Conservé entre deux essais : après une coupure
