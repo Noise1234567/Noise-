@@ -1,0 +1,5 @@
+# Copies de sauvegarde créées par ia-scoring/analyze.py avant chaque écriture
+*.sauvegarde-*.xlsx
+
+# Fichiers verrous créés par Excel quand un classeur est ouvert
+~$*

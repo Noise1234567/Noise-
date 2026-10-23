@@ -49,7 +49,7 @@ Tout retard sur NOISE-002, NOISE-006 ou NOISE-019 décale directement la release
 | Réalisables immédiatement      | NOISE-001, NOISE-002, NOISE-003                                                                                                                                                                                                                                                                                                                                                                                                  |
 | Dépendantes d'une autre tâche  | NOISE-005, NOISE-006, NOISE-007, NOISE-008, NOISE-009, NOISE-010, NOISE-011, NOISE-012, NOISE-013, NOISE-014, NOISE-015, NOISE-016, NOISE-017, NOISE-018, NOISE-019, NOISE-020, NOISE-021, NOISE-022, NOISE-023, NOISE-024, NOISE-025, NOISE-026, NOISE-027, NOISE-028, NOISE-029, NOISE-030, NOISE-031, NOISE-032, NOISE-033, NOISE-035, NOISE-036, NOISE-037, NOISE-038, NOISE-039, NOISE-043, NOISE-044, NOISE-045, NOISE-046 |
 | Bloquées (décision ou externe) | NOISE-034, NOISE-040 — NOISE-034 : KYC (DEC-016) ; NOISE-040 : DEC-017                                                                                                                                                                                                                                                                                                                                                           |
-| Yannis                         | NOISE-003, NOISE-005, NOISE-007, NOISE-010, NOISE-012, NOISE-013, NOISE-017, NOISE-021, NOISE-022, NOISE-025, NOISE-026, NOISE-029, NOISE-033, NOISE-035, NOISE-039, NOISE-040                                                                                                                                                                                                                                                   |
+| Yannis                         | NOISE-003, NOISE-005, NOISE-007, NOISE-010, NOISE-012, NOISE-013, NOISE-017, NOISE-021, NOISE-022, NOISE-025, NOISE-026, NOISE-029, NOISE-033, NOISE-035, NOISE-039, NOISE-040, NOISE-049                                                                                                                                                                                                                                        |
 | Orias                          | NOISE-008, NOISE-009, NOISE-011, NOISE-014, NOISE-015, NOISE-018, NOISE-020, NOISE-024, NOISE-027, NOISE-028, NOISE-031, NOISE-037                                                                                                                                                                                                                                                                                               |
 | Les deux (binôme / décision)   | NOISE-001, NOISE-002, NOISE-006, NOISE-016, NOISE-019, NOISE-023, NOISE-030, NOISE-032, NOISE-034, NOISE-036, NOISE-038                                                                                                                                                                                                                                                                                                          |
 | Intervention externe           | NOISE-002, NOISE-005, NOISE-009, NOISE-010, NOISE-016, NOISE-023, NOISE-028, NOISE-030, NOISE-034, NOISE-035, NOISE-036, NOISE-038                                                                                                                                                                                                                                                                                               |
@@ -344,20 +344,20 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Tests :
   - Test UI du sélecteur ; tests du service de session (vue retenue)
 
-#### NOISE-016 — Environnement staging sur Railway
+#### NOISE-016 — Environnement staging sur Hetzner
 
 - Objectif : Déployer automatiquement main sur staging (binôme).
 - Responsable : Commun · Reviewer : revue mutuelle (binôme)
 - Sprint : S2 · Type : Chore · Domaine : DevOps · Priorité : P0 · Estimation : 4 h
 - Dépendances : NOISE-002, NOISE-005, NOISE-006 · Dépend d'un service ou d'une validation externe
-- Statut : À faire
-- Fichiers concernés : docs/environments.md, apps/mobile/eas.json
+- Statut : En cours (fichiers de déploiement prêts, mise en place du serveur à faire, DEC-028)
+- Fichiers concernés : docs/environments.md, apps/api/Dockerfile, deploy/staging/*, .github/workflows/deploy-staging.yml, apps/mobile/eas.json
 - Critères d'acceptation :
   - [ ] Service API + Postgres staging ; migrations appliquées au déploiement (prisma migrate deploy)
-  - [ ] Variables d'environnement staging renseignées dans Railway (aucune dans Git)
+  - [ ] Variables d'environnement staging renseignées sur le serveur (aucune dans Git)
   - [ ] URL HTTPS staging ; /health/ready OK
-  - [ ] Profil EAS preview pointant vers staging
-  - [ ] docs/environments.md complété
+  - [x] Profil EAS preview pointant vers staging
+  - [x] docs/environments.md complété
 - Tests :
   - Smoke test automatique après déploiement (/health/ready)
 
@@ -534,11 +534,11 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Responsable : Orias · Reviewer : Yannis
 - Sprint : S4 · Type : Feature · Domaine : Full stack · Priorité : P1 · Estimation : 6 h
 - Dépendances : NOISE-020, NOISE-025
-- Statut : À faire
+- Statut : API en revue (partie 1) ; écran mobile à faire après la fusion de NOISE-054
 - Fichiers concernés : apps/api/src/modules/stats/_, apps/mobile/src/features/organizer/stats/_
 - Critères d'acceptation :
-  - [ ] GET /events/:id/stats : billets vendus par type, revenus bruts et nets estimés (DEC-009), scans
-  - [ ] Écran mobile avec rafraîchissement périodique (30 s)
+  - [x] GET /events/:id/stats : billets vendus par type, revenus bruts et nets estimés (DEC-009), scans, entrées par heure
+  - [ ] Écran mobile avec rafraîchissement périodique (30 s), section de l'écran de détail de NOISE-054
 - Tests :
   - Intégration : exactitude des agrégats, accès limité au propriétaire
 
@@ -564,14 +564,14 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Responsable : Yannis · Reviewer : Orias
 - Sprint : S4 · Type : Feature · Domaine : Full stack · Priorité : P1 · Estimation : 5 h
 - Dépendances : NOISE-020, NOISE-028
-- Statut : API en revue (NOISE-029, partie 1) ; écran organisateur et notification push à faire
+- Statut : API fusionnée (partie 1) ; écran organisateur fait (partie 2, en revue) ; notification push à faire avec NOISE-028
 - Fichiers concernés : apps/api/src/modules/events/*
 - Critères d'acceptation :
   - [x] POST /events/:id/cancel (organisateur propriétaire)
   - [x] Billets → CANCELLED, commandes → CANCELLED, liens scanner révoqués
   - [ ] Push aux acheteurs (point d'accroche prêt, envoi avec NOISE-028)
   - [x] Liste des remboursements à effectuer : 100 % du prix des billets, hors frais de paiement (DEC-025)
-  - [x] Calcul renvoyé par l'API avant confirmation : frais d'annulation (10 % des ventes), sommes déjà reversées à renvoyer sous 10 jours, part retenue (écran mobile à faire)
+  - [x] Calcul renvoyé par l'API avant confirmation : frais d'annulation (10 % des ventes), sommes déjà reversées à renvoyer sous 10 jours, part retenue (affiché par l'écran mobile « Annuler l'événement », confirmation en deux temps)
   - [x] Échéance de retour (annulation + 10 jours) enregistrée et visible par l'admin
 - Tests :
   - Intégration : scan d'un billet annulé → CANCELLED
@@ -828,6 +828,22 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Tests :
   - Intégration : organisateur non vérifié → 403 à la création ; vérifié → 201 ; un non-administrateur ne peut ni voir les pièces ni valider
 
+#### NOISE-049 — Mission de prospection des organisateurs à Cotonou
+
+- Objectif : Trouver et qualifier au moins 3 prospects organisateurs par jour, suivre la prospection et mesurer combien deviennent un événement publié.
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : S4 à post-MVP · Type : Business · Domaine : Prospection · Priorité : P1 · Estimation : à définir
+- Dépendances : aucune pour la collecte ; NOISE-034 pour qu'un prospect publie un événement payant
+- Statut : En cours
+- Fichiers concernés : prospection/\*
+- Critères d'acceptation :
+  - [ ] Brief de mission relu et validé par les deux développeurs (prospection/mission-cotonou/docs/brief.md)
+  - [ ] Classeur de suivi en place, copie remplie hors de Git
+  - [ ] Script d'analyse locale avec garde-fous et tests sur une fausse réponse du modèle
+  - [ ] 60 prospects qualifiés après 20 jours de collecte, funnel observé comparé au funnel simulé
+- Tests :
+  - Unitaires (script) : formule de score sur le cas de contrôle (79), garde-fous (citation absente, texte court, valeur inconnue, réponse JSON invalide)
+
 #### NOISE-053 — Idempotency-Key sur la commande et le paiement
 
 - Objectif : Une requête renvoyée après une réponse perdue (3G) ne crée pas une seconde commande ni une seconde demande de paiement.
@@ -978,12 +994,12 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
   - Intégration avec un envoi simulé : un e-mail par publication, un par paiement à rembourser, aucun sur un webhook rejoué
 - Note : les notifications de vente pour l'organisateur (« Nouvelle vente », à chaque achat) sont des notifications de l'app : NOISE-063.
 
-#### NOISE-060 — Un compte par rôle (selon DEC-028)
+#### NOISE-060 — Un compte par rôle (selon DEC-029)
 
 - Objectif : Séparer les comptes participant et organisateur, et retirer le sélecteur de rôle de l'app.
 - Responsable : Yannis · Reviewer : Orias
 - Sprint : S5 · Type : Feature · Domaine : Full stack · Priorité : P1 · Estimation : 4 h
-- Dépendances : DEC-028 (option retenue, à confirmer par Orias), NOISE-015
+- Dépendances : DEC-029 (option retenue, à confirmer par Orias), NOISE-015
 - Statut : À faire
 - Fichiers concernés : apps/api/prisma/schema.prisma, apps/api/src/modules/auth/*, apps/mobile/src/components/RoleHeader.tsx, apps/mobile/src/state/session.ts
 - Critères d'acceptation :

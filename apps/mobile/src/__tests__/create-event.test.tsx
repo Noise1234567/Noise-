@@ -144,6 +144,24 @@ describe('création d’un événement', () => {
     expect(screen.getByText('Événement publié')).toBeTruthy();
   });
 
+  it('identité non envoyée : message clair au vouvoiement, rien n’est publié', async () => {
+    const api = fakeApi({
+      create: jest.fn(async () => {
+        throw new ApiError(403, 'IDENTITY_REQUIRED', 'Envoie ta pièce d’identité pour organiser');
+      }),
+    });
+    await render(<CreateEventWizard pickPoster={pickPoster} api={api} onClose={jest.fn()} />);
+    await fillUntilSummary();
+
+    await press('Publier');
+    await act(async () => {});
+
+    expect(screen.getByText(/nous devons vérifier votre identité/)).toBeTruthy();
+    expect(screen.queryByText(/Envoie ta/)).toBeNull();
+    expect(api.update).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Réessayer la publication' })).toBeTruthy();
+  });
+
   it('affiche choisie : aperçu, puis envoyée avec l’événement créé', async () => {
     const api = fakeApi();
     await render(<CreateEventWizard api={api} pickPoster={pickPoster} onClose={jest.fn()} />);
