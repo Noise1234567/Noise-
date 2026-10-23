@@ -76,7 +76,7 @@ model User {
   /// Minuscules (CHECK en base). Nul pour les comptes créés avant DEC-026 ; obligatoire à l'inscription.
   email        String?    @db.VarChar(254)
   passwordHash String     @map("password_hash")
-  /// Un compte, un rôle (DEC-028) : participant, organisateur ou administrateur.
+  /// Un compte, un rôle (DEC-029) : participant, organisateur ou administrateur.
   role         UserRole
   status       UserStatus @default(ACTIVE)
   createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
@@ -95,7 +95,7 @@ model User {
   idempotencyKeys      IdempotencyKey[]
 
   /// Un même numéro (ou e-mail) peut porter un compte participant et un compte organisateur,
-  /// jamais deux comptes du même rôle (DEC-028).
+  /// jamais deux comptes du même rôle (DEC-029).
   @@unique([phone, role])
   @@unique([email, role])
   @@map("users")

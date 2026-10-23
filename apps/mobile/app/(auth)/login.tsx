@@ -30,7 +30,7 @@ const roleNoun: Record<AppRole, string> = {
 };
 
 /**
- * Écran 4 (et variantes 4b–4d) : connexion. Un compte, un rôle (DEC-028) : on choisit le compte
+ * Écran 4 (et variantes 4b–4d) : connexion. Un compte, un rôle (DEC-029) : on choisit le compte
  * auquel se connecter, participant ou organisateur (même numéro possible pour les deux).
  */
 export default function Login() {

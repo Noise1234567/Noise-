@@ -21,8 +21,8 @@ beforeEach(async () => {
 afterAll(() => prisma.$disconnect());
 
 const DAY = 86_400_000;
-const bearer = async (user: { id: string; roles: UserRole[] }) =>
-  `Bearer ${await createAccessToken({ userId: user.id, roles: user.roles }, SECRET)}`;
+const bearer = async (user: { id: string; role: UserRole }) =>
+  `Bearer ${await createAccessToken({ userId: user.id, roles: [user.role] }, SECRET)}`;
 const stats = (auth: string | null, id: string) => {
   const req = request(app).get(`/api/v1/events/${id}/stats`);
   return auth ? req.set('Authorization', auth) : req;
@@ -93,7 +93,7 @@ async function createTicket(
  * Standard sont entrés (21 h 10 et 23 h 40 UTC), il y a eu un scan refusé et un billet déjà utilisé.
  */
 async function scenario() {
-  const organizer = await factories.user(prisma, ['ORGANIZER']);
+  const organizer = await factories.user(prisma, 'ORGANIZER');
   const event = await createEvent(organizer.id);
   const standard = await prisma.ticketType.create({
     data: {
@@ -204,7 +204,7 @@ describe('GET /api/v1/events/:id/stats', () => {
   });
 
   it('événement sans vente : tout à zéro, courbe vide', async () => {
-    const organizer = await factories.user(prisma, ['ORGANIZER']);
+    const organizer = await factories.user(prisma, 'ORGANIZER');
     const event = await createEvent(organizer.id);
     await prisma.ticketType.create({
       data: { eventId: event.id, name: 'Standard', priceXof: 5000, quantityTotal: 30 },
@@ -251,17 +251,17 @@ describe('GET /api/v1/events/:id/stats', () => {
     const { event } = await scenario();
     expect((await stats(null, event.id)).status).toBe(401);
 
-    const participant = await factories.user(prisma, ['PARTICIPANT']);
+    const participant = await factories.user(prisma, 'PARTICIPANT');
     expect((await stats(await bearer(participant), event.id)).status).toBe(403);
 
-    const other = await factories.user(prisma, ['ORGANIZER']);
+    const other = await factories.user(prisma, 'ORGANIZER');
     const res = await stats(await bearer(other), event.id);
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('FORBIDDEN');
   });
 
   it('404 pour un événement inconnu, 400 pour un identifiant invalide', async () => {
-    const organizer = await factories.user(prisma, ['ORGANIZER']);
+    const organizer = await factories.user(prisma, 'ORGANIZER');
     const auth = await bearer(organizer);
     expect((await stats(auth, crypto.randomUUID())).status).toBe(404);
     expect((await stats(auth, 'pas-un-uuid')).status).toBe(400);

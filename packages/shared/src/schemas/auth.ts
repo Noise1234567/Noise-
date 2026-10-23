@@ -50,7 +50,7 @@ export const registerSchema = z.object({
 });
 
 /**
- * Rôle du compte auquel se connecter (DEC-028) : un même numéro peut porter un compte
+ * Rôle du compte auquel se connecter (DEC-029) : un même numéro peut porter un compte
  * participant et un compte organisateur. ADMIN : comptes créés par script (NOISE-055).
  */
 export const loginRoleSchema = z.enum(['PARTICIPANT', 'ORGANIZER', 'ADMIN']);
@@ -73,7 +73,7 @@ export interface PublicUser {
   phone: string;
   /** null pour les comptes créés avant DEC-026 (e-mail à renseigner plus tard). */
   email: string | null;
-  /** Un compte, un rôle (DEC-028). */
+  /** Un compte, un rôle (DEC-029). */
   role: 'PARTICIPANT' | 'ORGANIZER' | 'ADMIN';
 }
 

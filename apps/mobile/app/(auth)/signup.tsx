@@ -25,7 +25,7 @@ const roleLabel: Record<AppRole, string> = {
   ORGANIZER: 'Organisateur',
 };
 
-/** Un même numéro peut avoir un compte de chaque rôle (DEC-028) : le message dit lequel existe. */
+/** Un même numéro peut avoir un compte de chaque rôle (DEC-029) : le message dit lequel existe. */
 const roleNoun: Record<AppRole, string> = {
   PARTICIPANT: 'participant',
   ORGANIZER: 'organisateur',

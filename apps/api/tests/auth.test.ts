@@ -68,7 +68,7 @@ describe('inscription', () => {
     expect(res.body.error.code).toBe('CONFLICT');
   });
 
-  it('même numéro et même e-mail : un compte organisateur distinct est autorisé (DEC-028)', async () => {
+  it('même numéro et même e-mail : un compte organisateur distinct est autorisé (DEC-029)', async () => {
     const participant = await register();
     const organizer = await register({ ...aminata, role: 'ORGANIZER' });
     expect(organizer.status).toBe(201);
@@ -143,7 +143,7 @@ describe('inscription', () => {
 });
 
 describe('connexion', () => {
-  it('se connecte au compte du rôle demandé (DEC-028)', async () => {
+  it('se connecte au compte du rôle demandé (DEC-029)', async () => {
     const participant = (await register()).body.user;
     const organizer = (
       await register({ ...aminata, role: 'ORGANIZER', password: 'autremotdepasse' })
@@ -293,7 +293,7 @@ describe('/me', () => {
     expect((await request(app).get('/api/v1/me')).status).toBe(401);
   });
 
-  it('plus d’activation d’un second rôle : PATCH /me/roles n’existe plus (DEC-028)', async () => {
+  it('plus d’activation d’un second rôle : PATCH /me/roles n’existe plus (DEC-029)', async () => {
     const session = (await register()).body;
     const res = await request(app)
       .patch('/api/v1/me/roles')

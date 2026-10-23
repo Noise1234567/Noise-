@@ -12,7 +12,7 @@ type Status = 'loading' | 'signedOut' | 'signedIn';
 type SessionState = {
   status: Status;
   user: PublicUser | null;
-  /** Rôle du compte connecté : un compte, un rôle (DEC-028). Il décide de la vue affichée. */
+  /** Rôle du compte connecté : un compte, un rôle (DEC-029). Il décide de la vue affichée. */
   role: AppRole | null;
   /** Vrai si la session a été fermée par le serveur (écran 4d) : message sur la connexion. */
   sessionExpired: boolean;

@@ -35,7 +35,7 @@ export class AuthService {
     const passwordHash = await hashPassword(input.password);
     // Vérification explicite pour dire quel champ pose problème ; la contrainte d'unicité de la
     // base reste le garde-fou si deux inscriptions identiques arrivent en même temps.
-    // Unicité par rôle (DEC-028) : le même numéro ou e-mail peut avoir un compte de l'autre rôle.
+    // Unicité par rôle (DEC-029) : le même numéro ou e-mail peut avoir un compte de l'autre rôle.
     const emailTaken = await this.prisma.user.findUnique({
       where: { email_role: { email: input.email, role: input.role } },
     });

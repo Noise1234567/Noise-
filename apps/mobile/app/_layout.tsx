@@ -13,7 +13,7 @@ void SplashScreen.preventAutoHideAsync();
 
 /**
  * Pile racine. Trois zones, une seule visible à la fois selon la session :
- * authentification, vue Participant, vue Organisateur. Un compte n'a qu'un rôle (DEC-028) : la
+ * authentification, vue Participant, vue Organisateur. Un compte n'a qu'un rôle (DEC-029) : la
  * vue est celle du compte connecté.
  */
 export default function RootLayout() {

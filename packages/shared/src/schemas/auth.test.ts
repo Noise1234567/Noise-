@@ -48,7 +48,7 @@ describe('loginSchema', () => {
     });
   });
 
-  it('exige le rôle du compte (DEC-028)', () => {
+  it('exige le rôle du compte (DEC-029)', () => {
     expect(loginSchema.safeParse({ phone: '97454547', password: 'x' }).success).toBe(false);
     expect(
       loginSchema.safeParse({ phone: '97454547', password: 'x', role: 'SUPER_ADMIN' }).success,

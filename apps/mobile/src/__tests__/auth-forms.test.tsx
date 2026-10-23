@@ -152,7 +152,7 @@ describe('connexion', () => {
     expect(useSession.getState().role).toBe('ORGANIZER');
   });
 
-  it('le profil se change sur l’écran de connexion (DEC-028)', async () => {
+  it('le profil se change sur l’écran de connexion (DEC-029)', async () => {
     mock
       .onPost('/auth/login')
       .reply(200, { ...authSession, user: { ...authSession.user, role: 'PARTICIPANT' } });

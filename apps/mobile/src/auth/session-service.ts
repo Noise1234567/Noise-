@@ -18,7 +18,7 @@ export class NoMobileAccessError extends Error {
 
 /**
  * Enregistre la session reçue : jetons d'abord (stockage), puis état de l'app. La vue est celle
- * du rôle du compte (DEC-028).
+ * du rôle du compte (DEC-029).
  */
 export async function completeSignIn(session: AuthSession): Promise<void> {
   const { role } = session.user;

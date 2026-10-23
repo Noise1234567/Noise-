@@ -86,7 +86,7 @@ describe('accueils vides', () => {
     expect(screen.getByText('Aucun événement créé')).toBeTruthy();
   });
 
-  it('plus de sélecteur de rôle dans les vues (un compte, un rôle : DEC-028)', async () => {
+  it('plus de sélecteur de rôle dans les vues (un compte, un rôle : DEC-029)', async () => {
     signInAs('PARTICIPANT');
     await render(<Home />);
     expect(screen.queryByRole('tab', { name: 'Organisateur' })).toBeNull();

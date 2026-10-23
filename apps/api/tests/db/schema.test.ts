@@ -25,7 +25,7 @@ describe('connexion', () => {
 });
 
 describe('unicité', () => {
-  it('un numéro de téléphone = un seul compte par rôle (DEC-028)', async () => {
+  it('un numéro de téléphone = un seul compte par rôle (DEC-029)', async () => {
     const user = await factories.user(prisma);
     await expect(
       prisma.user.create({
@@ -39,7 +39,7 @@ describe('unicité', () => {
     expect(organizer.id).not.toBe(user.id);
   });
 
-  it('une adresse e-mail = un seul compte par rôle (DEC-028)', async () => {
+  it('une adresse e-mail = un seul compte par rôle (DEC-029)', async () => {
     const data = { name: 'A', passwordHash: 'x', email: 'a@example.com' };
     await prisma.user.create({ data: { ...data, phone: '+2290100000101', role: 'PARTICIPANT' } });
     await expect(

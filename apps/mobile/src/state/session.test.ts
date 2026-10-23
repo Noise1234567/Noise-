@@ -16,7 +16,7 @@ describe('session', () => {
     expect(useSession.getState().pendingRole).toBe('ORGANIZER');
   });
 
-  it('connecte dans le rôle du compte (un compte, un rôle : DEC-028)', () => {
+  it('connecte dans le rôle du compte (un compte, un rôle : DEC-029)', () => {
     useSession.getState().setPendingRole('PARTICIPANT');
     useSession.getState().signIn('ORGANIZER');
     expect(useSession.getState()).toMatchObject({
