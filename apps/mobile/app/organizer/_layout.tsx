@@ -22,6 +22,11 @@ export default function OrganizerLayout() {
       <Tabs.Screen name="create-event" options={{ href: null, tabBarStyle: { display: 'none' } }} />
       {/* Détail d'un événement (NOISE-054) : hors de la barre d'onglets. */}
       <Tabs.Screen name="event/[id]" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      {/* Annulation d'un événement : plein écran (NOISE-029). */}
+      <Tabs.Screen
+        name="cancel-event/[eventId]"
+        options={{ href: null, tabBarStyle: { display: 'none' } }}
+      />
     </Tabs>
   );
 }

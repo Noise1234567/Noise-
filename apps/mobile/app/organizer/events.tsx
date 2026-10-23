@@ -19,6 +19,7 @@ export default function MyEvents() {
         refreshKey={refreshKey}
         onCreate={() => router.push('/organizer/create-event')}
         onOpen={(id) => router.push({ pathname: '/organizer/event/[id]', params: { id } })}
+        onCancel={(eventId) => router.push(`/organizer/cancel-event/${eventId}`)}
       />
     </Screen>
   );
