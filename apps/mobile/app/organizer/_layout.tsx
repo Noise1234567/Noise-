@@ -20,6 +20,8 @@ export default function OrganizerLayout() {
       <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
       {/* Assistant de création : plein écran, sans onglet ni barre. */}
       <Tabs.Screen name="create-event" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      {/* Détail d'un événement (NOISE-054) : hors de la barre d'onglets. */}
+      <Tabs.Screen name="event/[id]" options={{ href: null, tabBarStyle: { display: 'none' } }} />
       {/* Annulation d'un événement : plein écran (NOISE-029). */}
       <Tabs.Screen
         name="cancel-event/[eventId]"
