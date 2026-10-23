@@ -34,6 +34,8 @@ Un environnement « test » séparé en ligne n'est pas nécessaire : la CI couv
 | `PAYMENT_API_KEY`, `PAYMENT_WEBHOOK_SECRET`                                                             | vides (fake)            | clé `sk_sandbox_` / `sk_live_` vérifiée au démarrage | NOISE-017      |
 | `QR_SIGNING_SECRET` (32 caractères minimum ; obligatoire hors tests)                                    | valeur locale           | secret distinct                                      | NOISE-020      |
 | `SCANNER_JWT_SECRET` (32 caractères minimum, différent de `JWT_ACCESS_SECRET` ; obligatoire hors tests) | valeur locale           | secret distinct                                      | NOISE-024      |
+| `SMTP_USER`, `SMTP_PASSWORD`, `TEAM_EMAIL` (les trois ensemble, ou aucun)                               | vides (envoi simulé)    | Gmail de l'équipe, mot de passe d'application        | NOISE-059      |
+| `SMTP_HOST`, `SMTP_PORT`                                                                                | smtp.gmail.com, 465     | idem (valeurs par défaut)                            | NOISE-059      |
 | `SENTRY_DSN`                                                                                            | vide                    | projet Sentry                                        | NOISE-030      |
 
 Chaque nouvelle variable est ajoutée à la fois dans `apps/api/src/config/env.ts`, `apps/api/.env.example` et ce tableau.
