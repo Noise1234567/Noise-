@@ -5,7 +5,7 @@ import {
   type OrderDto,
   type TicketTypeDto,
 } from '@noise/shared';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { OrdersApi } from '../../../api/orders';
@@ -18,7 +18,12 @@ import { Text } from '../../../components/Text';
 import { TextField } from '../../../components/TextField';
 import { colors, minTouchTarget, radii, spacing } from '../../../theme';
 import { formatEventDate, formatFcfa, purchasableTypes, ticketPriceLabel } from '../format';
-import { OPERATOR_LABELS, maxQuantity, validatePayerPhone } from './checkout-rules';
+import {
+  OPERATOR_LABELS,
+  createIntentKeys,
+  maxQuantity,
+  validatePayerPhone,
+} from './checkout-rules';
 import { usePaymentPolling, useSecondsLeft } from './usePaymentPolling';
 
 type Step = 'select' | 'pay' | 'waiting' | 'paid' | 'failed' | 'expired';
@@ -53,6 +58,11 @@ export function Checkout({ event, api, defaultPhone, onSeeTickets, onClose }: Pr
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Une clé par intention (commande, puis paiement) : un nouvel essai après une coupure ne
+  // crée rien en double (NOISE-053).
+  const orderKeys = useRef(createIntentKeys()).current;
+  const paymentKeys = useRef(createIntentKeys()).current;
+
   const selected = types.find((t) => t.id === typeId) ?? null;
   const secondsLeft = useSecondsLeft(
     step === 'pay' || step === 'waiting' ? (order?.expiresAt ?? null) : null,
@@ -76,7 +86,9 @@ export function Checkout({ event, api, defaultPhone, onSeeTickets, onClose }: Pr
     setError(null);
     setBusy(true);
     try {
-      const created = await api.create({ ticketTypeId: selected.id, quantity });
+      const body = { ticketTypeId: selected.id, quantity };
+      const created = await api.create(body, orderKeys.keyFor(body));
+      orderKeys.settle();
       setOrder(created);
       setStep(created.status === 'PAID' ? 'paid' : 'pay');
     } catch (e) {
@@ -98,7 +110,9 @@ export function Checkout({ event, api, defaultPhone, onSeeTickets, onClose }: Pr
     setError(null);
     setBusy(true);
     try {
-      await api.initiatePayment({ orderId: order.id, operator, phone: toApiPhone(phone) });
+      const body = { orderId: order.id, operator, phone: toApiPhone(phone) };
+      await api.initiatePayment(body, paymentKeys.keyFor(body));
+      paymentKeys.settle();
       setStep('waiting');
     } catch (e) {
       const apiError = toApiError(e);
