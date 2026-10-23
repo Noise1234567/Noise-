@@ -186,6 +186,32 @@ describe('POST /api/v1/events/:id/cancel', () => {
     expect(notify.mock.calls[0]?.[1].sort()).toEqual([aminata.id, koffi.id].sort());
   });
 
+  it('un billet déjà scanné reste USED, avec son heure d’entrée, et l’annulation réussit', async () => {
+    const { event, auth } = await scenario();
+    const entered = await prisma.ticket.findFirstOrThrow({ where: { eventId: event.id } });
+    const enteredAt = new Date(Date.now() - 600_000);
+    await prisma.ticket.update({
+      where: { id: entered.id },
+      data: { status: 'USED', usedAt: enteredAt },
+    });
+    // L'événement a déjà commencé : l'annulation reste possible tant qu'il n'est pas terminé.
+    await prisma.event.update({
+      where: { id: event.id },
+      data: { startsAt: new Date(Date.now() - 3_600_000) },
+    });
+
+    const res = await cancel(auth, event.id);
+
+    expect(res.status).toBe(200);
+    expect(res.body.cancellation).toMatchObject({ ticketsCancelled: 3, ordersCancelled: 2 });
+    const kept = await prisma.ticket.findUniqueOrThrow({ where: { id: entered.id } });
+    expect(kept.status).toBe('USED');
+    expect(kept.usedAt?.getTime()).toBe(enteredAt.getTime());
+    expect(await prisma.ticket.count({ where: { eventId: event.id, status: 'CANCELLED' } })).toBe(
+      3,
+    );
+  });
+
   it('plus aucune commande possible ensuite', async () => {
     const { event, standard, auth } = await scenario();
     await cancel(auth, event.id);

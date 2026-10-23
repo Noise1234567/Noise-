@@ -16,6 +16,7 @@ export default function MyEvents() {
         api={eventsApi}
         refreshKey={refreshKey}
         onCreate={() => router.push('/organizer/create-event')}
+        onCancel={(eventId) => router.push(`/organizer/cancel-event/${eventId}`)}
       />
     </Screen>
   );
