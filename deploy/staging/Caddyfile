@@ -1,0 +1,6 @@
+# Caddy obtient et renouvelle tout seul le certificat HTTPS (Let's Encrypt) pour STAGING_HOST,
+# par exemple 77-42-37-145.sslip.io (nom qui pointe sur l'adresse IP du serveur).
+{$STAGING_HOST} {
+	encode zstd gzip
+	reverse_proxy api:3000
+}
