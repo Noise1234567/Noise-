@@ -54,6 +54,14 @@ Production (NOISE-035) :
 
 Aucun déploiement production le vendredi soir ni la veille d'un événement pilote.
 
+## 4. Compte administrateur (NOISE-055)
+
+L'inscription publique ne crée jamais de compte ADMIN. Le premier compte (et les suivants) se crée à la main, avec le script `src/scripts/create-admin.ts`, une fois par environnement :
+
+- en local : `ADMIN_NAME=… ADMIN_PHONE=… ADMIN_EMAIL=… ADMIN_PASSWORD=… pnpm --filter @noise/api admin:create:dev` (lit `DATABASE_URL` dans `apps/api/.env`) ;
+- en staging ou en production : depuis le service API sur Railway (après un build), `pnpm --filter @noise/api admin:create` avec les mêmes variables passées pour cette seule commande.
+
+Règles : mot de passe de 12 caractères minimum ; les variables `ADMIN_*` ne sont jamais enregistrées dans un fichier versionné ni laissées dans les variables du service ; le script refuse un numéro ou un e-mail déjà utilisé et n'affiche que le numéro masqué. Qui crée un compte admin le note dans le journal de `progress.md` (date, environnement, personne), sans aucun secret.
 ## 4. Mettre en place le staging (une seule fois)
 
 Serveur : Hetzner Cloud `cax11` (ARM, 2 vCPU, 4 Go de RAM, 40 Go), Ubuntu, Helsinki, adresse `77.42.37.145`. Il est réservé à Noise : il n'héberge aucune autre application (DEC-028). Sans nom de domaine, le nom public est `77-42-37-145.sslip.io`, qui pointe sur l'adresse IP ; Caddy y obtient tout seul un certificat HTTPS.
