@@ -9,6 +9,7 @@ import { Banner } from '../../../src/components/Banner';
 import { Button } from '../../../src/components/Button';
 import { Text } from '../../../src/components/Text';
 import { POSTER_RATIO } from '../../../src/features/participant/EventCard';
+import { OrganizerContact } from '../../../src/features/participant/OrganizerContact';
 import { TicketRow } from '../../../src/features/participant/TicketRow';
 import { eventsApi } from '../../../src/features/participant/events-api';
 import {
@@ -162,6 +163,12 @@ export default function EventDetail() {
               </Text>
             </Pressable>
           ) : null}
+
+          <OrganizerContact
+            organizerName={event.organizerName}
+            eventTitle={event.title}
+            contact={event.organizerContact}
+          />
 
           <Text variant="section" style={styles.sectionTitle}>
             Billets

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { EventStatus } from '../domain.js';
+import type { OrganizerContactDto } from './organizer-profile.js';
 
 /**
  * Contrats des routes /api/v1/events (docs/api.md, NOISE-011). Partagés avec le mobile :
@@ -184,6 +185,8 @@ export interface EventDto {
   organizerId: string;
   /** Nom de l'organisateur (public) : « par <organisateur> » sur le détail. */
   organizerName: string;
+  /** WhatsApp et réseaux de l'organisateur (NOISE-061), null quand il ne les a pas renseignés. */
+  organizerContact: OrganizerContactDto;
   title: string;
   description: string;
   styles: EventStyle[];

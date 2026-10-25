@@ -14,3 +14,4 @@ export * from './schemas/tickets.js';
 export * from './schemas/scanner-links.js';
 export * from './schemas/cancellation.js';
 export * from './schemas/stats.js';
+export * from './schemas/organizer-profile.js';

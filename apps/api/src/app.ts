@@ -46,6 +46,8 @@ import {
   type ImageStorage,
 } from './modules/uploads/image-storage.js';
 import { createIdentityRouter } from './modules/identity/identity.routes.js';
+import { createOrganizerProfileRouter } from './modules/organizer-profile/organizer-profile.routes.js';
+import { OrganizerProfileService } from './modules/organizer-profile/organizer-profile.service.js';
 import { IdentityMaintenance } from './modules/identity/identity-maintenance.js';
 import { IdentityService } from './modules/identity/identity.service.js';
 import {
@@ -149,6 +151,10 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
         new IdentityService(deps.prisma, identityStorage),
         env.JWT_ACCESS_SECRET,
       ),
+    );
+    app.use(
+      '/api/v1/me/organizer-profile',
+      createOrganizerProfileRouter(new OrganizerProfileService(deps.prisma), env.JWT_ACCESS_SECRET),
     );
     app.use('/api/v1/me', createMeRouter(auth, env.JWT_ACCESS_SECRET));
     app.use(

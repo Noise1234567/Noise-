@@ -9,6 +9,7 @@ function event(id: string, values: Partial<EventDto>): EventDto {
     id,
     organizerId: 'org',
     organizerName: 'Awa Dossou',
+    organizerContact: { whatsapp: null, instagram: null, facebook: null, tiktok: null },
     title: id,
     description: '',
     styles: ['Rap'],

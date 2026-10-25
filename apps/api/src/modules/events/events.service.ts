@@ -17,6 +17,7 @@ import type { Event, Prisma, TicketType } from '../../generated/prisma/client.js
 import { HttpError } from '../../lib/http-error.js';
 import type { PrismaClient } from '../../lib/prisma.js';
 import type { AuthContext } from '../../middlewares/auth.js';
+import { toOrganizerContact } from '../organizer-profile/organizer-profile.service.js';
 
 /**
  * Règles des événements et des types de billets (NOISE-011, CDC 3.2). Ce service ne connaît
@@ -32,13 +33,26 @@ import type { AuthContext } from '../../middlewares/auth.js';
  * pour l'instant l'API calcule et expose le montant, sans bloquer la publication.
  */
 
-type EventWithTypes = Event & { ticketTypes: TicketType[]; organizer: { name: string } };
+type EventWithTypes = Event & {
+  ticketTypes: TicketType[];
+  organizer: {
+    name: string;
+    organizerProfile: Parameters<typeof toOrganizerContact>[0];
+  };
+};
 
 const ticketTypesOrder = [{ priceXof: 'asc' }, { name: 'asc' }] as const;
-/** Relations chargées avec chaque événement : ses billets et le nom (public) de l'organisateur. */
+/** Relations chargées avec chaque événement : ses billets, le nom et les contacts publics de l'organisateur. */
 const eventInclude = {
   ticketTypes: { orderBy: [...ticketTypesOrder] },
-  organizer: { select: { name: true } },
+  organizer: {
+    select: {
+      name: true,
+      organizerProfile: {
+        select: { whatsappPhone: true, instagramUrl: true, facebookUrl: true, tiktokUrl: true },
+      },
+    },
+  },
 } satisfies Prisma.EventInclude;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -375,6 +389,7 @@ export class EventsService {
       id: event.id,
       organizerId: event.organizerId,
       organizerName: event.organizer.name,
+      organizerContact: toOrganizerContact(event.organizer.organizerProfile),
       title: event.title,
       description: event.description,
       styles: event.styles as EventStyle[],

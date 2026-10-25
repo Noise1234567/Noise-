@@ -88,6 +88,7 @@ Base : CDC section 7, complétée par les décisions.
 | POST      | `/scanner/validate`         | Scanner JWT               | NOISE-025            |
 | POST      | `/me/push-token`            | Auth                      | NOISE-028            |
 | GET, POST | `/me/identity`              | Organisateur              | NOISE-048            |
+| GET, PUT  | `/me/organizer-profile`     | Organisateur              | NOISE-061            |
 | *         | `/admin/*`                  | Admin                     | NOISE-037, NOISE-039 |
 
 Écart avec le CDC : un seul endpoint webhook (`/payments/webhook`) car l'agrégateur envoie MTN et Moov au même endroit (DEC-005).
@@ -159,6 +160,17 @@ Refus avec avertissement : l'organisateur voit le motif et dispose de 72 heures 
 
 Conservation : la pièce est stockée en privé chez Cloudinary (type `authenticated`, aucune URL publique). Une pièce refusée est supprimée tout de suite ; une pièce validée est supprimée 12 mois après la validation (le statut reste `VERIFIED`).
 
+### Profil public de l'organisateur (NOISE-061)
+
+Réservé au rôle `ORGANIZER`. Contacts facultatifs, affichés aux participants sur la page de ses événements (`organizerContact`, section 4) : rien n'est public tant qu'il ne les renseigne pas.
+
+| Endpoint                           | Corps et réponse                                                                                                                                                                                                                                                                                                          | Erreurs                                |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| `GET /api/v1/me/organizer-profile` | 200 `{ profile: { whatsapp, instagram, facebook, tiktok } }` (null si non renseigné)                                                                                                                                                                                                                                      | 401 ; 403                              |
+| `PUT /api/v1/me/organizer-profile` | Remplace tout le profil : `{ whatsapp?, instagram?, facebook?, tiktok? }`, absent, vide ou null = effacé → 200, même réponse. WhatsApp : numéro béninois, enregistré en E.164. Liens : lien du réseau (sous-domaines compris), lien sans `https://` ou nom d'utilisateur seul (`@kofi.events`), enregistrés en `https://` | 400 avec le champ en cause ; 401 ; 403 |
+
+Le mobile ouvre WhatsApp par `https://wa.me/<numéro>` avec un message prérempli, et les réseaux par leur lien.
+
 ### Paiement et suivi de commande (NOISE-019)
 
 | Endpoint                         | Accès                    | Corps / réponse                                                                    | Erreurs                                                                                                                                                                                   |
@@ -208,7 +220,7 @@ Chaque type de billet renvoie `available` = quantité totale − billets vendus 
 
 « Presque complet » (NOISE-014) est calculé par l'API pour que tous les clients affichent la même chose. `lowStock` (par type de billet) vaut `true` quand il reste 20 % des places ou moins (`LOW_STOCK_RATIO` dans `@noise/shared`), arrondi vers le bas, sans être épuisé : sur 100 billets, 20 restants = vrai, 21 = faux, 0 = faux (c'est « Complet »). `almostFull` (par événement) applique la même règle au total des types encore en vente (ceux dont `onSale` est vrai) ; faux sans type de billet ou quand tout est vendu.
 
-`organizerName` est le nom du compte organisateur, affiché « par <organisateur> » sur le détail. Aucune autre donnée de l'organisateur n'est exposée (ni téléphone, ni e-mail).
+`organizerName` est le nom du compte organisateur, affiché « par <organisateur> » sur le détail. `organizerContact` (`{ whatsapp, instagram, facebook, tiktok }`, chaque valeur nulle si non renseignée) porte les contacts que l'organisateur a choisi de rendre publics (NOISE-061) ; le numéro du compte et l'e-mail ne sont jamais exposés.
 
 Styles : un événement porte `styles`, de 1 à 5 valeurs choisies par l'organisateur dans la liste fermée `EVENT_STYLES` : Afrobeat, Amapiano, Rap, Électro, Concert, Soirée, Gospel, Zouk, Coupé-décalé, Dancehall, Jazz, R&B, Festival, Autre. Pas de doublon. Ce champ remplace l'ancien `genre` (texte libre) à la création et à la modification ; la migration reporte les anciens genres connus et met `Autre` pour les autres.
 

@@ -37,6 +37,7 @@ const event = (over: Partial<EventDto> = {}): EventDto =>
     id: 'e1',
     organizerId: 'o1',
     organizerName: 'Club Cadjehoun',
+    organizerContact: { whatsapp: null, instagram: null, facebook: null, tiktok: null },
     title: 'Cadjehoun Nights #12',
     description: 'Une soirée afrobeat.',
     styles: ['Afrobeat', 'Soirée'],
@@ -153,5 +154,37 @@ describe('détail événement (écran 7)', () => {
     });
     await fireEvent.press(screen.getByRole('link', { name: 'Itinéraire' }));
     expect(open).toHaveBeenCalledWith(expect.stringContaining('Le%20Toit'));
+  });
+});
+
+describe('contacter l’organisateur (NOISE-061)', () => {
+  it('sans contact renseigné : pas de bloc Organisateur', async () => {
+    get.mockResolvedValue(event());
+    await render(<EventDetail />);
+    await screen.findByText('Cadjehoun Nights #12');
+    expect(screen.queryByText('Contacter l’organisateur')).toBeNull();
+    expect(screen.queryByText('Organisateur')).toBeNull();
+  });
+
+  it('WhatsApp avec message prérempli et réseaux renseignés seulement', async () => {
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    get.mockResolvedValue(
+      event({
+        organizerContact: {
+          whatsapp: '+2290197454547',
+          instagram: 'https://www.instagram.com/club.cadjehoun',
+          facebook: null,
+          tiktok: null,
+        },
+      }),
+    );
+    await render(<EventDetail />);
+    await fireEvent.press(await screen.findByRole('button', { name: 'Contacter l’organisateur' }));
+    expect(open).toHaveBeenCalledWith(
+      expect.stringMatching(/^https:\/\/wa\.me\/2290197454547\?text=.*Cadjehoun%20Nights/),
+    );
+    await fireEvent.press(screen.getByRole('link', { name: 'Instagram de l’organisateur' }));
+    expect(open).toHaveBeenCalledWith('https://www.instagram.com/club.cadjehoun');
+    expect(screen.queryByRole('link', { name: 'Facebook de l’organisateur' })).toBeNull();
   });
 });

@@ -18,6 +18,7 @@ const TABLES = [
   'event_cancellations',
   'idempotency_keys',
   'identity_verifications',
+  'organizer_profiles',
   'admin_audit_logs',
   'scan_logs',
   'scanner_links',

@@ -28,6 +28,7 @@ function event(ticketTypes: TicketTypeDto[] = [type()]): EventDto {
     id: 'evt',
     organizerId: 'org',
     organizerName: 'Awa Dossou',
+    organizerContact: { whatsapp: null, instagram: null, facebook: null, tiktok: null },
     title: 'Afro Night',
     description: '',
     styles: ['Afrobeat'],
