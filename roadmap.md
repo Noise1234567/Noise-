@@ -913,7 +913,6 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
   - Intégration : code faux, expiré, rejoué ; envoi limité ; virement refusé avant confirmation
   - Fournisseurs SMS et e-mail simulés (fake), jamais appelés en test
 
-
 #### NOISE-054 — Mobile organisateur : détail d'un événement et liens scanner
 
 - Objectif : Depuis « Mes événements », ouvrir un événement pour le publier, suivre ses ventes et donner un lien scanner à chaque membre du staff.
@@ -932,6 +931,7 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
   - [ ] Bouton d'annulation (partie mobile de NOISE-029)
 - Tests :
   - Tests UI : publication, refus pour identité, création et partage d'un lien, révocation confirmée, erreur réseau
+
 ### Manques identifiés le 2026-10-21 (ordre Pareto)
 
 Éléments indispensables qui n'étaient couverts par aucune tâche. Contact de l'équipe Noise : noise.bj@gmail.com (pas de WhatsApp). Ils sont classés par rapport valeur / effort : les premiers apportent beaucoup pour peu de travail. Toutes confiées à Yannis le 2026-10-21, Orias finissant ses propres tâches ; Orias relit. Avant les organisateurs pilotes : NOISE-055 à NOISE-066 ; avant Google Play : NOISE-067 et NOISE-068.
