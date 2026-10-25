@@ -913,6 +913,25 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
   - Intégration : code faux, expiré, rejoué ; envoi limité ; virement refusé avant confirmation
   - Fournisseurs SMS et e-mail simulés (fake), jamais appelés en test
 
+#### NOISE-054 — Mobile organisateur : détail d'un événement et liens scanner
+
+- Objectif : Depuis « Mes événements », ouvrir un événement pour le publier, suivre ses ventes et donner un lien scanner à chaque membre du staff.
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : S4 · Type : Feature · Domaine : Mobile · Priorité : P0 · Estimation : 6 h
+- Dépendances : NOISE-013, NOISE-024
+- Statut : En revue
+- Fichiers concernés : apps/mobile/app/organizer/event/[id].tsx, apps/mobile/src/features/organizer/event-detail/*
+- Critères d'acceptation :
+  - [x] Les lignes de « Mes événements » ouvrent le détail
+  - [x] Publier un brouillon ; message clair si l'identité n'est pas envoyée (403 IDENTITY_REQUIRED)
+  - [x] Ventes par type de billet et montant net après la commission de 10 %
+  - [x] Créer un lien scanner (nom du staff, durée) et le partager aussitôt par le partage du téléphone
+  - [x] Liste des liens (actif, expiré, révoqué) et révocation avec confirmation
+  - [ ] Modifier les infos, ajouter un type de billet, changer l'affiche (tâche suivante)
+  - [ ] Bouton d'annulation (partie mobile de NOISE-029)
+- Tests :
+  - Tests UI : publication, refus pour identité, création et partage d'un lien, révocation confirmée, erreur réseau
+
 ### Manques identifiés le 2026-10-21 (ordre Pareto)
 
 Éléments indispensables qui n'étaient couverts par aucune tâche. Contact de l'équipe Noise : noise.bj@gmail.com (pas de WhatsApp). Ils sont classés par rapport valeur / effort : les premiers apportent beaucoup pour peu de travail. Toutes confiées à Yannis le 2026-10-21, Orias finissant ses propres tâches ; Orias relit. Avant les organisateurs pilotes : NOISE-055 à NOISE-066 ; avant Google Play : NOISE-067 et NOISE-068.
