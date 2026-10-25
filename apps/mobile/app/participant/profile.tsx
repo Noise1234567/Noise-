@@ -1,13 +1,14 @@
-import { Button } from '../../src/components/Button';
-import { Placeholder } from '../../src/components/Placeholder';
 import { logout } from '../../src/auth/session-service';
+import { Screen } from '../../src/components/Screen';
+import { ParticipantProfile } from '../../src/features/participant/profile/ParticipantProfile';
+import { useSession } from '../../src/state/session';
 
-/** Écran 16 : Profil Participant. Déconnexion avec confirmation et activation du rôle : prochaines PR. */
+/** Écran 16 : Profil Participant (NOISE-062). */
 export default function Profile() {
-  const onLogout = () => void logout();
+  const user = useSession((s) => s.user);
   return (
-    <Placeholder title="Profil" note="Informations du compte, activation du rôle Organisateur.">
-      <Button variant="secondary" label="Se déconnecter" onPress={onLogout} />
-    </Placeholder>
+    <Screen>
+      <ParticipantProfile user={user} onLogout={() => void logout()} />
+    </Screen>
   );
 }

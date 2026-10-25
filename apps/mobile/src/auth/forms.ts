@@ -19,6 +19,10 @@ export function formatLocalPhone(input: string): string {
   return digits.replace(/(\d{2})(?=\d)/g, '$1 ');
 }
 
+/** Numéro enregistré (+2290197454547) affiché au format local : « 01 97 45 45 47 ». */
+export const displayPhone = (e164: string | null | undefined): string =>
+  e164 ? formatLocalPhone(e164.replace(/^\+229/, '')) : '';
+
 /** Valeur envoyée à l'API : l'indicatif est fixe, l'API normalise en E.164. */
 export const toApiPhone = (local: string): string => `+229${local.replace(/\D/g, '')}`;
 
