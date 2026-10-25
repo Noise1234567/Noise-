@@ -54,14 +54,6 @@ Production (NOISE-035) :
 
 Aucun déploiement production le vendredi soir ni la veille d'un événement pilote.
 
-## 4. Compte administrateur (NOISE-055)
-
-L'inscription publique ne crée jamais de compte ADMIN. Le premier compte (et les suivants) se crée à la main, avec le script `src/scripts/create-admin.ts`, une fois par environnement :
-
-- en local : `ADMIN_NAME=… ADMIN_PHONE=… ADMIN_EMAIL=… ADMIN_PASSWORD=… pnpm --filter @noise/api admin:create:dev` (lit `DATABASE_URL` dans `apps/api/.env`) ;
-- en staging ou en production : depuis le service API sur Railway (après un build), `pnpm --filter @noise/api admin:create` avec les mêmes variables passées pour cette seule commande.
-
-Règles : mot de passe de 12 caractères minimum ; les variables `ADMIN_*` ne sont jamais enregistrées dans un fichier versionné ni laissées dans les variables du service ; le script refuse un numéro ou un e-mail déjà utilisé et n'affiche que le numéro masqué. Qui crée un compte admin le note dans le journal de `progress.md` (date, environnement, personne), sans aucun secret.
 ## 4. Mettre en place le staging (une seule fois)
 
 Serveur : Hetzner Cloud `cax11` (ARM, 2 vCPU, 4 Go de RAM, 40 Go), Ubuntu, Helsinki, adresse `77.42.37.145`. Il est réservé à Noise : il n'héberge aucune autre application (DEC-028). Sans nom de domaine, le nom public est `77-42-37-145.sslip.io`, qui pointe sur l'adresse IP ; Caddy y obtient tout seul un certificat HTTPS.
@@ -159,3 +151,13 @@ Les déploiements suivants sont automatiques : chaque fusion sur `main` dont la 
 
 - Changer un secret : modifier `/opt/noise-staging/.env`, puis relancer le workflow à la main (Run workflow) ou, sur le serveur, `docker compose up -d`.
 - Retour en arrière : annuler la fusion fautive sur `main` (revert) ; le workflow redéploie la version précédente.
+
+## 5. Compte administrateur (NOISE-055)
+
+L'inscription publique ne crée jamais de compte ADMIN. Le premier compte (et les suivants) se crée à la main, avec le script `src/scripts/create-admin.ts`, une fois par environnement :
+
+- en local : `ADMIN_NAME=… ADMIN_PHONE=… ADMIN_EMAIL=… ADMIN_PASSWORD=… pnpm --filter @noise/api admin:create:dev` (lit `DATABASE_URL` dans `apps/api/.env`) ;
+- en staging (serveur Hetzner, DEC-028), depuis `/opt/noise-staging` : `docker compose -f deploy/staging/docker-compose.yml exec -e ADMIN_NAME=… -e ADMIN_PHONE=… -e ADMIN_EMAIL=… -e ADMIN_PASSWORD=… api node dist/scripts/create-admin.js` (le dossier de travail du conteneur est déjà `apps/api`) ;
+- en production : même principe sur l'hébergement retenu (NOISE-035), avec `pnpm --filter @noise/api admin:create` après un build.
+
+Règles : mot de passe de 12 caractères minimum ; les variables `ADMIN_*` ne sont jamais enregistrées dans un fichier versionné ni laissées dans les variables du service ; le script refuse un numéro ou un e-mail déjà utilisé et n'affiche que le numéro masqué. Une commande tapée reste dans l'historique du shell : la faire précéder d'une espace (bash avec `HISTCONTROL=ignorespace`, réglage par défaut d'Ubuntu) ou effacer la ligne de l'historique après coup. Une saisie masquée du mot de passe dans le script viendra dans une PR suivante. Qui crée un compte admin le note dans le journal de `progress.md` (date, environnement, personne), sans aucun secret.
