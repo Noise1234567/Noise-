@@ -913,6 +913,235 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
   - Intégration : code faux, expiré, rejoué ; envoi limité ; virement refusé avant confirmation
   - Fournisseurs SMS et e-mail simulés (fake), jamais appelés en test
 
+### Manques identifiés le 2026-10-21 (ordre Pareto)
+
+Éléments indispensables qui n'étaient couverts par aucune tâche. Contact de l'équipe Noise : noise.bj@gmail.com (pas de WhatsApp). Ils sont classés par rapport valeur / effort : les premiers apportent beaucoup pour peu de travail. Toutes confiées à Yannis le 2026-10-21, Orias finissant ses propres tâches ; Orias relit. Avant les organisateurs pilotes : NOISE-055 à NOISE-066 ; avant Google Play : NOISE-067 et NOISE-068.
+
+#### NOISE-055 — Création du premier compte administrateur
+
+- Objectif : Pouvoir créer un compte ADMIN en staging et en production, sans passer par l'inscription.
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : S5 · Type : Chore · Domaine : Backend · Priorité : P0 · Estimation : 1 h
+- Dépendances : NOISE-037
+- Statut : À faire
+- Fichiers concernés : apps/api/scripts/create-admin.ts, docs/environments.md
+- Critères d'acceptation :
+  - [ ] Script lancé à la main (`pnpm --filter @noise/api admin:create`) : nom, téléphone, mot de passe saisis ou passés en variables, jamais en clair dans Git
+  - [ ] Refus si le numéro existe déjà ; mot de passe haché (argon2id)
+  - [ ] Procédure documentée (qui peut le lancer, où)
+- Tests :
+  - Intégration : création, refus d'un doublon, rôle ADMIN effectif
+
+#### NOISE-056 — Déclarer l'index des styles dans le schéma Prisma
+
+- Objectif : Empêcher chaque nouvelle migration de supprimer l'index GIN `events_styles_idx` (déjà arrivé deux fois, NOISE-053 et NOISE-029).
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : S5 · Type : Dette technique · Domaine : Backend · Priorité : P1 · Estimation : 30 min
+- Dépendances : NOISE-014
+- Statut : À faire
+- Fichiers concernés : apps/api/prisma/schema.prisma
+- Critères d'acceptation :
+  - [ ] `@@index([styles], type: Gin)` dans le modèle Event, sans nouvelle migration effective
+  - [ ] `prisma migrate dev --create-only` ne propose plus de supprimer l'index
+- Tests :
+  - Vérification manuelle documentée dans la PR
+
+#### NOISE-057 — Contact du support dans l'app
+
+- Objectif : Un participant ou un organisateur en difficulté (débité sans billet, question) peut écrire à l'équipe Noise en un geste.
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : S5 · Type : Feature · Domaine : Mobile · Priorité : P0 · Estimation : 1 h
+- Dépendances : NOISE-021, NOISE-022
+- Statut : En revue
+- Fichiers concernés : apps/mobile/src/components/SupportButton.tsx, apps/mobile/src/components/support.ts
+- Critères d'acceptation :
+  - [x] Bouton « Contacter le support » : ouvre l'application mail vers noise.bj@gmail.com, dans les deux profils et sur les écrans « Paiement non abouti » et « Réservation expirée »
+  - [x] Sujet et message préremplis avec la référence utile (identifiant de commande), sans donnée sensible
+  - [x] Adresse en configuration publique (EXPO_PUBLIC_SUPPORT_EMAIL), l'adresse de l'équipe par défaut
+- Tests :
+  - Tests UI : lien mailto construit avec la référence de commande
+- Note : Noise n'a pas de WhatsApp. Le WhatsApp de l'organisateur, pour que les participants le contactent, est dans NOISE-061.
+
+#### NOISE-058 — Données de démo complètes dans le seed
+
+- Objectif : Tester et montrer l'app sans tout recréer : événements avec affiche et ventes, participant avec billets, compte admin de développement.
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : S5 · Type : Chore · Domaine : Backend · Priorité : P1 · Estimation : 1 h
+- Dépendances : NOISE-020, NOISE-055
+- Statut : À faire
+- Fichiers concernés : apps/api/prisma/seed.ts
+- Critères d'acceptation :
+  - [ ] Un événement publié avec billets vendus, un brouillon, un événement passé
+  - [ ] Un participant avec des billets valables (QR réels, QR_SIGNING_SECRET de l'environnement)
+  - [ ] Un compte admin de développement ; aucun de ces comptes en production
+- Tests :
+  - Seed rejouable sans erreur sur une base vide
+
+#### NOISE-059 — E-mails à l'équipe : soirée publiée et client à rembourser
+
+- Objectif : L'équipe Noise est prévenue par e-mail (noise.bj@gmail.com) quand une soirée est publiée, et quand un client a payé sans recevoir de billet.
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : S5 · Type : Feature · Domaine : Backend · Priorité : P0 · Estimation : 3 h
+- Dépendances : NOISE-011, NOISE-019 ; fournisseur d'envoi d'e-mails à décider (proposé : Gmail avec un mot de passe d'application, gratuit, sans nom de domaine ; il servira aussi à NOISE-052)
+- Statut : À faire
+- Fichiers concernés : apps/api/src/lib/mailer.ts, apps/api/src/modules/events/events.service.ts, apps/api/src/modules/payments/payments.service.ts, apps/api/src/config/env.ts
+- Critères d'acceptation :
+  - [ ] Soirée publiée : e-mail avec le titre, l'organisateur, la date, le lieu, la capacité et les prix
+  - [ ] Client à rembourser : e-mail pour un paiement reçu sur une commande expirée, un paiement en double ou un montant incohérent (commande, montant, heure ; numéro masqué)
+  - [ ] Envoi après la validation ; un échec d'envoi n'empêche jamais la publication ni le traitement du paiement, et il est journalisé
+  - [ ] Identifiants d'envoi uniquement dans .env et Railway ; en test, envoi simulé
+- Tests :
+  - Intégration avec un envoi simulé : un e-mail par publication, un par paiement à rembourser, aucun sur un webhook rejoué
+- Note : les notifications de vente pour l'organisateur (« Nouvelle vente », à chaque achat) sont des notifications de l'app : NOISE-063.
+
+#### NOISE-060 — Un compte par rôle (selon DEC-029)
+
+- Objectif : Séparer les comptes participant et organisateur, et retirer le sélecteur de rôle de l'app.
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : S5 · Type : Feature · Domaine : Full stack · Priorité : P1 · Estimation : 4 h
+- Dépendances : DEC-029 (option retenue, à confirmer par Orias), NOISE-015
+- Statut : À faire
+- Fichiers concernés : apps/api/prisma/schema.prisma, apps/api/src/modules/auth/*, apps/mobile/src/components/RoleHeader.tsx, apps/mobile/src/state/session.ts
+- Critères d'acceptation :
+  - [ ] Plus de sélecteur ni d'activation du second rôle ; PATCH /me/roles retiré ou réservé
+  - [ ] Inscription et connexion dans le rôle choisi à l'écran de bienvenue
+  - [ ] Même numéro autorisé pour un compte participant et un compte organisateur, jamais deux comptes du même rôle
+  - [ ] Comptes existants à deux rôles traités (migration documentée)
+- Tests :
+  - Intégration : inscription et connexion par rôle ; tests mobile de redirection mis à jour
+
+#### NOISE-061 — Profil organisateur : WhatsApp, réseaux sociaux, identité
+
+- Objectif : L'organisateur complète son profil (WhatsApp, réseaux sociaux) ; les participants le contactent depuis la page de l'événement ; il voit l'état de sa pièce d'identité.
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : S5 · Type : Feature · Domaine : Full stack · Priorité : P0 · Estimation : 5 h
+- Dépendances : NOISE-048 (écran d'envoi de la pièce, #40), NOISE-014
+- Statut : À faire
+- Fichiers concernés : apps/api/prisma/schema.prisma, apps/api/src/modules/auth/*, apps/mobile/app/organizer/profile.tsx, apps/mobile/app/participant/event/[id].tsx
+- Critères d'acceptation :
+  - [ ] Champs facultatifs : WhatsApp (numéro béninois validé), Instagram, Facebook, TikTok (liens validés)
+  - [ ] Écran Profil organisateur : nom, téléphone, e-mail, état de la pièce d'identité (avec accès à l'envoi), liens, déconnexion confirmée, support (NOISE-057)
+  - [ ] Détail d'un événement côté participant : « Contacter l'organisateur » (WhatsApp) et ses réseaux, seulement s'ils sont renseignés
+- Tests :
+  - Intégration : validation des liens et du numéro ; tests UI du profil et du contact
+
+#### NOISE-062 — Profil participant
+
+- Objectif : Remplacer l'écran vide par un vrai profil.
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : S5 · Type : Feature · Domaine : Mobile · Priorité : P1 · Estimation : 3 h
+- Dépendances : NOISE-008
+- Statut : À faire
+- Fichiers concernés : apps/mobile/app/participant/profile.tsx
+- Critères d'acceptation :
+  - [ ] Nom, téléphone, e-mail ; déconnexion avec confirmation (billets enregistrés effacés, NOISE-022)
+  - [ ] Contacter le support (NOISE-057) ; plus tard : changer le mot de passe (NOISE-068) et supprimer le compte (NOISE-067)
+- Tests :
+  - Tests UI : affichage, déconnexion confirmée
+
+#### NOISE-063 — Notification à l'organisateur à chaque vente
+
+- Objectif : Comme une nouvelle vente sur Shopify : l'organisateur reçoit une notification à chaque billet acheté, pour suivre ses ventes et revenir dans l'app.
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : S5 · Type : Feature · Domaine : Full stack · Priorité : P0 · Estimation : 3 h
+- Dépendances : NOISE-028 (infrastructure des notifications push), NOISE-019
+- Statut : À faire
+- Fichiers concernés : apps/api/src/modules/notifications/*, apps/api/src/modules/payments/payments.service.ts, apps/mobile (ouverture du détail de l'événement)
+- Critères d'acceptation :
+  - [ ] À chaque commande confirmée (payée ou gratuite) : « Nouvelle vente : 2 × VIP · 30 000 FCFA · Afro Night » au propriétaire de l'événement
+  - [ ] Toucher la notification ouvre le détail de l'événement (NOISE-054)
+  - [ ] Envoyée après la validation du paiement ; un échec d'envoi ne bloque jamais la vente
+  - [ ] Réglage pour la couper dans le profil organisateur
+- Tests :
+  - Intégration avec un envoi simulé : une notification par commande confirmée, aucune sur un paiement rejoué
+
+#### NOISE-064 — Mise à jour de l'application
+
+- Objectif : Les utilisateurs d'un APK installé par lien reçoivent les corrections.
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : S5 · Type : Feature · Domaine : Mobile · Priorité : P0 · Estimation : 3 h
+- Dépendances : NOISE-009
+- Statut : À faire
+- Fichiers concernés : apps/mobile/app.json, apps/mobile/eas.json, apps/api/src/app.ts, docs/android-release.md
+- Critères d'acceptation :
+  - [ ] Corrections JavaScript livrées à distance (EAS Update) sur le canal de l'environnement
+  - [ ] Version minimale exposée par l'API ; en dessous, écran « Mettez l'app à jour » avec le lien de téléchargement
+  - [ ] Procédure documentée (quand une mise à jour à distance suffit, quand un nouvel APK est nécessaire)
+- Tests :
+  - Tests UI : écran affiché sous la version minimale
+
+#### NOISE-065 — Interface d'administration
+
+- Objectif : Une interface web pour l'équipe Noise : statistiques, validation des pièces d'identité, suivi des paiements, alertes, annulations et remboursements, suspension. Remplace l'usage direct des routes d'administration (écart à DEC-020, décision à consigner).
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : S5 · Type : Feature · Domaine : Full stack · Priorité : P0 · Estimation : 2 à 3 jours
+- Dépendances : NOISE-037, NOISE-048, NOISE-055, NOISE-059 ; conception à présenter avant de commencer
+- Statut : À faire
+- Fichiers concernés : apps/admin (ou servie par l'API comme le scanner), apps/api/src/modules/admin/*
+- Critères d'acceptation :
+  - [ ] Connexion réservée au rôle ADMIN
+  - [ ] Statistiques : ventes, commissions, événements, organisateurs, taux d'échec des paiements
+  - [ ] Pièces d'identité : voir, valider, refuser avec motif
+  - [ ] Paiements et alertes ; annulations, remboursements à faire et montants dus par les organisateurs
+  - [ ] Suspendre ou réactiver un organisateur ou un événement ; chaque action journalisée
+- Tests :
+  - Intégration : accès refusé hors ADMIN ; E2E Playwright du parcours de validation d'une pièce
+
+#### NOISE-066 — Marquer un remboursement comme effectué
+
+- Objectif : Après une annulation, suivre les remboursements un par un pour n'en oublier aucun et n'en faire aucun deux fois.
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : S5 · Type : Feature · Domaine : Backend · Priorité : P1 · Estimation : 3 h
+- Dépendances : NOISE-029
+- Statut : À faire
+- Fichiers concernés : apps/api/prisma/schema.prisma, apps/api/src/modules/cancellation/*
+- Critères d'acceptation :
+  - [ ] Date de remboursement, administrateur et référence du transfert enregistrés par commande ; action journalisée
+  - [ ] Un remboursement déjà marqué ne peut pas l'être une seconde fois (409)
+  - [ ] Liste des remboursements : faits et restants ; utilisée par l'interface d'administration (NOISE-065)
+- Tests :
+  - Intégration : marquage, double marquage refusé, accès ADMIN seulement
+
+#### NOISE-067 — Supprimer son compte depuis l'app
+
+- Objectif : Exigence de Google Play pour toute app avec des comptes, et droit à l'effacement.
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : Post-MVP · Type : Feature · Domaine : Full stack · Priorité : P1 · Estimation : 4 h
+- Dépendances : NOISE-062, NOISE-043
+- Statut : À faire
+- Fichiers concernés : apps/api/src/modules/auth/_, apps/mobile/app/_/profile.tsx
+- Critères d'acceptation :
+  - [ ] Suppression confirmée par le mot de passe ; données personnelles effacées ou anonymisées
+  - [ ] Commandes et ventes conservées anonymisées (obligations comptables) ; refus si un événement à venir a des ventes
+- Tests :
+  - Intégration : anonymisation, refus avec événement en cours
+
+#### NOISE-068 — Changer son mot de passe
+
+- Objectif : Un utilisateur connecté peut changer son mot de passe (le mot de passe oublié reste NOISE-040).
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : Post-MVP · Type : Feature · Domaine : Full stack · Priorité : P2 · Estimation : 2 h
+- Dépendances : NOISE-007, NOISE-062
+- Statut : À faire
+- Fichiers concernés : apps/api/src/modules/auth/_, apps/mobile/app/_/profile.tsx
+- Critères d'acceptation :
+  - [ ] Ancien mot de passe exigé ; autres sessions révoquées après le changement
+- Tests :
+  - Intégration : ancien mot de passe faux refusé, sessions révoquées
+
+#### NOISE-069 — Purge planifiée des données expirées
+
+- Objectif : Supprimer régulièrement les clés d'idempotence expirées et les jetons de rafraîchissement périmés.
+- Responsable : Yannis · Reviewer : Orias
+- Sprint : Post-MVP · Type : Dette technique · Domaine : Backend · Priorité : P2 · Estimation : 1 h
+- Dépendances : NOISE-053
+- Statut : À faire
+- Fichiers concernés : apps/api/src/modules/orders/expiry-job.ts
+- Critères d'acceptation :
+  - [ ] Purge une fois par jour, sans bloquer le job d'expiration des commandes
+- Tests :
+  - Unitaires : seules les lignes expirées sont supprimées
+
 ### M5 — Google Play
 
 #### NOISE-038 — Google Play Console et test fermé
