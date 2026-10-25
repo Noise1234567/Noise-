@@ -15,6 +15,7 @@ import {
 } from '@noise/shared';
 import type { Event, Prisma, TicketType } from '../../generated/prisma/client.js';
 import { HttpError } from '../../lib/http-error.js';
+import { eventPublishedMail, type TeamNotifier } from '../../lib/team-mail.js';
 import type { PrismaClient } from '../../lib/prisma.js';
 import type { AuthContext } from '../../middlewares/auth.js';
 
@@ -49,8 +50,16 @@ const invalid = (path: string, message: string) =>
 const isUniqueViolation = (error: unknown) =>
   typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2002';
 
+/** Erreur Prisma « enregistrement introuvable » (mise à jour conditionnelle sans effet). */
+const isNotFound = (error: unknown) =>
+  typeof error === 'object' && error !== null && 'code' in error && error.code === 'P2025';
+
 export class EventsService {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(
+    private readonly prisma: PrismaClient,
+    /** E-mail à l'équipe à chaque publication (NOISE-059) ; aucun envoi par défaut. */
+    private readonly team?: TeamNotifier,
+  ) {}
 
   async list(auth: AuthContext, query: ListEventsQuery): Promise<EventListResponse> {
     const now = new Date();
@@ -195,21 +204,41 @@ export class EventsService {
       }
     }
 
-    const updated = await this.prisma.event.update({
-      where: { id },
-      data: {
-        title: input.title,
-        description: input.description,
-        styles: input.styles,
-        venue: input.venue,
-        city: input.city,
-        status: input.status,
-        capacity,
-        startsAt,
-        endsAt,
-      },
-      include: eventInclude,
-    });
+    const publishing = input.status === 'PUBLISHED' && event.status !== 'PUBLISHED';
+    let updated;
+    try {
+      updated = await this.prisma.event.update({
+        // Publication conditionnée au statut lu : deux publications simultanées n'en font qu'une
+        // (un seul e-mail à l'équipe).
+        where: publishing ? { id, status: event.status } : { id },
+        data: {
+          title: input.title,
+          description: input.description,
+          styles: input.styles,
+          venue: input.venue,
+          city: input.city,
+          status: input.status,
+          capacity,
+          startsAt,
+          endsAt,
+        },
+        include: { ...eventInclude, organizer: { select: { name: true, email: true } } },
+      });
+    } catch (error) {
+      if (publishing && isNotFound(error)) {
+        throw new HttpError(409, 'CONFLICT', 'Cet événement vient de changer de statut');
+      }
+      throw error;
+    }
+    if (publishing) {
+      this.team?.notify(
+        eventPublishedMail({
+          ...updated,
+          organizerName: updated.organizer.name,
+          organizerEmail: updated.organizer.email,
+        }),
+      );
+    }
     const reserved = await this.reservedByTicketType(updated.ticketTypes, now);
     return this.toDto(updated, reserved, auth.userId, now);
   }
