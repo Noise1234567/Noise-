@@ -22,6 +22,8 @@ import {
   type CancellationNotifier,
 } from './modules/cancellation/cancellation.service.js';
 import { createAuthRouter, createMeRouter } from './modules/auth/auth.routes.js';
+import { createEventStatsRouter } from './modules/stats/stats.routes.js';
+import { StatsService } from './modules/stats/stats.service.js';
 import { AuthService } from './modules/auth/auth.service.js';
 import { createPaymentProvider, type PaymentProvider } from './modules/payments/providers/index.js';
 import {
@@ -168,6 +170,11 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
     const cancellations = new CancellationService(deps.prisma, logger, deps.notifyCancellation);
     app.use('/api/v1/events', createEventCancellationRouter(cancellations, env.JWT_ACCESS_SECRET));
     app.use('/api/v1/admin', createAdminRefundsRouter(cancellations, env.JWT_ACCESS_SECRET));
+    // Statistiques de l'événement pour son organisateur (NOISE-027).
+    app.use(
+      '/api/v1/events',
+      createEventStatsRouter(new StatsService(deps.prisma), env.JWT_ACCESS_SECRET),
+    );
     if (payments) {
       app.use(
         '/api/v1/payments',

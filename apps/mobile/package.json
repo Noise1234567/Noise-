@@ -49,6 +49,7 @@
     "build:dev": "eas build --profile development --platform android",
     "build:preview": "eas build --profile preview --platform android",
     "build:production": "eas build --profile production --platform android",
+    "eas-build-post-install": "pnpm --filter @noise/shared build",
     "test:watch": "jest --watch"
   },
   "private": true,

@@ -46,7 +46,7 @@ import {
   type WhenWhereValues,
 } from './draft';
 import type { PickedPoster } from './poster';
-import { emptyProgress, submitEvent, type SubmitProgress } from './submit';
+import { describeSubmitError, emptyProgress, submitEvent, type SubmitProgress } from './submit';
 
 const STEPS = ['Infos', 'Date et lieu', 'Affiche', 'Capacité et billets', 'Récapitulatif'] as const;
 const STEP = { info: 0, whenWhere: 1, poster: 2, tickets: 3, summary: 4 } as const;
@@ -100,12 +100,7 @@ export function CreateEventWizard({ api, pickPoster, onClose }: Props) {
       setProgress(done);
       setStep(STEPS.length);
     } catch (e) {
-      const apiError = toApiError(e);
-      setError(
-        apiError.isNetwork
-          ? `${apiError.message} Ce qui a déjà été enregistré ne sera pas renvoyé.`
-          : apiError.message,
-      );
+      setError(describeSubmitError(toApiError(e)));
     } finally {
       setSending(null);
     }
