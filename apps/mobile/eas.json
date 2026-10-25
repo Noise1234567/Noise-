@@ -20,7 +20,8 @@
         "buildType": "apk"
       },
       "env": {
-        "APP_ENV": "staging"
+        "APP_ENV": "staging",
+        "EXPO_PUBLIC_API_URL": "https://77-42-37-145.sslip.io"
       }
     },
     "production": {
