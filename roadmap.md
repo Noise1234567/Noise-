@@ -818,13 +818,14 @@ Format de chaque tâche : objectif, responsable, reviewer, dépendances, critèr
 - Responsable : à attribuer · Reviewer : l'autre développeur
 - Sprint : S4 · Type : Feature · Domaine : Full stack · Priorité : P0 · Estimation : 8 h
 - Dépendances : NOISE-011, NOISE-037
-- Statut : API implémentée (en attente de revue) ; écran mobile à faire
+- Statut : API et écran mobile implémentés (en attente de revue) ; il reste le message `IDENTITY_REQUIRED` sur l'écran de création d'événement (NOISE-013)
 - Fichiers concernés : apps/api/prisma/_, apps/api/src/modules/events/_, apps/api/src/modules/admin/_, apps/mobile/src/features/organizer/_
 - Critères d'acceptation :
   - [x] Statut d'identité de l'organisateur : non soumis, en attente, vérifié, refusé (avec motif)
-  - [x] API d'envoi d'une photo de pièce d'identité ; stockage non public, consultable par les seuls administrateurs (écran mobile : PR suivante)
+  - [x] API d'envoi d'une photo de pièce d'identité ; stockage non public, consultable par les seuls administrateurs (écran mobile : carte de statut sur le tableau de bord et le profil, écran d'envoi de la photo)
   - [x] Validation ou refus par un administrateur (action journalisée), refus avec délai de 72 h ou immédiat
-  - [x] Création et publication d'événement refusées (403 IDENTITY_REQUIRED) tant que la pièce n'est pas envoyée (précision de DEC-018, 2026-10-16) ; message clair dans l'app (PR mobile)
+  - [x] Création et publication d'événement refusées (403 IDENTITY_REQUIRED) tant que la pièce n'est pas envoyée (précision de DEC-018, 2026-10-16)
+  - [ ] Message clair dans l'app quand la création est refusée (à brancher sur l'écran de création d'événement)
 - Tests :
   - Intégration : organisateur non vérifié → 403 à la création ; vérifié → 201 ; un non-administrateur ne peut ni voir les pièces ni valider
 

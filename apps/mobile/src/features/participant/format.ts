@@ -83,6 +83,12 @@ export function formatEventRange(startsAt: string, endsAt: string): string {
   return `${start} – ${DAYS_LONG[e.weekday]} ${e.day} ${MONTHS_LONG[e.month]} · ${end}`;
 }
 
+/** Date limite en heure du Bénin : « lundi 19 octobre à 14:00 ». */
+export function formatDeadline(iso: string): string {
+  const p = beninParts(iso);
+  return `${DAYS_LONG[p.weekday]?.toLowerCase()} ${p.day} ${MONTHS_LONG[p.month]} à ${pad(p.hours)}:${pad(p.minutes)}`;
+}
+
 /** Types réellement achetables : vente ouverte et au moins une place. */
 export const purchasableTypes = (types: TicketTypeDto[]) =>
   types.filter((type) => type.onSale && type.available > 0);
