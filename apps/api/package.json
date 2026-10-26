@@ -16,7 +16,8 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
-    "db:seed": "tsx --env-file-if-exists=.env prisma/seed.ts",
+    "db:seed": "tsx --env-file-if-exists=.env src/scripts/seed-demo.ts",
+    "seed:demo": "node dist/scripts/seed-demo.js",
     "admin:create": "node dist/scripts/create-admin.js",
     "admin:create:dev": "tsx --env-file-if-exists=.env src/scripts/create-admin.ts",
     "postinstall": "prisma generate"
