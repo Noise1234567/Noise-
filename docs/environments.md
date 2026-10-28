@@ -34,6 +34,8 @@ Un environnement « test » séparé en ligne n'est pas nécessaire : la CI couv
 | `PAYMENT_API_KEY`, `PAYMENT_WEBHOOK_SECRET`                                                             | vides (fake)            | clé `sk_sandbox_` / `sk_live_` vérifiée au démarrage | NOISE-017      |
 | `QR_SIGNING_SECRET` (32 caractères minimum ; obligatoire hors tests)                                    | valeur locale           | secret distinct                                      | NOISE-020      |
 | `SCANNER_JWT_SECRET` (32 caractères minimum, différent de `JWT_ACCESS_SECRET` ; obligatoire hors tests) | valeur locale           | secret distinct                                      | NOISE-024      |
+| `SMTP_USER`, `SMTP_PASSWORD`, `TEAM_EMAIL` (les trois ensemble, ou aucun)                               | vides (envoi simulé)    | Gmail de l'équipe, mot de passe d'application        | NOISE-059      |
+| `SMTP_HOST`, `SMTP_PORT`                                                                                | smtp.gmail.com, 465     | idem (valeurs par défaut)                            | NOISE-059      |
 | `SENTRY_DSN`                                                                                            | vide                    | projet Sentry                                        | NOISE-030      |
 
 Chaque nouvelle variable est ajoutée à la fois dans `apps/api/src/config/env.ts`, `apps/api/.env.example` et ce tableau.
@@ -141,7 +143,7 @@ Les déploiements suivants sont automatiques : chaque fusion sur `main` dont la 
 
 - Webhook FedaPay (sandbox) : `https://77-42-37-145.sslip.io/api/v1/payments/webhook`, avec le secret placé dans `PAYMENT_WEBHOOK_SECRET`.
 - Application mobile : le profil EAS `preview` pointe sur `https://77-42-37-145.sslip.io` (`apps/mobile/eas.json`).
-- Données de démonstration : le script `db:seed` refuse toute base autre que `noise_dev`. Au staging, les comptes se créent par l'application ; le premier compte administrateur sera créé par la commande de NOISE-055.
+- Données de démonstration : voir la section 6 (commande `seed:demo`). Le premier compte administrateur du staging se crée par la commande de la section 5.
 - Sauvegarde de la base (à planifier avec cron, en plus des sauvegardes Hetzner si elles sont activées) :
 
   ```
@@ -151,3 +153,45 @@ Les déploiements suivants sont automatiques : chaque fusion sur `main` dont la 
 
 - Changer un secret : modifier `/opt/noise-staging/.env`, puis relancer le workflow à la main (Run workflow) ou, sur le serveur, `docker compose up -d`.
 - Retour en arrière : annuler la fusion fautive sur `main` (revert) ; le workflow redéploie la version précédente.
+
+## 5. Compte administrateur (NOISE-055)
+
+L'inscription publique ne crée jamais de compte ADMIN. Le premier compte (et les suivants) se crée à la main, avec le script `src/scripts/create-admin.ts`, une fois par environnement :
+
+- en local : `ADMIN_NAME=… ADMIN_PHONE=… ADMIN_EMAIL=… ADMIN_PASSWORD=… pnpm --filter @noise/api admin:create:dev` (lit `DATABASE_URL` dans `apps/api/.env`) ;
+- en staging (serveur Hetzner, DEC-028), depuis `/opt/noise-staging` : `docker compose -f deploy/staging/docker-compose.yml exec -e ADMIN_NAME=… -e ADMIN_PHONE=… -e ADMIN_EMAIL=… -e ADMIN_PASSWORD=… api node dist/scripts/create-admin.js` (le dossier de travail du conteneur est déjà `apps/api`) ;
+- en production : même principe sur l'hébergement retenu (NOISE-035), avec `pnpm --filter @noise/api admin:create` après un build.
+
+Règles : mot de passe de 12 caractères minimum ; les variables `ADMIN_*` ne sont jamais enregistrées dans un fichier versionné ni laissées dans les variables du service ; le script refuse un numéro ou un e-mail déjà utilisé et n'affiche que le numéro masqué. Une commande tapée reste dans l'historique du shell : la faire précéder d'une espace (bash avec `HISTCONTROL=ignorespace`, réglage par défaut d'Ubuntu) ou effacer la ligne de l'historique après coup. Une saisie masquée du mot de passe dans le script viendra dans une PR suivante. Qui crée un compte admin le note dans le journal de `progress.md` (date, environnement, personne), sans aucun secret.
+
+## 6. Données de démonstration (NOISE-058)
+
+Un jeu de données complet pour essayer l'application sans rien saisir : 11 comptes (plus un administrateur en local), 9 événements dans tous les états (10 en local), environ 170 commandes, 400 billets avec de vrais QR et un journal de scans.
+
+Contenu :
+
+- Organisateurs : Kofi Démo (pièce vérifiée, 5 événements, 6 en local), Mariam Sow (vérifiée, 2 événements), Serge Adjovi (pièce en attente), Ismaël Tossou (pièce refusée, délai de régularisation en cours), Nadège Kpossou (aucune pièce envoyée).
+- Participants : Aminata Démo (billets dans plusieurs états, à utiliser pour tester « Mes billets »), Koffi, Fatou, Yves, Chantal, et Brice (compte suspendu).
+- Événements : publié avec trois prix et une vente Early bird qui se termine bientôt ; brouillon ; passé avec entrées scannées et refus de scan (statistiques) ; complet ; presque complet ; annulé par l'organisateur (billets annulés, remboursements dus) ; retiré de la vente faute de pièce valide ; brouillon d'un organisateur en attente. En local seulement : un événement retiré par l'administration et son journal.
+- Commandes : payées, en attente (stock réservé 15 minutes), expirée, échouée.
+- Numéros : +229 01 00 00 00 01 à 12. Même mot de passe pour tous, choisi à l'exécution (voir ci-dessous).
+
+Limites : aucune affiche n'est envoyée au stockage (les événements s'affichent sans image) ; les pièces d'identité n'ont pas d'image, un administrateur qui tente de les ouvrir obtient une erreur ; les liens scanner de démo servent seulement d'historique, ils ne sont pas utilisables (le jeton signé n'est pas conservé), l'organisateur en crée un depuis l'application.
+
+Le script est rejouable : à chaque lancement, tout ce qui appartient aux comptes de démo (numéros +229 01 00 00 00 xx avec une adresse en @noise.test) est supprimé puis recréé. Les autres données ne sont jamais touchées. Il refuse de tourner si `NODE_ENV=production` ou si la base n'est pas `noise_dev` ou `noise_staging`.
+
+En local (mot de passe « motdepasse » par défaut, compte administrateur de développement inclus) :
+
+```
+pnpm --filter @noise/api db:seed
+```
+
+Au staging, depuis `/opt/noise-staging`. Choisir un mot de passe d'au moins 8 caractères ; le saisir sans l'écrire dans l'historique du shell :
+
+```
+read -rsp "Mot de passe de démo : " DEMO_PASSWORD; echo
+docker compose -f deploy/staging/docker-compose.yml exec -e DEMO_PASSWORD="$DEMO_PASSWORD" api node dist/scripts/seed-demo.js
+unset DEMO_PASSWORD
+```
+
+Les QR sont signés avec le `QR_SIGNING_SECRET` de l'environnement : ils sont valides pour cette API. Le compte administrateur n'est jamais créé au staging, utiliser la section 5. Ne jamais lancer ce script en production.

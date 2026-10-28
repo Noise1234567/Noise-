@@ -22,6 +22,18 @@ jest.mock('../auth/session-service', () => ({ hydrateSession: jest.fn() }));
 jest.mock('../features/participant/events-api', () => ({
   eventsApi: { list: jest.fn().mockResolvedValue({ data: [], nextCursor: null }) },
 }));
+jest.mock('../features/identity/identity-api', () => ({
+  identityApi: {
+    get: jest.fn().mockResolvedValue({
+      status: 'VERIFIED',
+      canOrganize: true,
+      submittedAt: null,
+      refusalReason: null,
+      resubmitDeadline: null,
+      eventsPulled: false,
+    }),
+  },
+}));
 jest.mock('expo-router', () => {
   const { Text } = jest.requireActual('react-native');
   const Stack = ({ children }: { children: ReactNode }) => children;
