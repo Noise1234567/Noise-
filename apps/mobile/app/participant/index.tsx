@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-native';
 
-import { Banner } from '../../src/components/Banner';
+import { OfflineBar } from '../../src/components/OfflineBar';
 import { Button } from '../../src/components/Button';
 import { RoleHeader } from '../../src/components/RoleHeader';
 import { Screen } from '../../src/components/Screen';
@@ -19,9 +19,8 @@ import {
   dateLabel,
   dateOptions,
 } from '../../src/features/participant/filters';
-import { listSubtitle } from '../../src/features/participant/format';
 import { useEventList } from '../../src/features/participant/useEventList';
-import { colors, spacing } from '../../src/theme';
+import { colors, minTouchTarget, spacing } from '../../src/theme';
 
 /** Écran 6 : Accueil Événements (vue Participant), avec ses états 6c à 6f. */
 export default function Home() {
@@ -39,28 +38,28 @@ export default function Home() {
     setDate(undefined);
   };
 
-  const scope =
-    selectedStyles.length > 0 ? selectedStyles.join(' · ') : (city ?? 'Toutes les villes');
   // Erreur sur un rafraîchissement ou une page suivante alors qu'une liste est déjà affichée :
   // on garde la liste en lecture seule et on le dit (maquette 6f), plutôt que d'effacer l'écran.
   const offline = list.error?.network === true && list.events.length > 0;
 
   return (
     <Screen>
+      {offline ? <OfflineBar onRetry={list.retry} /> : null}
       <View style={styles.header}>
         <View style={styles.switcher}>
           <RoleHeader />
         </View>
-        <Ionicons
-          name="notifications-outline"
-          size={24}
-          color={colors.text}
+        <Pressable
+          accessibilityRole="button"
           accessibilityLabel="Notifications"
-        />
+          onPress={() => router.push('/participant/notifications')}
+          style={styles.bell}
+        >
+          <Ionicons name="notifications-outline" size={22} color={colors.text} />
+        </Pressable>
       </View>
-      <Text variant="title">Événements</Text>
-      <Text muted style={styles.subtitle}>
-        {list.loading ? 'Chargement…' : listSubtitle(scope, list.events.length, list.hasMore)}
+      <Text variant="title" style={styles.title}>
+        Événements
       </Text>
 
       <View style={styles.pills}>
@@ -86,15 +85,6 @@ export default function Home() {
       </View>
       <StyleChips selected={selectedStyles} onChange={setStyles} />
 
-      {offline ? (
-        <View style={styles.offline}>
-          <Banner kind="warning">
-            Hors ligne · lecture seule. Vos billets restent disponibles.
-          </Banner>
-          <Button variant="text" label="Réessayer" onPress={list.retry} />
-        </View>
-      ) : null}
-
       {list.loading ? (
         <View accessibilityLabel="Chargement des soirées" accessibilityLiveRegion="polite">
           {[0, 1, 2].map((key) => (
@@ -107,7 +97,7 @@ export default function Home() {
           <Text muted style={styles.center}>
             Votre connexion semble faible. Vos billets restent dans Mes billets.
           </Text>
-          <Button variant="secondary" label="Réessayer" onPress={list.retry} />
+          <Button label="Réessayer" onPress={list.retry} />
         </View>
       ) : list.events.length === 0 ? (
         <View style={styles.state}>
@@ -153,9 +143,17 @@ export default function Home() {
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
   switcher: { flex: 1, marginRight: spacing.lg },
-  subtitle: { marginTop: spacing.xs, marginBottom: spacing.lg },
+  title: { marginBottom: spacing.lg },
+  bell: {
+    width: minTouchTarget,
+    height: minTouchTarget,
+    borderRadius: minTouchTarget / 2,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   pills: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
-  offline: { marginBottom: spacing.md },
   state: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
   center: { textAlign: 'center' },
 });
