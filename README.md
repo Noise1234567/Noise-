@@ -9,7 +9,7 @@ Statut : fondations du projet (aucune fonctionnalité métier livrée). État d�
 | Dossier           | Contenu                                                                     |
 | ----------------- | --------------------------------------------------------------------------- |
 | `apps/api`        | API REST — Node 24, Express 5, TypeScript, Prisma 7, PostgreSQL             |
-| `apps/mobile`     | App Android — Expo SDK 57 / React Native (vues participant et organisateur) |
+| `apps/mobile`     | App Android — Expo SDK 58 / React Native (vues participant et organisateur) |
 | `apps/scanner`    | Scanner web du staff — Vite + TypeScript, servi par l'API                   |
 | `packages/shared` | Contrats partagés : statuts, constantes métier, codes d'erreur              |
 | `docs/`           | Documentation technique                                                     |

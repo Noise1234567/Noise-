@@ -143,7 +143,7 @@ export default function Home() {
           // La page suivante se charge quand il reste environ 2 cartes (maquette 6).
           onEndReached={list.loadMore}
           onEndReachedThreshold={1.5}
-          ListFooterComponent={list.loadingMore ? <EventCardSkeleton /> : null}
+          ListFooterComponent={list.loadingMore ? <EventCardSkeleton /> : undefined}
         />
       )}
     </Screen>

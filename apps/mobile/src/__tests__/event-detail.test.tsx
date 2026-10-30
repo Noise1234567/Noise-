@@ -141,8 +141,10 @@ describe('détail événement (écran 7)', () => {
 
   it('retour, partage et itinéraire', async () => {
     get.mockResolvedValue(event());
-    const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' });
-    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    const share = jest
+      .spyOn(Share, 'share')
+      .mockResolvedValue({ action: 'sharedAction', activityType: undefined });
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue();
     await render(<EventDetail />);
     await screen.findByText('Cadjehoun Nights #12');
     await fireEvent.press(screen.getByRole('button', { name: 'Retour' }));
