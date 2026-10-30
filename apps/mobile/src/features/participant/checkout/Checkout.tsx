@@ -13,6 +13,7 @@ import { toApiError } from '../../../api/errors';
 import { formatLocalPhone, toApiPhone } from '../../../auth/forms';
 import { formatClock } from '../../../auth/useCountdown';
 import { Banner } from '../../../components/Banner';
+import { SupportButton } from '../../../components/SupportButton';
 import { Button } from '../../../components/Button';
 import { Text } from '../../../components/Text';
 import { TextField } from '../../../components/TextField';
@@ -155,6 +156,7 @@ export function Checkout({ event, api, defaultPhone, onSeeTickets, onClose }: Pr
         message="Le délai de 15 minutes est dépassé : les places ont été libérées. Si votre compte a été débité, le montant vous sera remboursé."
         primary={{ label: 'Recommencer', onPress: restart }}
         secondary={{ label: 'Fermer', onPress: onClose }}
+        supportReference={order ? `commande ${order.id}` : undefined}
       />
     );
   }
@@ -165,6 +167,7 @@ export function Checkout({ event, api, defaultPhone, onSeeTickets, onClose }: Pr
         message="La demande a été refusée ou n'a pas été validée. Vérifiez votre solde Mobile Money, puis réessayez : vos places restent réservées."
         primary={{ label: 'Réessayer', onPress: () => setStep('pay') }}
         secondary={{ label: 'Annuler', onPress: onClose }}
+        supportReference={order ? `commande ${order.id}` : undefined}
       />
     );
   }
@@ -358,11 +361,14 @@ function Outcome({
   message,
   primary,
   secondary,
+  supportReference,
 }: {
   title: string;
   message: string;
   primary: { label: string; onPress: () => void };
   secondary?: { label: string; onPress: () => void };
+  /** Affiche « Contacter le support » avec cette référence (NOISE-057). */
+  supportReference?: string;
 }) {
   return (
     <View style={styles.center} accessibilityLiveRegion="polite">
@@ -377,6 +383,7 @@ function Outcome({
         {secondary ? (
           <Button variant="text" label={secondary.label} onPress={secondary.onPress} />
         ) : null}
+        {supportReference ? <SupportButton reference={supportReference} /> : null}
       </View>
     </View>
   );

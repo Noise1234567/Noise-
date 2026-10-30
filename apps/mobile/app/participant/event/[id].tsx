@@ -16,6 +16,7 @@ import {
   isLongDescription,
   purchaseState,
 } from '../../../src/features/participant/format';
+import { useSession } from '../../../src/state/session';
 import { useEvent } from '../../../src/features/participant/useEvent';
 import { colors, radii, spacing } from '../../../src/theme';
 
@@ -28,6 +29,7 @@ export default function EventDetail() {
   const insets = useSafeAreaInsets();
   const { event, loading, error, retry } = useEvent(eventsApi.get, id);
   const [expanded, setExpanded] = useState(false);
+  const signedIn = useSession((st) => st.status === 'signedIn');
 
   const back = () => (router.canGoBack() ? router.back() : router.replace('/participant'));
   const topButtons = (
@@ -181,10 +183,13 @@ export default function EventDetail() {
           label={purchase.label}
           disabled={purchase.kind !== 'OPEN'}
           onPress={() =>
-            router.push({
-              pathname: '/participant/checkout/[eventId]',
-              params: { eventId: event.id },
-            })
+            // Sans compte, l'achat passe d'abord par la connexion (NOISE-075), qui rend ensuite cet écran.
+            signedIn
+              ? router.push({
+                  pathname: '/participant/checkout/[eventId]',
+                  params: { eventId: event.id },
+                })
+              : router.push('/login')
           }
         />
         {purchase.kind !== 'OPEN' ? (

@@ -6,6 +6,7 @@ import { Linking, Share } from 'react-native';
 import EventDetail from '../../app/participant/event/[id]';
 import { ApiError } from '../api/errors';
 import { eventsApi } from '../features/participant/events-api';
+import { useSession } from '../state/session';
 
 jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
 jest.mock('react-native-safe-area-context', () => ({
@@ -13,9 +14,15 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 const mockBack = jest.fn();
+const mockPush = jest.fn();
 jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ id: 'e1' }),
-  router: { back: (...a: unknown[]) => mockBack(...a), canGoBack: () => true, replace: jest.fn() },
+  router: {
+    back: (...a: unknown[]) => mockBack(...a),
+    canGoBack: () => true,
+    replace: jest.fn(),
+    push: (...a: unknown[]) => mockPush(...a),
+  },
 }));
 jest.mock('../features/participant/events-api', () => ({ eventsApi: { get: jest.fn() } }));
 
@@ -56,6 +63,8 @@ const event = (over: Partial<EventDto> = {}): EventDto =>
 beforeEach(() => {
   get.mockReset();
   mockBack.mockReset();
+  mockPush.mockReset();
+  useSession.setState({ status: 'signedOut' });
 });
 
 describe('détail événement (écran 7)', () => {
@@ -78,6 +87,24 @@ describe('détail événement (écran 7)', () => {
     expect(screen.getByText('Dernières places · 14 restantes')).toBeTruthy();
     expect(screen.getByText('10 000 FCFA')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Choisir mes billets' })).toBeTruthy();
+  });
+
+  it('sans compte, « Choisir mes billets » ouvre la connexion', async () => {
+    get.mockResolvedValue(event());
+    await render(<EventDetail />);
+    await fireEvent.press(await screen.findByRole('button', { name: 'Choisir mes billets' }));
+    expect(mockPush).toHaveBeenCalledWith('/login');
+  });
+
+  it('connecté, « Choisir mes billets » ouvre le tunnel d’achat', async () => {
+    useSession.setState({ status: 'signedIn' });
+    get.mockResolvedValue(event());
+    await render(<EventDetail />);
+    await fireEvent.press(await screen.findByRole('button', { name: 'Choisir mes billets' }));
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/participant/checkout/[eventId]',
+      params: { eventId: 'e1' },
+    });
   });
 
   it('chargement : squelettes (7d)', async () => {
@@ -141,8 +168,10 @@ describe('détail événement (écran 7)', () => {
 
   it('retour, partage et itinéraire', async () => {
     get.mockResolvedValue(event());
-    const share = jest.spyOn(Share, 'share').mockResolvedValue({ action: 'sharedAction' });
-    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    const share = jest
+      .spyOn(Share, 'share')
+      .mockResolvedValue({ action: 'sharedAction', activityType: undefined });
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue();
     await render(<EventDetail />);
     await screen.findByText('Cadjehoun Nights #12');
     await fireEvent.press(screen.getByRole('button', { name: 'Retour' }));

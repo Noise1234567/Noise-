@@ -5,6 +5,10 @@ import { z } from 'zod';
  * si une variable obligatoire manque ou est invalide (fail fast).
  * Ajouter ici chaque nouvelle variable ET dans .env.example.
  */
+/** Variable facultative : une ligne vide dans .env (« SMTP_USER= ») vaut « absente ». */
+const blankAsUndefined = <T extends z.ZodType>(schema: T) =>
+  z.preprocess((value) => (value === '' ? undefined : value), schema.optional());
+
 const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'test', 'staging', 'production']).default('development'),
@@ -37,6 +41,13 @@ const envSchema = z
     PAYMENT_ENVIRONMENT: z.enum(['sandbox', 'live']).default('sandbox'),
     PAYMENT_API_KEY: z.string().optional(),
     PAYMENT_WEBHOOK_SECRET: z.string().optional(),
+    // E-mails à l'équipe (NOISE-059) : Gmail avec un mot de passe d'application. Sans eux, envoi simulé.
+    SMTP_HOST: z.string().default('smtp.gmail.com'),
+    SMTP_PORT: z.coerce.number().int().positive().default(465),
+    SMTP_USER: blankAsUndefined(z.string().email()),
+    SMTP_PASSWORD: blankAsUndefined(z.string()),
+    /** Destinataire des e-mails à l'équipe (soirée publiée, client à rembourser). */
+    TEAM_EMAIL: blankAsUndefined(z.string().email()),
   })
   .superRefine((env, ctx) => {
     if (env.NODE_ENV !== 'test' && !env.JWT_ACCESS_SECRET) {
@@ -64,6 +75,15 @@ const envSchema = z
         code: 'custom',
         path: ['SCANNER_JWT_SECRET'],
         message: 'doit différer de QR_SIGNING_SECRET',
+      });
+    }
+    // Configuration d'envoi partielle : erreur au démarrage plutôt qu'e-mails perdus en silence.
+    const smtp = [env.SMTP_USER, env.SMTP_PASSWORD, env.TEAM_EMAIL];
+    if (smtp.some(Boolean) && !smtp.every(Boolean)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['SMTP_USER'],
+        message: 'SMTP_USER, SMTP_PASSWORD et TEAM_EMAIL vont ensemble',
       });
     }
     if (env.PAYMENT_PROVIDER === 'fake') {

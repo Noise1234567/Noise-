@@ -1,10 +1,10 @@
 import type { TicketTypeDto } from '@noise/shared';
 
 import {
+  formatDeadline,
   formatEventDate,
   formatEventRange,
   formatFcfa,
-  listSubtitle,
   priceFromLabel,
   isLongDescription,
   purchaseState,
@@ -29,6 +29,16 @@ describe('formatFcfa', () => {
     expect(formatFcfa(5000)).toBe('5 000 FCFA');
     expect(formatFcfa(1_250_000)).toBe('1 250 000 FCFA');
     expect(formatFcfa(500)).toBe('500 FCFA');
+  });
+});
+
+describe('date limite en heure du Bénin', () => {
+  it('13:00 UTC un lundi est 14:00 à Cotonou', () => {
+    expect(formatDeadline('2026-10-19T13:00:00Z')).toBe('lundi 19 octobre à 14:00');
+  });
+
+  it('23:30 UTC passe au lendemain', () => {
+    expect(formatDeadline('2026-10-19T23:30:00Z')).toBe('mardi 20 octobre à 00:30');
   });
 });
 
@@ -104,14 +114,6 @@ describe('ligne de billet (maquette 7)', () => {
 
   it('épuisé prime sur vente terminée', () => {
     expect(ticketAvailability(type({ available: 0, onSale: false }))).toBe('SOLD_OUT');
-  });
-});
-
-describe('sous-titre de la liste', () => {
-  it('compte les soirées, avec un + tant qu’il y a d’autres pages', () => {
-    expect(listSubtitle('Cotonou', 10, true)).toBe('Cotonou · 10+ soirées à venir');
-    expect(listSubtitle('Amapiano', 3, false)).toBe('Amapiano · 3 soirées à venir');
-    expect(listSubtitle('Cotonou', 1, false)).toBe('Cotonou · 1 soirée à venir');
   });
 });
 

@@ -2,7 +2,7 @@ import type { CreateEventInput, EventDto, TicketTypeDto } from '@noise/shared';
 
 import type { EventWriteApi } from '../../../api/events';
 import { ApiError } from '../../../api/errors';
-import { emptyProgress, submitEvent, type SubmitProgress } from './submit';
+import { describeSubmitError, emptyProgress, submitEvent, type SubmitProgress } from './submit';
 
 const event: CreateEventInput = {
   title: 'Afro Night',
@@ -161,5 +161,24 @@ describe('envoi d’un événement', () => {
     await expect(
       submitEvent(api, { event, poster: null, tickets, publish: true }, emptyProgress(), () => {}),
     ).rejects.toMatchObject({ status: 409 });
+  });
+});
+
+describe('describeSubmitError', () => {
+  it('IDENTITY_REQUIRED : message au vouvoiement, pas celui (tutoyé) du serveur', () => {
+    const message = describeSubmitError(
+      new ApiError(403, 'IDENTITY_REQUIRED', 'Envoie ta pièce d’identité pour organiser'),
+    );
+    expect(message).toMatch(/vérifier votre identité/);
+    expect(message).not.toMatch(/Envoie ta/);
+  });
+
+  it('réseau coupé : précise que l’enregistré n’est pas renvoyé', () => {
+    const message = describeSubmitError(new ApiError(null, 'NETWORK', 'Connexion impossible.'));
+    expect(message).toBe('Connexion impossible. Ce qui a déjà été enregistré ne sera pas renvoyé.');
+  });
+
+  it('autre erreur : message de l’API tel quel', () => {
+    expect(describeSubmitError(new ApiError(409, 'CONFLICT', 'Conflit'))).toBe('Conflit');
   });
 });

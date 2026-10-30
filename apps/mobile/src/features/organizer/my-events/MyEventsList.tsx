@@ -8,6 +8,7 @@ import { Button } from '../../../components/Button';
 import { StateView } from '../../../components/StateView';
 import { Text } from '../../../components/Text';
 import { colors, radii, spacing } from '../../../theme';
+import { canCancelEvent } from '../cancel-event/cancel-rules';
 import {
   TAB_LABELS,
   formatCotonouDateTime,
@@ -19,6 +20,10 @@ import {
 type Props = {
   api: Pick<EventsApi, 'listMine'>;
   onCreate: () => void;
+  /** Ouvre le détail d'un événement (NOISE-054). */
+  onOpen?: (eventId: string) => void;
+  /** Ouvre l'annulation d'un événement publié (NOISE-029). */
+  onCancel?: (eventId: string) => void;
   /** Change à chaque retour sur l'écran : la liste est rechargée (après une création). */
   refreshKey?: number;
 };
@@ -38,7 +43,7 @@ const statusLabel: Record<EventDto['status'], string> = {
 };
 
 /** Écran 19 : « Mes événements », classés à venir / passés / annulés (NOISE-013). */
-export function MyEventsList({ api, onCreate, refreshKey = 0 }: Props) {
+export function MyEventsList({ api, onCreate, onOpen, onCancel, refreshKey = 0 }: Props) {
   const [load, setLoad] = useState<Load>({ kind: 'loading' });
   const [tab, setTab] = useState<EventTab>('upcoming');
   const [loadingMore, setLoadingMore] = useState(false);
@@ -119,7 +124,14 @@ export function MyEventsList({ api, onCreate, refreshKey = 0 }: Props) {
             Aucun événement dans cette catégorie.
           </Text>
         ) : (
-          shown.map((event) => <EventRow key={event.id} event={event} />)
+          shown.map((event) => (
+            <EventRow
+              key={event.id}
+              event={event}
+              onPress={onOpen ? () => onOpen(event.id) : undefined}
+              onCancel={onCancel}
+            />
+          ))
         )}
         {load.nextCursor ? (
           <Button
@@ -134,27 +146,48 @@ export function MyEventsList({ api, onCreate, refreshKey = 0 }: Props) {
   );
 }
 
-function EventRow({ event }: { event: EventDto }) {
+function EventRow({
+  event,
+  onPress,
+  onCancel,
+}: {
+  event: EventDto;
+  onPress?: () => void;
+  onCancel?: (eventId: string) => void;
+}) {
   const { sold, total } = salesProgress(event);
+  // La zone d'informations ouvre le détail ; le bouton d'annulation reste en dehors (pas de
+  // bouton dans un bouton).
   return (
-    <View style={styles.card} accessibilityLabel={`${event.title}, ${statusLabel[event.status]}`}>
-      <View style={styles.cardHeader}>
-        <Text variant="button" style={styles.flex}>
-          {event.title}
+    <View style={styles.card}>
+      <Pressable
+        accessibilityRole={onPress ? 'button' : undefined}
+        accessibilityLabel={`${event.title}, ${statusLabel[event.status]}`}
+        disabled={!onPress}
+        onPress={onPress}
+        style={({ pressed }) => [styles.cardBody, pressed && styles.pressed]}
+      >
+        <View style={styles.cardHeader}>
+          <Text variant="button" style={styles.flex}>
+            {event.title}
+          </Text>
+          <Text
+            variant="caption"
+            style={[styles.badge, event.status === 'PUBLISHED' ? styles.badgeLive : null]}
+          >
+            {statusLabel[event.status]}
+          </Text>
+        </View>
+        <Text variant="caption" muted>
+          {formatCotonouDateTime(event.startsAt)} · {event.venue}, {event.city}
         </Text>
-        <Text
-          variant="caption"
-          style={[styles.badge, event.status === 'PUBLISHED' ? styles.badgeLive : null]}
-        >
-          {statusLabel[event.status]}
+        <Text variant="caption">
+          {sold} / {total} billets vendus
         </Text>
-      </View>
-      <Text variant="caption" muted>
-        {formatCotonouDateTime(event.startsAt)} · {event.venue}, {event.city}
-      </Text>
-      <Text variant="caption">
-        {sold} / {total} billets vendus
-      </Text>
+      </Pressable>
+      {onCancel && canCancelEvent(event) ? (
+        <Button variant="text" label="Annuler l’événement" onPress={() => onCancel(event.id)} />
+      ) : null}
     </View>
   );
 }
@@ -179,6 +212,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.card,
     backgroundColor: colors.surface,
   },
+  cardBody: { gap: spacing.xs },
   cardHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   badge: {
     paddingHorizontal: spacing.sm,
@@ -188,4 +222,5 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   badgeLive: { borderColor: colors.accent },
+  pressed: { opacity: 0.85 },
 });

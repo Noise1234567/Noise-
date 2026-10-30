@@ -10,8 +10,10 @@ import { useSession } from '../state/session';
 const mockReplace = jest.fn();
 const mockStore = new Map<string, string>();
 
+jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
 jest.mock('expo-router', () => ({
   useRouter: () => ({ replace: mockReplace, back: jest.fn(), push: jest.fn() }),
+  router: { replace: jest.fn(), back: jest.fn(), canGoBack: () => true },
 }));
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
