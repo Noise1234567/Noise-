@@ -4,14 +4,28 @@ import Welcome from '../../app/(auth)/index';
 import { useSession } from '../state/session';
 
 const mockPush = jest.fn();
+const mockBack = jest.fn();
+const mockReplace = jest.fn();
+let mockCanGoBack = true;
 
-jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
+jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: mockPush }),
+  router: {
+    back: () => mockBack(),
+    replace: (...args: unknown[]) => mockReplace(...args),
+    canGoBack: () => mockCanGoBack,
+  },
+}));
 jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
 beforeEach(() => {
   mockPush.mockClear();
+  mockBack.mockClear();
+  mockReplace.mockClear();
+  mockCanGoBack = true;
   useSession.setState({ status: 'signedOut', roles: [], activeRole: null, pendingRole: null });
 });
 
@@ -35,5 +49,18 @@ describe('écran de bienvenue', () => {
     await fireEvent.press(screen.getByRole('button', { name: "J'ai déjà un compte" }));
     expect(mockPush).toHaveBeenCalledWith('/login');
     expect(useSession.getState().pendingRole).toBeNull();
+  });
+
+  it('« Retour » revient en arrière quand l’écran a été ouvert depuis l’app', async () => {
+    await render(<Welcome />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Retour' }));
+    expect(mockBack).toHaveBeenCalled();
+  });
+
+  it('« Retour » ouvre les événements quand la bienvenue est le premier écran', async () => {
+    mockCanGoBack = false;
+    await render(<Welcome />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Retour' }));
+    expect(mockReplace).toHaveBeenCalledWith('/participant');
   });
 });
