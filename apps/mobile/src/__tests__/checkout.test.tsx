@@ -1,4 +1,10 @@
-import type { EventDto, OrderDto, OrderStatusResponse, TicketTypeDto } from '@noise/shared';
+import type {
+  EventDto,
+  InitiatePaymentResponse,
+  OrderDto,
+  OrderStatusResponse,
+  TicketTypeDto,
+} from '@noise/shared';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
 import type { OrdersApi } from '../api/orders';
@@ -132,17 +138,19 @@ describe('tunnel d’achat', () => {
     await press('Un billet de plus');
     await press(/Continuer · 10\s000\sFCFA/);
     await act(async () => {});
-    expect(api.create).toHaveBeenCalledWith({ ticketTypeId: 't-standard', quantity: 2 });
+    expect(api.create).toHaveBeenCalledWith(
+      { ticketTypeId: 't-standard', quantity: 2 },
+      expect.stringMatching(/^[a-z0-9]{32}$/),
+    );
     expect(screen.getByText('Places réservées pendant 15:00')).toBeTruthy();
 
     await press('MTN MoMo');
     await press(/Payer 10\s000\sFCFA/);
     await act(async () => {});
-    expect(api.initiatePayment).toHaveBeenCalledWith({
-      orderId: 'ord',
-      operator: 'MTN',
-      phone: '+2290197452138',
-    });
+    expect(api.initiatePayment).toHaveBeenCalledWith(
+      { orderId: 'ord', operator: 'MTN', phone: '+2290197452138' },
+      expect.stringMatching(/^[a-z0-9]{32}$/),
+    );
     expect(screen.getByText('Validez le paiement sur votre téléphone')).toBeTruthy();
 
     await wait(2000);
@@ -221,6 +229,83 @@ describe('tunnel d’achat', () => {
     await act(async () => {});
     expect(screen.getByText('Réservation confirmée')).toBeTruthy();
     expect(api.initiatePayment).not.toHaveBeenCalled();
+  });
+
+  it('coupure réseau à la commande : le nouvel essai réutilise la même clé, un autre choix en prend une nouvelle', async () => {
+    const create = jest
+      .fn<Promise<OrderDto>, [unknown, string?]>()
+      .mockRejectedValueOnce(new ApiError(null, 'NETWORK', 'Connexion impossible.'))
+      .mockRejectedValueOnce(new ApiError(null, 'NETWORK', 'Connexion impossible.'))
+      .mockResolvedValueOnce(order());
+    await render(
+      <Checkout
+        event={event()}
+        api={fakeApi({ create })}
+        defaultPhone=""
+        onSeeTickets={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+    await press(/Continuer/);
+    await act(async () => {});
+    await press(/Continuer/);
+    await act(async () => {});
+    await press('Un billet de plus');
+    await press(/Continuer/);
+    await act(async () => {});
+    const keys = create.mock.calls.map((call) => call[1]);
+    expect(keys[0]).toBe(keys[1]);
+    expect(keys[2]).not.toBe(keys[1]);
+  });
+
+  it('erreur définitive (4xx) : le nouvel essai prend une nouvelle clé, une 5xx garde la même', async () => {
+    const create = jest
+      .fn<Promise<OrderDto>, [unknown, string?]>()
+      .mockRejectedValueOnce(new ApiError(409, 'CONFLICT', 'Ce billet est épuisé'))
+      .mockRejectedValueOnce(new ApiError(503, 'UNKNOWN', 'Service indisponible.'))
+      .mockResolvedValueOnce(order());
+    await render(
+      <Checkout
+        event={event()}
+        api={fakeApi({ create })}
+        defaultPhone=""
+        onSeeTickets={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+    for (let i = 0; i < 3; i++) {
+      await press(/Continuer/);
+      await act(async () => {});
+    }
+    const keys = create.mock.calls.map((call) => call[1]);
+    expect(keys[1]).not.toBe(keys[0]);
+    expect(keys[2]).toBe(keys[1]);
+  });
+
+  it('paiement refusé (4xx) : le nouvel essai prend une nouvelle clé', async () => {
+    const initiatePayment = jest
+      .fn<Promise<InitiatePaymentResponse>, [unknown, string?]>()
+      .mockRejectedValueOnce(new ApiError(400, 'VALIDATION_ERROR', 'Numéro refusé'))
+      .mockResolvedValueOnce({ paymentId: 'pay', status: 'PENDING' });
+    await render(
+      <Checkout
+        event={event()}
+        api={fakeApi({ initiatePayment })}
+        defaultPhone="01 97 45 21 38"
+        onSeeTickets={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    );
+    await press(/Continuer/);
+    await act(async () => {});
+    await press('MTN MoMo');
+    await press(/Payer/);
+    await act(async () => {});
+    await press(/Payer/);
+    await act(async () => {});
+    const keys = initiatePayment.mock.calls.map((call) => call[1]);
+    expect(keys).toHaveLength(2);
+    expect(keys[1]).not.toBe(keys[0]);
   });
 
   it('billet épuisé entre-temps : message du serveur, pas de commande', async () => {
