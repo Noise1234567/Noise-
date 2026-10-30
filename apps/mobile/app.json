@@ -31,7 +31,7 @@
       [
         "expo-image-picker",
         {
-          "cameraPermission": false,
+          "cameraPermission": "Noise utilise l’appareil photo pour photographier votre pièce d’identité.",
           "microphonePermission": false
         }
       ]

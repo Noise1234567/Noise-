@@ -3,7 +3,7 @@ import { StyleSheet, View } from 'react-native';
 import { colors, radii } from '../theme';
 import { Text } from './Text';
 
-const tones = {
+export const bannerTones = {
   error: { mark: colors.error, border: 'rgba(255,90,95,0.35)', fill: 'rgba(255,90,95,0.1)' },
   warning: { mark: colors.warning, border: 'rgba(255,181,71,0.35)', fill: 'rgba(255,181,71,0.1)' },
   info: { mark: colors.secondary, border: 'rgba(0,196,255,0.35)', fill: 'rgba(0,196,255,0.1)' },
@@ -13,7 +13,7 @@ type Props = { kind: 'error' | 'warning' | 'info'; children: string };
 
 /** Bandeau d'état des maquettes (3b–3d, 4b–4d) : rouge pour une erreur, ambre pour une attente, cyan pour une information. */
 export function Banner({ kind, children }: Props) {
-  const tone = tones[kind];
+  const tone = bannerTones[kind];
   return (
     <View
       accessibilityRole="alert"

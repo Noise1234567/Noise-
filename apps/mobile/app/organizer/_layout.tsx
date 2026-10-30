@@ -27,6 +27,8 @@ export default function OrganizerLayout() {
         name="cancel-event/[eventId]"
         options={{ href: null, tabBarStyle: { display: 'none' } }}
       />
+      {/* Envoi de la pièce d'identité : atteint depuis la carte de statut, pas depuis la barre d'onglets. */}
+      <Tabs.Screen name="identity" options={{ href: null }} />
     </Tabs>
   );
 }
