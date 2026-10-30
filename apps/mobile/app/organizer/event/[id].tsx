@@ -6,6 +6,7 @@ import { Screen } from '../../../src/components/Screen';
 import { StateView } from '../../../src/components/StateView';
 import { OrganizerEventDetail } from '../../../src/features/organizer/event-detail/OrganizerEventDetail';
 import { scannerLinksApi } from '../../../src/features/organizer/scanner-links-api';
+import { eventStatsApi } from '../../../src/features/organizer/stats-api';
 import { eventsApi } from '../../../src/features/participant/events-api';
 import { useEvent } from '../../../src/features/participant/useEvent';
 
@@ -28,6 +29,7 @@ export default function OrganizerEvent() {
           event={event}
           publish={(eventId) => eventsApi.update(eventId, { status: 'PUBLISHED' })}
           scannerApi={scannerLinksApi}
+          statsApi={eventStatsApi}
           apiBaseUrl={API_BASE_URL}
           share={share}
           onBack={back}
