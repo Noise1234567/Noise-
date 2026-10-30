@@ -2,6 +2,7 @@ import type { OrderStatusResponse } from '@noise/shared';
 
 import {
   createIntentKeys,
+  keepsIntentKey,
   localPhoneFromE164,
   maxQuantity,
   pollDelay,
@@ -62,5 +63,14 @@ describe('règles du tunnel d’achat', () => {
     expect(keys.keyFor({ ticketTypeId: 't', quantity: 2 })).not.toBe(a);
     keys.settle();
     expect(keys.keyFor({ ticketTypeId: 't', quantity: 2 })).toBe('cle-3');
+  });
+
+  it('clé gardée seulement si le résultat est inconnu : pas de réponse ou 5xx', () => {
+    expect(keepsIntentKey(null)).toBe(true);
+    expect(keepsIntentKey(500)).toBe(true);
+    expect(keepsIntentKey(503)).toBe(true);
+    expect(keepsIntentKey(400)).toBe(false);
+    expect(keepsIntentKey(409)).toBe(false);
+    expect(keepsIntentKey(429)).toBe(false);
   });
 });

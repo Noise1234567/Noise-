@@ -58,7 +58,8 @@ export const pollDelay = (attempt: number) => POLL_DELAYS_MS[attempt] ?? 5000;
 /**
  * Clés d'idempotence (NOISE-053) : une clé par intention. Un nouvel essai de la même requête
  * (même contenu, après une erreur réseau) réutilise la clé ; un contenu différent en crée une
- * nouvelle ; après un succès, `settle` l'oublie, pour que la prochaine intention ait la sienne.
+ * nouvelle ; après un succès ou une erreur définitive, `settle` l'oublie, pour que la prochaine
+ * intention ait la sienne.
  */
 export function createIntentKeys(random: () => string = randomKey) {
   let current: { signature: string; key: string } | null = null;
@@ -73,6 +74,13 @@ export function createIntentKeys(random: () => string = randomKey) {
     },
   };
 }
+
+/**
+ * Garder la clé seulement quand le résultat est inconnu (pas de réponse, 5xx). Une 4xx est
+ * définitive : avec la même clé, le serveur rejouerait la même erreur pendant 24 h, même si
+ * le stock est revenu entre-temps.
+ */
+export const keepsIntentKey = (status: number | null) => status === null || status >= 500;
 
 /** 32 caractères aléatoires : unicité suffisante pour une intention d'achat (pas un secret). */
 function randomKey(): string {

@@ -22,6 +22,7 @@ import { formatEventDate, formatFcfa, purchasableTypes, ticketPriceLabel } from 
 import {
   OPERATOR_LABELS,
   createIntentKeys,
+  keepsIntentKey,
   maxQuantity,
   validatePayerPhone,
 } from './checkout-rules';
@@ -93,7 +94,9 @@ export function Checkout({ event, api, defaultPhone, onSeeTickets, onClose }: Pr
       setOrder(created);
       setStep(created.status === 'PAID' ? 'paid' : 'pay');
     } catch (e) {
-      setError(toApiError(e).message);
+      const apiError = toApiError(e);
+      if (!keepsIntentKey(apiError.status)) orderKeys.settle();
+      setError(apiError.message);
     } finally {
       setBusy(false);
     }
@@ -117,6 +120,7 @@ export function Checkout({ event, api, defaultPhone, onSeeTickets, onClose }: Pr
       setStep('waiting');
     } catch (e) {
       const apiError = toApiError(e);
+      if (!keepsIntentKey(apiError.status)) paymentKeys.settle();
       // Une demande est déjà en cours pour cette commande : on attend son résultat.
       if (apiError.status === 409 && /en cours/i.test(apiError.message)) setStep('waiting');
       else setError(apiError.message);
