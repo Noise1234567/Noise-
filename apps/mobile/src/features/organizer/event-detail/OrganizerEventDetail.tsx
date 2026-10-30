@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import type { ScannerLinksApi } from '../../../api/scanner-links';
+import type { EventStatsApi } from '../../../api/stats';
 import { toApiError } from '../../../api/errors';
 import { Banner } from '../../../components/Banner';
 import { Button } from '../../../components/Button';
@@ -10,6 +11,7 @@ import { Text } from '../../../components/Text';
 import { colors, radii, spacing } from '../../../theme';
 import { formatEventRange, formatFcfa } from '../../participant/format';
 import { EVENT_STATUS_LABELS, canCreateScannerLink, salesByType } from './event-detail-rules';
+import { EventStats } from '../stats/EventStats';
 import { ScannerLinks } from './ScannerLinks';
 
 type Props = {
@@ -17,6 +19,7 @@ type Props = {
   /** Publie le brouillon (PUT /events/:id) et renvoie l'événement à jour. */
   publish: (eventId: string) => Promise<EventDto>;
   scannerApi: ScannerLinksApi;
+  statsApi: EventStatsApi;
   apiBaseUrl: string;
   share: (message: string) => Promise<void>;
   onBack: () => void;
@@ -32,12 +35,14 @@ function publishErrorMessage(error: ReturnType<typeof toApiError>): string {
 
 /**
  * Détail d'un événement côté organisateur (NOISE-054) : statut, publication d'un brouillon,
- * ventes par type de billet et liens scanner pour le staff.
+ * ventes par type de billet (brouillon) ou statistiques complètes (NOISE-027) et liens scanner
+ * pour le staff.
  */
 export function OrganizerEventDetail({
   event: initial,
   publish,
   scannerApi,
+  statsApi,
   apiBaseUrl,
   share,
   onBack,
@@ -92,27 +97,31 @@ export function OrganizerEventDetail({
       ) : null}
       {error ? <Banner kind="error">{error}</Banner> : null}
 
-      <View style={styles.card}>
-        <Text variant="section">Ventes</Text>
-        <Text variant="amount">
-          {sales.sold} / {sales.total} billets
-        </Text>
-        {sales.rows.map((row) => (
-          <View key={row.name} style={styles.line}>
-            <Text>{row.name}</Text>
-            <Text muted>
-              {row.sold} / {row.total}
-            </Text>
+      {event.status === 'DRAFT' ? (
+        <View style={styles.card}>
+          <Text variant="section">Ventes</Text>
+          <Text variant="amount">
+            {sales.sold} / {sales.total} billets
+          </Text>
+          {sales.rows.map((row) => (
+            <View key={row.name} style={styles.line}>
+              <Text>{row.name}</Text>
+              <Text muted>
+                {row.sold} / {row.total}
+              </Text>
+            </View>
+          ))}
+          <View style={styles.line}>
+            <Text variant="button">Vous recevez</Text>
+            <Text variant="button">{formatFcfa(sales.netXof)}</Text>
           </View>
-        ))}
-        <View style={styles.line}>
-          <Text variant="button">Vous recevez</Text>
-          <Text variant="button">{formatFcfa(sales.netXof)}</Text>
+          <Text variant="caption" muted>
+            Après la commission Noise de 10 %, estimation.
+          </Text>
         </View>
-        <Text variant="caption" muted>
-          Après la commission Noise de 10 %, estimation.
-        </Text>
-      </View>
+      ) : (
+        <EventStats eventId={event.id} api={statsApi} />
+      )}
 
       <ScannerLinks
         eventId={event.id}

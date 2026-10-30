@@ -1,8 +1,9 @@
-import type { CreatedScannerLinkDto, EventDto, ScannerLinkDto } from '@noise/shared';
+import type { CreatedScannerLinkDto, EventDto, EventStatsDto, ScannerLinkDto } from '@noise/shared';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
 import { ApiError } from '../api/errors';
 import type { ScannerLinksApi } from '../api/scanner-links';
+import type { EventStatsApi } from '../api/stats';
 import { OrganizerEventDetail } from '../features/organizer/event-detail/OrganizerEventDetail';
 
 jest.mock('react-native-safe-area-context', () => ({
@@ -67,6 +68,33 @@ function fakeScanner(overrides: Partial<ScannerLinksApi> = {}): ScannerLinksApi 
   };
 }
 
+const fakeStats = (): EventStatsDto => ({
+  eventId: 'evt',
+  status: 'PUBLISHED',
+  generatedAt: '2026-10-21T10:00:00.000Z',
+  sales: { ticketsSold: 20, grossXof: 100000, organizerNetXof: 90000, noiseFeeXof: 10000 },
+  byType: [
+    {
+      ticketTypeId: 't',
+      name: 'Standard',
+      priceXof: 5000,
+      quantityTotal: 100,
+      sold: 20,
+      remaining: 80,
+      grossXof: 100000,
+    },
+  ],
+  entries: {
+    checkedIn: 0,
+    notYetEntered: 20,
+    cancelled: 0,
+    lastEntryAt: null,
+    refusedScans: 0,
+    alreadyUsedScans: 0,
+    arrivals: [],
+  },
+});
+
 const press = (name: string | RegExp) => fireEvent.press(screen.getByRole('button', { name }));
 
 async function renderDetail(
@@ -74,6 +102,7 @@ async function renderDetail(
   options: { scanner?: ScannerLinksApi; publish?: jest.Mock; share?: jest.Mock } = {},
 ) {
   const scanner = options.scanner ?? fakeScanner();
+  const stats: EventStatsApi = { get: jest.fn(async () => fakeStats()) };
   const share = options.share ?? jest.fn(async () => {});
   const publish = options.publish ?? jest.fn(async () => event({ ...values, status: 'PUBLISHED' }));
   await render(
@@ -81,21 +110,31 @@ async function renderDetail(
       event={event(values)}
       publish={publish}
       scannerApi={scanner}
+      statsApi={stats}
       apiBaseUrl="http://10.0.0.5:3000/api/v1"
       share={share}
       onBack={jest.fn()}
     />,
   );
   await act(async () => {});
-  return { scanner, share, publish };
+  return { scanner, share, publish, stats };
 }
 
 describe('détail d’un événement côté organisateur', () => {
-  it('affiche les ventes et les liens scanner existants', async () => {
-    await renderDetail();
-    expect(screen.getByText('20 / 100 billets')).toBeTruthy();
+  it('publié : affiche les statistiques et les liens scanner existants', async () => {
+    const { stats } = await renderDetail();
+    expect(stats.get).toHaveBeenCalledWith('evt');
+    expect(screen.getByText('Statistiques')).toBeTruthy();
+    expect(screen.getByText('20 / 100')).toBeTruthy();
     expect(screen.getByText('Porte A')).toBeTruthy();
     expect(screen.getByText(/Actif · valable jusqu’au/)).toBeTruthy();
+  });
+
+  it('brouillon : pas de statistiques, seulement les ventes de l’événement', async () => {
+    const { stats } = await renderDetail({ status: 'DRAFT' });
+    expect(stats.get).not.toHaveBeenCalled();
+    expect(screen.queryByText('Statistiques')).toBeNull();
+    expect(screen.getByText('20 / 100 billets')).toBeTruthy();
   });
 
   it('brouillon : publier, puis le statut passe à Publié', async () => {
