@@ -83,6 +83,12 @@ export function formatEventRange(startsAt: string, endsAt: string): string {
   return `${start} – ${DAYS_LONG[e.weekday]} ${e.day} ${MONTHS_LONG[e.month]} · ${end}`;
 }
 
+/** Date limite en heure du Bénin : « lundi 19 octobre à 14:00 ». */
+export function formatDeadline(iso: string): string {
+  const p = beninParts(iso);
+  return `${DAYS_LONG[p.weekday]?.toLowerCase()} ${p.day} ${MONTHS_LONG[p.month]} à ${pad(p.hours)}:${pad(p.minutes)}`;
+}
+
 /** Types réellement achetables : vente ouverte et au moins une place. */
 export const purchasableTypes = (types: TicketTypeDto[]) =>
   types.filter((type) => type.onSale && type.available > 0);
@@ -127,12 +133,6 @@ export function ticketAvailabilityLabel(type: TicketTypeDto): string {
     default:
       return `Disponible · ${type.available} ${type.available > 1 ? 'restants' : 'restant'}`;
   }
-}
-
-/** Sous-titre de l'accueil : « Cotonou · 23 soirées à venir », ou le genre filtré. */
-export function listSubtitle(scope: string, count: number, hasMore: boolean): string {
-  const total = hasMore ? `${count}+` : String(count);
-  return `${scope} · ${total} ${count > 1 ? 'soirées' : 'soirée'} à venir`;
 }
 
 /** Prix d'une ligne de billet : montant ou « Gratuit ». */

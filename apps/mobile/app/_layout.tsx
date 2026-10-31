@@ -13,7 +13,7 @@ void SplashScreen.preventAutoHideAsync();
 
 /**
  * Pile racine. Trois zones, une seule visible à la fois selon la session :
- * authentification, vue Participant, vue Organisateur. Basculer de rôle change la zone visible,
+ * authentification, vue Participant (aussi ouverte aux visiteurs sans compte), vue Organisateur. Basculer de rôle change la zone visible,
  * sans reconnexion (le jeton reste le même).
  */
 export default function RootLayout() {
@@ -42,7 +42,8 @@ export default function RootLayout() {
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && activeRole === 'PARTICIPANT'}>
+        {/* Un visiteur sans compte parcourt la vue Participant : l'achat l'envoie vers la connexion. */}
+        <Stack.Protected guard={!signedIn || activeRole === 'PARTICIPANT'}>
           <Stack.Screen name="participant" />
         </Stack.Protected>
         <Stack.Protected guard={signedIn && activeRole === 'ORGANIZER'}>

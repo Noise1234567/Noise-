@@ -1,4 +1,5 @@
 import type { PublicUser } from '@noise/shared';
+import type { ReactNode } from 'react';
 import { Alert, ScrollView, StyleSheet, View } from 'react-native';
 
 import { displayPhone } from '../../../auth/forms';
@@ -9,13 +10,15 @@ import { colors, radii, spacing } from '../../../theme';
 type Props = {
   user: PublicUser | null;
   onLogout: () => void;
+  /** Bas de page : contacter le support (NOISE-057). */
+  footer?: ReactNode;
 };
 
 /**
  * Écran 16 : Profil participant (NOISE-062). Compte et déconnexion confirmée : la déconnexion
  * efface les billets enregistrés sur le téléphone (NOISE-022), d'où la confirmation.
  */
-export function ParticipantProfile({ user, onLogout }: Props) {
+export function ParticipantProfile({ user, onLogout, footer }: Props) {
   const confirmLogout = () =>
     Alert.alert(
       'Se déconnecter ?',
@@ -42,6 +45,7 @@ export function ParticipantProfile({ user, onLogout }: Props) {
 
       <View style={styles.actions}>
         <Button variant="secondary" label="Se déconnecter" onPress={confirmLogout} />
+        {footer}
       </View>
     </ScrollView>
   );

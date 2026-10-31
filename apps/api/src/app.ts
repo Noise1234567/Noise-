@@ -11,6 +11,7 @@ import { errorHandler, notFoundHandler } from './middlewares/error-handler.js';
 import { createIdempotency } from './middlewares/idempotency.js';
 import { globalRateLimit } from './middlewares/rate-limit.js';
 import type { PrismaClient } from './lib/prisma.js';
+import { createTeamMailer, TeamNotifier, type TeamMailer } from './lib/team-mail.js';
 import { createAdminRouter } from './modules/admin/admin.routes.js';
 import {
   createAdminRefundsRouter,
@@ -69,6 +70,8 @@ export interface AppDependencies {
   paymentProvider?: PaymentProvider;
   /** Création des billets à la confirmation du paiement (NOISE-020). */
   issueTickets?: TicketIssuer;
+  /** E-mails à l'équipe (NOISE-059) ; par défaut Gmail si SMTP_* et TEAM_EMAIL sont définis, sinon simulé. */
+  teamMailer?: TeamMailer;
   /** Dossier du build du scanner web (tests). Par défaut : apps/scanner/dist. */
   scannerDir?: string;
 }
@@ -104,6 +107,8 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
 
   // Création des billets et de leurs QR (NOISE-020), partagée par le paiement et les billets
   // gratuits. Sans QR_SIGNING_SECRET (tests seulement), aucun billet n'est créé.
+  const team = new TeamNotifier(deps.teamMailer ?? createTeamMailer(env, logger), logger);
+
   const issueTickets =
     deps.issueTickets ??
     (env.QR_SIGNING_SECRET ? createTicketIssuer(env.QR_SIGNING_SECRET) : undefined);
@@ -114,6 +119,7 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
       deps.paymentProvider ?? createPaymentProvider(env),
       logger,
       issueTickets,
+      team,
     );
   // Avant express.json() : le webhook a besoin du corps brut pour vérifier la signature.
   if (payments) app.use('/api/v1/payments/webhook', createPaymentWebhookRouter(payments));
@@ -179,7 +185,7 @@ export function createApp(env: Env, logger: Logger, deps: AppDependencies = {}) 
     app.use(
       '/api/v1/events',
       createEventsRouter(
-        new EventsService(deps.prisma),
+        new EventsService(deps.prisma, team),
         env.JWT_ACCESS_SECRET,
         deps.imageStorage ?? defaultImageStorage(env, logger),
       ),

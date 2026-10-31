@@ -1,6 +1,6 @@
 import type { PublicUser } from '@noise/shared';
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { Alert, Text } from 'react-native';
 
 import { ParticipantProfile } from '../features/participant/profile/ParticipantProfile';
 
@@ -23,6 +23,13 @@ describe('profil participant (écran 16)', () => {
   it('compte sans e-mail (créé avant DEC-026) : pas de ligne vide', async () => {
     await render(<ParticipantProfile user={{ ...user, email: null }} onLogout={jest.fn()} />);
     expect(screen.queryByText('aminata@example.com')).toBeNull();
+  });
+
+  it('affiche le bas de page fourni (support)', async () => {
+    await render(
+      <ParticipantProfile user={user} onLogout={jest.fn()} footer={<Text>Bas de page</Text>} />,
+    );
+    expect(screen.getByText('Bas de page')).toBeTruthy();
   });
 
   it('déconnexion après confirmation seulement, en prévenant que les billets seront effacés', async () => {
