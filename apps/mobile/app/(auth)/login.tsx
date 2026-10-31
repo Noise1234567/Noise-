@@ -12,6 +12,7 @@ import {
   type LoginField,
 } from '../../src/auth/forms';
 import { formatClock, useCountdown } from '../../src/auth/useCountdown';
+import { BackButton } from '../../src/components/BackButton';
 import { Banner } from '../../src/components/Banner';
 import { Button } from '../../src/components/Button';
 import { RoleSwitcher } from '../../src/components/RoleSwitcher';
@@ -79,6 +80,7 @@ export default function Login() {
 
   return (
     <Screen>
+      <BackButton fallback="/participant" />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.flex}

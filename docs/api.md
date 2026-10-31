@@ -231,6 +231,8 @@ Styles : un événement porte `styles`, de 1 à 5 valeurs choisies par l'organis
 - `entries` : billets entrés (`checkedIn`), valides pas encore entrés, annulés, heure de la dernière entrée, scans refusés (dont billet déjà utilisé) et `arrivals`, les entrées par heure (début de l'heure en UTC, heures creuses à zéro, liste vide tant que personne n'est entré). Le Bénin est en UTC+1 toute l'année : les tranches tombent à l'heure pile en heure locale.
 - `status` et `generatedAt` : l'état de l'événement (un événement annulé garde ses billets entrés, ses ventes remboursées ne comptent plus) et l'heure du calcul. Le mobile rafraîchit toutes les 30 secondes.
 
+Côté mobile, ces chiffres s'affichent dans la section « Statistiques » du détail d'un événement publié (`apps/mobile/src/features/organizer/stats/`). Un brouillon n'a pas de statistiques : l'écran montre seulement les ventes déclarées sur l'événement.
+
 ### Annulation par l'organisateur (NOISE-029, DEC-025)
 
 Organisateur propriétaire uniquement (403 sinon) ; 404 si l'événement n'existe pas ; 409 s'il est déjà annulé ou terminé.

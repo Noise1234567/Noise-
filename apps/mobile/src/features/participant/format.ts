@@ -135,12 +135,6 @@ export function ticketAvailabilityLabel(type: TicketTypeDto): string {
   }
 }
 
-/** Sous-titre de l'accueil : « Cotonou · 23 soirées à venir », ou le genre filtré. */
-export function listSubtitle(scope: string, count: number, hasMore: boolean): string {
-  const total = hasMore ? `${count}+` : String(count);
-  return `${scope} · ${total} ${count > 1 ? 'soirées' : 'soirée'} à venir`;
-}
-
 /** Prix d'une ligne de billet : montant ou « Gratuit ». */
 export const ticketPriceLabel = (type: Pick<TicketTypeDto, 'priceXof'>) =>
   type.priceXof === 0 ? 'Gratuit' : formatFcfa(type.priceXof);

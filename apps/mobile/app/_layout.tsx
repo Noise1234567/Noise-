@@ -13,8 +13,8 @@ void SplashScreen.preventAutoHideAsync();
 
 /**
  * Pile racine. Trois zones, une seule visible à la fois selon la session :
- * authentification, vue Participant, vue Organisateur. Un compte n'a qu'un rôle (DEC-029) : la
- * vue est celle du compte connecté.
+ * authentification, vue Participant (aussi ouverte aux visiteurs sans compte), vue Organisateur.
+ * Un compte n'a qu'un rôle (DEC-029) : la vue est celle du compte connecté.
  */
 export default function RootLayout() {
   const [fontsLoaded] = useFonts(fontAssets);
@@ -42,7 +42,8 @@ export default function RootLayout() {
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
-        <Stack.Protected guard={signedIn && role === 'PARTICIPANT'}>
+        {/* Un visiteur sans compte parcourt la vue Participant : l'achat l'envoie vers la connexion. */}
+        <Stack.Protected guard={!signedIn || role === 'PARTICIPANT'}>
           <Stack.Screen name="participant" />
         </Stack.Protected>
         <Stack.Protected guard={signedIn && role === 'ORGANIZER'}>

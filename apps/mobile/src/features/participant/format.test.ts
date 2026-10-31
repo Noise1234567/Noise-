@@ -5,7 +5,6 @@ import {
   formatEventDate,
   formatEventRange,
   formatFcfa,
-  listSubtitle,
   priceFromLabel,
   isLongDescription,
   purchaseState,
@@ -115,14 +114,6 @@ describe('ligne de billet (maquette 7)', () => {
 
   it('épuisé prime sur vente terminée', () => {
     expect(ticketAvailability(type({ available: 0, onSale: false }))).toBe('SOLD_OUT');
-  });
-});
-
-describe('sous-titre de la liste', () => {
-  it('compte les soirées, avec un + tant qu’il y a d’autres pages', () => {
-    expect(listSubtitle('Cotonou', 10, true)).toBe('Cotonou · 10+ soirées à venir');
-    expect(listSubtitle('Amapiano', 3, false)).toBe('Amapiano · 3 soirées à venir');
-    expect(listSubtitle('Cotonou', 1, false)).toBe('Cotonou · 1 soirée à venir');
   });
 });
 

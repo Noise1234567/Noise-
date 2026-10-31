@@ -63,7 +63,8 @@ describe('redirection selon le rôle', () => {
   it('déconnecté : seule la zone authentification est accessible', async () => {
     await render(<RootLayout />);
     expect(screen.getByText('zone:(auth)')).toBeTruthy();
-    expect(screen.queryByText('zone:participant')).toBeNull();
+    // Sans compte, la vue Participant reste ouverte pour parcourir les soirées (NOISE-075).
+    expect(screen.getByText('zone:participant')).toBeTruthy();
     expect(screen.queryByText('zone:organizer')).toBeNull();
   });
 

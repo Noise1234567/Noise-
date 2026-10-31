@@ -12,6 +12,8 @@ jest.mock('react-native-safe-area-context', () => ({
   SafeAreaProvider: ({ children }: { children: ReactNode }) => children,
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
+const mockPush = jest.fn();
+jest.mock('expo-router', () => ({ router: { push: (...args: unknown[]) => mockPush(...args) } }));
 jest.mock('../features/participant/events-api', () => ({ eventsApi: { list: jest.fn() } }));
 
 const list = eventsApi.list as unknown as jest.Mock;
@@ -66,7 +68,8 @@ describe('accueil participant (écran 6)', () => {
     expect(screen.getByText('Dim. 18 oct. · 22:00')).toBeTruthy();
     expect(screen.getByText('Le Toit, Haie Vive')).toBeTruthy();
     expect(screen.getByText('5 000 FCFA')).toBeTruthy();
-    expect(screen.getByText('Cotonou · 1 soirée à venir')).toBeTruthy();
+    // Pas de compteur de soirées : il n'est pas affiché.
+    expect(screen.queryByText(/soirées? à venir/)).toBeNull();
     expect(screen.queryByText('Presque complet')).toBeNull();
   });
 
@@ -121,5 +124,22 @@ describe('accueil participant (écran 6)', () => {
     ).toBeTruthy();
     await fireEvent.press(screen.getByRole('button', { name: 'Réessayer' }));
     expect(await screen.findByText('Cadjehoun Nights #12')).toBeTruthy();
+  });
+
+  it('la cloche ouvre l’écran Notifications', async () => {
+    list.mockResolvedValue({ data: [event()], nextCursor: null });
+    await render(<Home />);
+    await fireEvent.press(await screen.findByRole('button', { name: 'Notifications' }));
+    expect(mockPush).toHaveBeenCalledWith('/participant/notifications');
+  });
+
+  it('une carte ouvre le détail de l’événement', async () => {
+    list.mockResolvedValue({ data: [event()], nextCursor: null });
+    await render(<Home />);
+    await fireEvent.press(await screen.findByText('Cadjehoun Nights #12'));
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/participant/event/[id]',
+      params: { id: 'e1' },
+    });
   });
 });

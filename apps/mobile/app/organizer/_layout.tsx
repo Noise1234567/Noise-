@@ -1,6 +1,19 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
+import type { ColorValue } from 'react-native';
 
 import { colors, fontFamily } from '../../src/theme';
+
+/** Icône d'onglet : contour au repos, pleine quand l'onglet est actif. */
+const tabIcon =
+  (name: 'stats-chart' | 'calendar' | 'person') =>
+  ({ color, size, focused }: { color: ColorValue; size: number; focused: boolean }) => (
+    <Ionicons
+      name={focused ? name : (`${name}-outline` as const)}
+      size={size}
+      color={color as string}
+    />
+  );
 
 // Vue Organisateur : barre d'onglets en bas. Onglet actif en cyan (le violet est réservé à l'action principale).
 export default function OrganizerLayout() {
@@ -15,9 +28,15 @@ export default function OrganizerLayout() {
         tabBarLabelStyle: { fontFamily: fontFamily.interMedium, fontSize: 12 },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Tableau de bord' }} />
-      <Tabs.Screen name="events" options={{ title: 'Mes événements' }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profil' }} />
+      <Tabs.Screen
+        name="index"
+        options={{ title: 'Tableau de bord', tabBarIcon: tabIcon('stats-chart') }}
+      />
+      <Tabs.Screen
+        name="events"
+        options={{ title: 'Mes événements', tabBarIcon: tabIcon('calendar') }}
+      />
+      <Tabs.Screen name="profile" options={{ title: 'Profil', tabBarIcon: tabIcon('person') }} />
       {/* Assistant de création : plein écran, sans onglet ni barre. */}
       <Tabs.Screen name="create-event" options={{ href: null, tabBarStyle: { display: 'none' } }} />
       {/* Détail d'un événement (NOISE-054) : hors de la barre d'onglets. */}

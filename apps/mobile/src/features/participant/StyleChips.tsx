@@ -52,10 +52,11 @@ function Chip({ label, active, onPress }: { label: string; active: boolean; onPr
 }
 
 const styles = StyleSheet.create({
-  scroll: { flexGrow: 0, marginBottom: spacing.lg },
+  // flexShrink: 0 : sans lui, la rangée se laisse écraser par la liste (flex: 1) et rogne les pastilles.
+  scroll: { flexGrow: 0, flexShrink: 0, marginBottom: spacing.lg },
   row: { gap: spacing.sm, paddingRight: spacing.lg },
   chip: {
-    minHeight: minTouchTarget - 8,
+    height: minTouchTarget - 8,
     paddingHorizontal: spacing.lg,
     borderRadius: radii.button,
     backgroundColor: colors.surface,
