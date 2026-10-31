@@ -61,7 +61,8 @@ export class EventsService {
     private readonly team?: TeamNotifier,
   ) {}
 
-  async list(auth: AuthContext, query: ListEventsQuery): Promise<EventListResponse> {
+  /** Soirées publiées et à venir ; `viewerId` est null pour un visiteur sans compte. */
+  async list(viewerId: string | null, query: ListEventsQuery): Promise<EventListResponse> {
     const now = new Date();
     const where: Prisma.EventWhereInput = { status: 'PUBLISHED', endsAt: { gt: now } };
     if (query.styles) where.styles = { hasSome: query.styles };
@@ -87,7 +88,7 @@ export class EventsService {
       now,
     );
     return {
-      data: page.map((event) => this.toDto(event, reserved, auth.userId, now)),
+      data: page.map((event) => this.toDto(event, reserved, viewerId, now)),
       nextCursor: hasMore ? (page.at(-1)?.id ?? null) : null,
     };
   }
@@ -118,17 +119,17 @@ export class EventsService {
     };
   }
 
-  async get(auth: AuthContext, id: string): Promise<EventDto> {
+  async get(viewerId: string | null, id: string): Promise<EventDto> {
     const event = await this.prisma.event.findUnique({
       where: { id },
       include: eventInclude,
     });
-    if (!event || (event.status === 'DRAFT' && event.organizerId !== auth.userId)) {
+    if (!event || (event.status === 'DRAFT' && event.organizerId !== viewerId)) {
       throw new HttpError(404, 'NOT_FOUND', 'Événement introuvable');
     }
     const now = new Date();
     const reserved = await this.reservedByTicketType(event.ticketTypes, now);
-    return this.toDto(event, reserved, auth.userId, now);
+    return this.toDto(event, reserved, viewerId, now);
   }
 
   /** L'événement est créé en brouillon : il devient visible une fois publié (update). */
@@ -393,7 +394,7 @@ export class EventsService {
   private toDto(
     event: EventWithTypes,
     reserved: Map<string, number>,
-    viewerId: string,
+    viewerId: string | null,
     now: Date,
   ): EventDto {
     const isOwner = event.organizerId === viewerId;

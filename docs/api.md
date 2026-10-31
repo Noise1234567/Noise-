@@ -67,8 +67,8 @@ Base : CDC section 7, complétée par les décisions.
 | POST      | `/auth/logout`              | Auth                      | NOISE-007            |
 | GET       | `/me`                       | Auth                      | NOISE-007            |
 | PATCH     | `/me/roles`                 | Auth                      | NOISE-015            |
-| GET       | `/events`                   | Auth                      | NOISE-011 (existe)   |
-| GET       | `/events/:id`               | Auth                      | NOISE-011 (existe)   |
+| GET       | `/events`                   | Public (auth facultative) | NOISE-011, NOISE-075 |
+| GET       | `/events/:id`               | Public (auth facultative) | NOISE-011, NOISE-075 |
 | POST      | `/events`                   | Organisateur              | NOISE-011 (existe)   |
 | PUT       | `/events/:id`               | Organisateur propriétaire | NOISE-011 (existe)   |
 | POST      | `/events/:id/ticket-types`  | Organisateur propriétaire | NOISE-011 (existe)   |
@@ -191,7 +191,8 @@ Réservé au rôle `ORGANIZER`. Renvoie les événements de l'organisateur conne
 
 ### Détail, création, modification
 
-- `GET /events/:id` : un événement `PUBLISHED` ou `CANCELLED` est lisible par tout utilisateur connecté (les détenteurs de billets doivent voir une annulation) ; un brouillon n'est visible que de son organisateur (404 pour les autres).
+- `GET /events` et `GET /events/:id` sont publics (mode invité, NOISE-075) : un visiteur sans compte voit les soirées publiées. Sans en-tête `Authorization`, la requête est anonyme ; un jeton présent mais invalide ou expiré répond 401, pour que l'app rafraîchisse sa session au lieu de passer en visiteur.
+- `GET /events/:id` : un événement `PUBLISHED` ou `CANCELLED` est lisible par tous, avec ou sans compte (les détenteurs de billets doivent voir une annulation) ; un brouillon n'est visible que de son organisateur (404 pour les autres, visiteurs compris).
 - `POST /events` : crée l'événement en `DRAFT`. Début dans le futur, fin après le début, `capacity` obligatoire (nombre de participants attendus, entier de 1 à 100 000).
 - `PUT /events/:id` : mise à jour partielle (au moins un champ). `status: "PUBLISHED"` publie le brouillon, à condition qu'il ait au moins un type de billet et qu'il ne soit pas terminé (409 sinon). Aucune autre valeur de statut n'est acceptée : l'annulation aura sa propre route (NOISE-029). Un événement annulé ne se modifie plus (409). Dès qu'un billet est vendu, `startsAt`, `endsAt` et `venue` ne peuvent plus changer (409) : les acheteurs ne seraient pas prévenus tant que les notifications (NOISE-028) n'existent pas. `capacity` peut être modifiée, sans descendre sous la somme des billets déjà créés (400). Les autres champs restent modifiables. La publication est conditionnée au statut lu : deux publications simultanées n'en font qu'une (l'autre reçoit 409), et l'équipe Noise reçoit un seul e-mail « Nouvelle soirée publiée » (NOISE-059 : titre, organisateur, date, lieu, capacité, prix). Un échec d'envoi est journalisé et n'empêche pas la publication.
 - `POST /events/:id/ticket-types` : `name` (unique par événement, 409 sinon), `priceXof` (entier de 0 à 1 000 000, 0 = billet gratuit), `quantityTotal` (entier de 1 à 100 000), `salesEndAt` facultatif (au plus tard la fin de l'événement). La somme des `quantityTotal` des types de billets ne peut pas dépasser la `capacity` de l'événement (409, le message indique combien de places restent).
