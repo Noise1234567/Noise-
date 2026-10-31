@@ -1,6 +1,5 @@
 import {
   updateOrganizerProfileSchema,
-  type MyIdentityResponse,
   type OrganizerContactDto,
   type UpdateOrganizerProfileInput,
 } from '@noise/shared';
@@ -45,36 +44,4 @@ export function validateContactForm(form: ContactForm): {
     errors[field] ??= issue.message;
   }
   return { errors };
-}
-
-/** Libellé et ton de l'état de la pièce d'identité (DEC-018). */
-export function identitySummary(identity: MyIdentityResponse): {
-  label: string;
-  detail: string;
-  kind: 'info' | 'warning' | 'error';
-} {
-  switch (identity.status) {
-    case 'VERIFIED':
-      return { label: 'Vérifiée', detail: 'Votre pièce d’identité a été validée.', kind: 'info' };
-    case 'PENDING':
-      return {
-        label: 'En cours de vérification',
-        detail: 'Vous pouvez déjà créer et publier vos événements.',
-        kind: 'info',
-      };
-    case 'REFUSED':
-      return {
-        label: 'Refusée',
-        detail: identity.refusalReason
-          ? `Motif : ${identity.refusalReason}. Envoyez une nouvelle pièce.`
-          : 'Envoyez une nouvelle pièce.',
-        kind: 'error',
-      };
-    default:
-      return {
-        label: 'Non envoyée',
-        detail: 'Envoyez votre pièce d’identité pour créer et publier des événements.',
-        kind: 'warning',
-      };
-  }
 }

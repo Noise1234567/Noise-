@@ -77,7 +77,7 @@ Découpage d'un module API : `routes` (HTTP, auth, validation d'entrée) → `co
 | Langage        | TypeScript strict partout                                                                                      |
 | API            | Express 5, Zod 4, pino, helmet, express-rate-limit                                                             |
 | Base           | PostgreSQL 17, Prisma 7 (adaptateur `pg`)                                                                      |
-| Mobile         | Expo SDK 57, React Native, Zustand, Axios, SecureStore, navigation : voir DEC-011                              |
+| Mobile         | Expo SDK 58, React Native, Zustand, Axios, SecureStore, navigation : voir DEC-011                              |
 | Scanner        | Vite + TypeScript sans framework, BarcodeDetector + repli jsQR                                                 |
 | Tests          | Vitest + Supertest (API), jest-expo + RN Testing Library (mobile), Maestro (E2E Android), Playwright (scanner) |
 | Paiement       | Agrégateur béninois, FedaPay ou KKiaPay (choix final dans NOISE-010)                                           |

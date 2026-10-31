@@ -8,6 +8,7 @@ import {
 } from '@noise/shared';
 import type { Logger } from 'pino';
 import { HttpError } from '../../lib/http-error.js';
+import { refundNeededMail, type RefundReason, type TeamNotifier } from '../../lib/team-mail.js';
 import type { PrismaClient } from '../../lib/prisma.js';
 import type { TicketIssuer } from '../tickets/ticket-issuer.js';
 import type { PaymentProvider, RequestHeaders } from './providers/index.js';
@@ -46,6 +47,8 @@ export class PaymentsService {
     private readonly logger: Logger,
     /** Création des billets dans la transaction de confirmation (NOISE-020) : si elle échoue, la confirmation est annulée. */
     private readonly issueTickets: TicketIssuer = async () => {},
+    /** E-mail à l'équipe quand un client est à rembourser (NOISE-059) ; aucun envoi par défaut. */
+    private readonly team?: TeamNotifier,
     private readonly now: () => Date = () => new Date(),
   ) {}
 
@@ -186,6 +189,11 @@ export class PaymentsService {
         where: { id: payment.id },
         data: { rawStatus: `${remote.rawStatus}:montant_incoherent` },
       });
+      // Le paiement reste non confirmé : webhooks rejoués et suivi de commande repassent ici.
+      // Un seul e-mail, au premier constat.
+      if (!payment.rawStatus?.endsWith(':montant_incoherent')) {
+        await this.alertRefund('amount-mismatch', payment.id, remote.amountXof);
+      }
       return 'amount-mismatch';
     }
 
@@ -253,14 +261,49 @@ export class PaymentsService {
         { alert: 'PAYMENT_DUPLICATE', paymentId: payment.id, orderId: payment.orderId },
         'Commande déjà payée par une autre tentative : ce paiement est à rembourser',
       );
+      await this.alertRefund('duplicate-payment', payment.id);
     }
     if (outcome === 'paid-after-expiry') {
       this.logger.error(
         { alert: 'PAYMENT_ON_EXPIRED_ORDER', paymentId: payment.id, orderId: payment.orderId },
         'Paiement reçu sur une commande expirée : à rembourser manuellement',
       );
+      await this.alertRefund('expired-order', payment.id);
     }
     return outcome;
+  }
+
+  /** Prévient l'équipe qu'un client est à rembourser. N'échoue jamais : l'alerte des logs reste. */
+  private async alertRefund(reason: RefundReason, paymentId: string, receivedXof?: number) {
+    if (!this.team) return;
+    try {
+      const payment = await this.prisma.payment.findUniqueOrThrow({
+        where: { id: paymentId },
+        include: {
+          order: {
+            include: {
+              participant: { select: { name: true } },
+              ticketType: { select: { event: { select: { title: true } } } },
+            },
+          },
+        },
+      });
+      this.team.notify(
+        refundNeededMail({
+          reason,
+          orderId: payment.orderId,
+          paymentId: payment.id,
+          eventTitle: payment.order.ticketType.event.title,
+          participantName: payment.order.participant.name,
+          participantPhone: payment.phoneMasked,
+          expectedXof: payment.amountXof,
+          receivedXof,
+          at: this.now(),
+        }),
+      );
+    } catch (error) {
+      this.logger.error({ err: error, paymentId }, 'E-mail de remboursement non préparé');
+    }
   }
 
   /** Suivi de commande pour le mobile. Rattrape un webhook perdu en revérifiant le statut. */

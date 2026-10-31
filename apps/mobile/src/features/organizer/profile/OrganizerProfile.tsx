@@ -1,5 +1,5 @@
-import type { MyIdentityResponse, PublicUser } from '@noise/shared';
-import { useCallback, useEffect, useState } from 'react';
+import type { PublicUser } from '@noise/shared';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
 
 import type { OrganizerProfileApi } from '../../../api/organizer-profile';
@@ -13,7 +13,6 @@ import { TextField } from '../../../components/TextField';
 import { colors, radii, spacing } from '../../../theme';
 import {
   displayPhone,
-  identitySummary,
   toForm,
   validateContactForm,
   type ContactField,
@@ -21,9 +20,13 @@ import {
 } from './profile-rules';
 
 type Props = {
-  api: Pick<OrganizerProfileApi, 'get' | 'save' | 'identity'>;
+  api: Pick<OrganizerProfileApi, 'get' | 'save'>;
   user: PublicUser | null;
   onLogout: () => void;
+  /** Carte de la pièce d'identité (NOISE-048), avec son bouton d'envoi. */
+  identity?: ReactNode;
+  /** Bas de page : contacter le support (NOISE-057). */
+  footer?: ReactNode;
 };
 
 const EMPTY_FORM: ContactForm = { whatsapp: '', instagram: '', facebook: '', tiktok: '' };
@@ -32,10 +35,9 @@ const EMPTY_FORM: ContactForm = { whatsapp: '', instagram: '', facebook: '', tik
  * Écran 26 : Profil organisateur (NOISE-061). Compte, état de la pièce d'identité, contacts
  * publics (WhatsApp, réseaux) affichés aux participants, déconnexion confirmée.
  */
-export function OrganizerProfile({ api, user, onLogout }: Props) {
+export function OrganizerProfile({ api, user, onLogout, identity, footer }: Props) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [identity, setIdentity] = useState<MyIdentityResponse | null>(null);
   const [form, setForm] = useState<ContactForm>(EMPTY_FORM);
   const [errors, setErrors] = useState<FieldErrors<ContactField>>({});
   const [saving, setSaving] = useState(false);
@@ -45,9 +47,7 @@ export function OrganizerProfile({ api, user, onLogout }: Props) {
     setLoading(true);
     setLoadError(null);
     try {
-      const [profile, mine] = await Promise.all([api.get(), api.identity()]);
-      setForm(toForm(profile));
-      setIdentity(mine);
+      setForm(toForm(await api.get()));
     } catch (e) {
       setLoadError(toApiError(e).message);
     } finally {
@@ -92,8 +92,6 @@ export function OrganizerProfile({ api, user, onLogout }: Props) {
   if (loading) return <StateView kind="loading" />;
   if (loadError) return <StateView kind="error" message={loadError} onRetry={() => void load()} />;
 
-  const summary = identity ? identitySummary(identity) : null;
-
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -108,15 +106,7 @@ export function OrganizerProfile({ api, user, onLogout }: Props) {
           {user?.email ? <Text muted>{user.email}</Text> : null}
         </View>
 
-        {summary ? (
-          <View style={styles.section}>
-            <Text variant="section">Pièce d’identité</Text>
-            <Text variant="button" style={styles.status}>
-              {summary.label}
-            </Text>
-            <Banner kind={summary.kind}>{summary.detail}</Banner>
-          </View>
-        ) : null}
+        {identity}
 
         <View style={styles.section}>
           <Text variant="section">Contacts publics</Text>
@@ -169,6 +159,7 @@ export function OrganizerProfile({ api, user, onLogout }: Props) {
 
         <View style={styles.section}>
           <Button variant="secondary" label="Se déconnecter" onPress={confirmLogout} />
+          {footer}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -185,5 +176,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   section: { gap: spacing.md },
-  status: { color: colors.secondary },
 });

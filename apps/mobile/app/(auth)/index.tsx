@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
+import { BackButton } from '../../src/components/BackButton';
 import { Logo } from '../../src/components/Logo';
 import { Screen } from '../../src/components/Screen';
 import { Text } from '../../src/components/Text';
@@ -16,6 +17,8 @@ export default function Welcome() {
 
   return (
     <Screen>
+      {/* Sans compte, on peut quand même parcourir les soirées. */}
+      <BackButton fallback="/participant" />
       <Logo />
       <View style={styles.spacer} />
       <Text variant="title" style={styles.headline}>

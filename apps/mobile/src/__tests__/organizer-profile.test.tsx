@@ -1,6 +1,6 @@
-import type { MyIdentityResponse, OrganizerContactDto, PublicUser } from '@noise/shared';
+import type { OrganizerContactDto, PublicUser } from '@noise/shared';
 import { fireEvent, render, screen } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { Alert, Text } from 'react-native';
 
 import { OrganizerProfile } from '../features/organizer/profile/OrganizerProfile';
 
@@ -20,20 +20,9 @@ const emptyContact: OrganizerContactDto = {
   facebook: null,
   tiktok: null,
 };
-const identity = (over: Partial<MyIdentityResponse> = {}): MyIdentityResponse => ({
-  status: 'PENDING',
-  canOrganize: true,
-  submittedAt: '2026-10-20T10:00:00.000Z',
-  refusalReason: null,
-  resubmitDeadline: null,
-  eventsPulled: false,
-  ...over,
-});
-
 function fakeApi(contact: OrganizerContactDto = emptyContact) {
   return {
     get: jest.fn().mockResolvedValue(contact),
-    identity: jest.fn().mockResolvedValue(identity()),
     save: jest.fn(async (input: Record<string, string | null>) => ({
       whatsapp: input.whatsapp ?? null,
       instagram: input.instagram ? 'https://www.instagram.com/kofi.events' : null,
@@ -44,13 +33,12 @@ function fakeApi(contact: OrganizerContactDto = emptyContact) {
 }
 
 describe('profil organisateur (écran 26)', () => {
-  it('affiche le compte, l’état de la pièce et les contacts enregistrés', async () => {
+  it('affiche le compte et les contacts enregistrés', async () => {
     const api = fakeApi({ ...emptyContact, whatsapp: '+2290166000001' });
     await render(<OrganizerProfile api={api} user={user} onLogout={jest.fn()} />);
     expect(await screen.findByText('Kofi Events')).toBeTruthy();
     expect(screen.getByText('01 97 45 45 47')).toBeTruthy();
     expect(screen.getByText('kofi@example.com')).toBeTruthy();
-    expect(screen.getByText('En cours de vérification')).toBeTruthy();
     expect(screen.getByDisplayValue('01 66 00 00 01')).toBeTruthy();
   });
 
@@ -80,12 +68,18 @@ describe('profil organisateur (écran 26)', () => {
     expect(api.save).not.toHaveBeenCalled();
   });
 
-  it('pièce refusée : motif affiché', async () => {
-    const api = fakeApi();
-    api.identity.mockResolvedValue(identity({ status: 'REFUSED', refusalReason: 'Photo floue' }));
-    await render(<OrganizerProfile api={api} user={user} onLogout={jest.fn()} />);
-    expect(await screen.findByText('Refusée')).toBeTruthy();
-    expect(screen.getByText('Motif : Photo floue. Envoyez une nouvelle pièce.')).toBeTruthy();
+  it('affiche la carte de la pièce d’identité et le bas de page fournis', async () => {
+    await render(
+      <OrganizerProfile
+        api={fakeApi()}
+        user={user}
+        onLogout={jest.fn()}
+        identity={<Text>Carte identité</Text>}
+        footer={<Text>Bas de page</Text>}
+      />,
+    );
+    expect(await screen.findByText('Carte identité')).toBeTruthy();
+    expect(screen.getByText('Bas de page')).toBeTruthy();
   });
 
   it('déconnexion après confirmation seulement', async () => {

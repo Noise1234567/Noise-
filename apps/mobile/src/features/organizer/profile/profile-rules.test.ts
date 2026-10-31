@@ -1,16 +1,4 @@
-import type { MyIdentityResponse } from '@noise/shared';
-
-import { displayPhone, identitySummary, toForm, validateContactForm } from './profile-rules';
-
-const identity = (over: Partial<MyIdentityResponse>): MyIdentityResponse => ({
-  status: 'NOT_SUBMITTED',
-  canOrganize: false,
-  submittedAt: null,
-  refusalReason: null,
-  resubmitDeadline: null,
-  eventsPulled: false,
-  ...over,
-});
+import { displayPhone, toForm, validateContactForm } from './profile-rules';
 
 describe('profil organisateur : règles', () => {
   it('numéro au format local et formulaire de départ', () => {
@@ -44,14 +32,5 @@ describe('profil organisateur : règles', () => {
       whatsapp: 'Numéro WhatsApp béninois invalide',
       instagram: 'Lien Instagram invalide',
     });
-  });
-
-  it('état de la pièce d’identité', () => {
-    expect(identitySummary(identity({})).label).toBe('Non envoyée');
-    expect(identitySummary(identity({ status: 'PENDING' })).label).toBe('En cours de vérification');
-    expect(identitySummary(identity({ status: 'VERIFIED' })).label).toBe('Vérifiée');
-    expect(
-      identitySummary(identity({ status: 'REFUSED', refusalReason: 'Photo floue' })).detail,
-    ).toBe('Motif : Photo floue. Envoyez une nouvelle pièce.');
   });
 });
