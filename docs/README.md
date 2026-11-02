@@ -11,6 +11,7 @@
 | [testing.md](testing.md)                 | Stratégie et commandes de test                             | toutes                   |
 | [environments.md](environments.md)       | Local, test, staging, production ; déploiement             | NOISE-016, 035           |
 | [android-release.md](android-release.md) | Builds APK / AAB, signature, versioning, Google Play       | NOISE-009, 032, 033, 038 |
+| [admin-interface.md](admin-interface.md) | Interface d'administration : conception, écrans, découpage | NOISE-065                |
 | [git-workflow.md](git-workflow.md)       | Branches, commits, PR, revues, merge, releases             | NOISE-005                |
 | [notion-model.md](notion-model.md)       | Structure de l'espace Notion et import                     | NOISE-004                |
 
