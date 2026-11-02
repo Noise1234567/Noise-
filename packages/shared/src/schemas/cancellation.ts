@@ -15,6 +15,17 @@ export const cancelEventSchema = z.object({
 
 export type CancelEventInput = z.infer<typeof cancelEventSchema>;
 
+/** POST /api/v1/admin/orders/:orderId/refund : référence du transfert Mobile Money (NOISE-066). */
+export const markRefundSchema = z.object({
+  reference: z
+    .string({ error: 'Référence du transfert attendue' })
+    .trim()
+    .min(3, 'Référence trop courte')
+    .max(100, 'Référence trop longue'),
+});
+
+export type MarkRefundInput = z.infer<typeof markRefundSchema>;
+
 /**
  * Calcul de DEC-025, en FCFA entiers. Exemple : 1 000 000 de ventes, 700 000 déjà reversés :
  * frais 100 000, à renvoyer 700 000, part retenue 200 000, remboursements 1 000 000.
@@ -56,6 +67,9 @@ export interface RefundDto {
   quantity: number;
   refundXof: number;
   paidAt: string | null;
+  /** Remboursement marqué comme effectué (NOISE-066) ; null tant qu'il reste à faire. */
+  refundedAt: string | null;
+  refundReference: string | null;
 }
 
 export interface EventRefundsResponse {
@@ -64,5 +78,8 @@ export interface EventRefundsResponse {
   returnDueAt: string;
   organizerOwesXof: number;
   refundTotalXof: number;
+  /** Déjà remboursé et reste à rembourser, en FCFA (NOISE-066). */
+  refundedXof: number;
+  remainingXof: number;
   refunds: RefundDto[];
 }

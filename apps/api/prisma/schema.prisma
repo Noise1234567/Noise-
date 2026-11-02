@@ -85,6 +85,7 @@ model User {
   organizedEvents      Event[]
   orders               Order[]                @relation("participant")
   referredOrders       Order[]                @relation("referrer")
+  refundedOrders       Order[]                @relation("refunder")
   createdScannerLink   ScannerLink[]
   pushTokens           PushToken[]
   adminAuditLogs       AdminAuditLog[]
@@ -192,11 +193,16 @@ model Order {
   noiseShareXof     Int?        @map("noise_share_xof")
   affiliateShareXof Int?        @map("affiliate_share_xof")
   organizerShareXof Int?        @map("organizer_share_xof")
+  /// Remboursement fait à la main après une annulation (NOISE-066) : date, administrateur, référence du transfert.
+  refundedAt        DateTime?   @map("refunded_at") @db.Timestamptz(3)
+  refundedById      String?     @map("refunded_by_id") @db.Uuid
+  refundReference   String?     @map("refund_reference") @db.VarChar(100)
   createdAt         DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt         DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   participant User       @relation("participant", fields: [participantId], references: [id], onDelete: Restrict)
   referrer    User?      @relation("referrer", fields: [referrerId], references: [id], onDelete: SetNull)
+  refundedBy  User?      @relation("refunder", fields: [refundedById], references: [id], onDelete: Restrict)
   ticketType  TicketType @relation(fields: [ticketTypeId], references: [id], onDelete: Restrict)
   payments    Payment[]
   tickets     Ticket[]
@@ -321,11 +327,13 @@ enum AdminAction {
   IDENTITY_VIEWED
   IDENTITY_APPROVED
   IDENTITY_REFUSED
+  REFUND_MARKED
 }
 
 enum AdminTargetType {
   USER
   EVENT
+  ORDER
 }
 
 /// Journal des actions d'administration (DEC-020, NOISE-037) : qui a fait quoi, sur quoi, pourquoi.

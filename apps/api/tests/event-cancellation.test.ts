@@ -342,3 +342,101 @@ describe('GET /api/v1/admin/events/:eventId/refunds', () => {
     ).toBe(404);
   });
 });
+
+describe('POST /api/v1/admin/orders/:orderId/refund (NOISE-066)', () => {
+  const mark = (orderId: string, authorization: string, reference = 'MTN-TX-778812') =>
+    request(app)
+      .post(`/api/v1/admin/orders/${orderId}/refund`)
+      .set('Authorization', authorization)
+      .send({ reference });
+  const newAdmin = (phone: string) =>
+    prisma.user.create({ data: { name: 'Admin', phone, passwordHash: 'x', roles: ['ADMIN'] } });
+  const refundsOf = async (eventId: string, authorization: string) =>
+    (
+      await request(app)
+        .get(`/api/v1/admin/events/${eventId}/refunds`)
+        .set('Authorization', authorization)
+    ).body as {
+      refundedXof: number;
+      remainingXof: number;
+      refunds: {
+        orderId: string;
+        refundXof: number;
+        refundedAt: string | null;
+        refundReference: string | null;
+      }[];
+    };
+
+  it('enregistre date, administrateur et référence, journalise, et met à jour faits / restants', async () => {
+    const { event, auth } = await scenario();
+    await cancel(auth, event.id);
+    const admin = await newAdmin('+2290199999997');
+    const adminAuth = await bearer(admin);
+    const [first] = (await refundsOf(event.id, adminAuth)).refunds;
+
+    const res = await mark(first!.orderId, adminAuth);
+
+    expect(res.status).toBe(200);
+    expect(res.body.refund).toMatchObject({
+      orderId: first!.orderId,
+      refundReference: 'MTN-TX-778812',
+      refundedAt: expect.any(String),
+    });
+    const order = await prisma.order.findUniqueOrThrow({ where: { id: first!.orderId } });
+    expect(order.refundedById).toBe(admin.id);
+    const audit = await prisma.adminAuditLog.findMany({ where: { action: 'REFUND_MARKED' } });
+    expect(audit).toEqual([
+      expect.objectContaining({ adminId: admin.id, targetType: 'ORDER', targetId: first!.orderId }),
+    ]);
+    const list = await refundsOf(event.id, adminAuth);
+    expect(list.refundedXof).toBe(first!.refundXof);
+    expect(list.remainingXof).toBe(25_000 - first!.refundXof);
+    expect(list.refunds.filter((r) => r.refundedAt === null)).toHaveLength(1);
+  });
+
+  it('un remboursement déjà marqué est refusé (409), même en parallèle', async () => {
+    const { event, auth } = await scenario();
+    await cancel(auth, event.id);
+    const adminAuth = await bearer(await newAdmin('+2290199999996'));
+    const [first] = (await refundsOf(event.id, adminAuth)).refunds;
+
+    const results = await Promise.all([
+      mark(first!.orderId, adminAuth, 'REF-A'),
+      mark(first!.orderId, adminAuth, 'REF-B'),
+      mark(first!.orderId, adminAuth, 'REF-C'),
+    ]);
+
+    expect(results.map((r) => r.status).sort()).toEqual([200, 409, 409]);
+    expect(await prisma.adminAuditLog.count({ where: { action: 'REFUND_MARKED' } })).toBe(1);
+    const again = await mark(first!.orderId, adminAuth);
+    expect(again.status).toBe(409);
+    expect(again.body.error.code).toBe('CONFLICT');
+  });
+
+  it('commande payée d’un événement non annulé : 409 ; commande inconnue : 404', async () => {
+    const { event } = await scenario();
+    const adminAuth = await bearer(await newAdmin('+2290199999995'));
+    const paid = await prisma.order.findFirstOrThrow({
+      where: { ticketType: { eventId: event.id }, status: 'PAID' },
+    });
+
+    expect((await mark(paid.id, adminAuth)).status).toBe(409);
+    expect((await mark(crypto.randomUUID(), adminAuth)).status).toBe(404);
+  });
+
+  it('réservé aux administrateurs ; référence validée', async () => {
+    const { event, auth } = await scenario();
+    await cancel(auth, event.id);
+    const adminAuth = await bearer(await newAdmin('+2290199999994'));
+    const [first] = (await refundsOf(event.id, adminAuth)).refunds;
+
+    expect((await request(app).post(`/api/v1/admin/orders/${first!.orderId}/refund`)).status).toBe(
+      401,
+    );
+    expect((await mark(first!.orderId, auth)).status).toBe(403);
+    const invalid = await mark(first!.orderId, adminAuth, ' x ');
+    expect(invalid.status).toBe(400);
+    expect(invalid.body.error.code).toBe('VALIDATION_ERROR');
+    expect((await mark('pas-un-uuid', adminAuth)).status).toBe(400);
+  });
+});

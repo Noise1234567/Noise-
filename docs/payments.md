@@ -162,7 +162,7 @@ Règles décidées en réunion d'équipe le 2026-10-08. Montants en FCFA entiers
 - Annulation par l'organisateur (DEC-025) :
   - frais d'annulation = ventes totales × 10 % ;
   - l'organisateur renvoie sous 10 jours les virements déjà effectués ; le reste du solde est retenu ;
-  - après le retour des fonds, chaque acheteur est remboursé de 100 % du prix de ses billets, hors frais de paiement, par transfert automatique si l'API FedaPay le permet (NOISE-045), sinon manuellement ;
+  - après le retour des fonds, chaque acheteur est remboursé de 100 % du prix de ses billets, hors frais de paiement, par transfert automatique si l'API FedaPay le permet (NOISE-045), sinon manuellement ; un remboursement manuel est noté par l'administrateur avec la référence du transfert, une seule fois par commande (NOISE-066) ;
   - sans paiement sous 10 jours : e-mail et SMS, relance deux à trois jours après avec un délai de 48 à 72 h, puis bannissement définitif et poursuites ; les acheteurs sont informés d'une enquête de 7 jours au plus, puis remboursés sous 10 jours sur la trésorerie de Noise si l'enquête est concluante (NOISE-046).
 
 Exemple d'annulation : 200 billets à 5 000 FCFA (1 000 000 FCFA de ventes), 700 000 FCFA déjà reversés. L'organisateur paie 100 000 FCFA de frais et renvoie 700 000 FCFA ; Noise retient 200 000 FCFA, rembourse 1 000 000 FCFA aux acheteurs et conserve sa commission de 100 000 FCFA.
