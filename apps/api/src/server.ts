@@ -5,6 +5,8 @@ import { createApp } from './app.js';
 import { startIdentityJob } from './modules/identity/identity-job.js';
 import { IdentityMaintenance } from './modules/identity/identity-maintenance.js';
 import { createIdentityStorage } from './modules/uploads/identity-storage.js';
+import { DataPurge } from './modules/maintenance/data-purge.js';
+import { startPurgeJob } from './modules/maintenance/purge-job.js';
 import { startOrderExpiryJob } from './modules/orders/expiry-job.js';
 import { OrdersService } from './modules/orders/orders.service.js';
 
@@ -33,6 +35,9 @@ const stopIdentityJob = prisma
   ? startIdentityJob(new IdentityMaintenance(prisma, identityStorage), logger)
   : () => undefined;
 
+// Clés d'idempotence et jetons de rafraîchissement périmés, une fois par jour (NOISE-069).
+const stopPurgeJob = prisma ? startPurgeJob(new DataPurge(prisma), logger) : () => undefined;
+
 const server = app.listen(env.PORT, () => {
   logger.info({ port: env.PORT, env: env.NODE_ENV }, 'API Noise démarrée');
 });
@@ -41,6 +46,7 @@ function shutdown(signal: string) {
   logger.info({ signal }, 'Arrêt en cours');
   stopOrderExpiryJob();
   stopIdentityJob();
+  stopPurgeJob();
   server.close(() => {
     void (prisma?.$disconnect() ?? Promise.resolve()).finally(() => process.exit(0));
   });
