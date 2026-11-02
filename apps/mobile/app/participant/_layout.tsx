@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import type { ColorValue } from 'react-native';
 
+import { FULL_SCREEN_TAB } from '../../src/components/tab-options';
 import { colors, fontFamily } from '../../src/theme';
 
 /** Icône d'onglet : contour au repos, pleine quand l'onglet est actif. */
@@ -38,19 +39,13 @@ export default function ParticipantLayout() {
       />
       <Tabs.Screen name="profile" options={{ title: 'Profil', tabBarIcon: tabIcon('person') }} />
       {/* Notifications : plein écran, ouvert depuis la cloche (maquette 17). */}
-      <Tabs.Screen
-        name="notifications"
-        options={{ href: null, tabBarStyle: { display: 'none' } }}
-      />
+      <Tabs.Screen name="notifications" options={FULL_SCREEN_TAB} />
       {/* Détail d'un événement : plein écran, hors de la barre d'onglets (maquette 7). */}
-      <Tabs.Screen name="event/[id]" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="event/[id]" options={FULL_SCREEN_TAB} />
       {/* Tunnel d'achat : plein écran (NOISE-021). */}
-      <Tabs.Screen
-        name="checkout/[eventId]"
-        options={{ href: null, tabBarStyle: { display: 'none' } }}
-      />
+      <Tabs.Screen name="checkout/[eventId]" options={FULL_SCREEN_TAB} />
       {/* Billet en plein écran avec son QR (NOISE-022). */}
-      <Tabs.Screen name="ticket/[id]" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="ticket/[id]" options={FULL_SCREEN_TAB} />
     </Tabs>
   );
 }
