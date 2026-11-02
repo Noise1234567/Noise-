@@ -21,14 +21,15 @@ export function createEventsController(service: EventsService) {
   const eventId = (res: Response) => (res.locals.params as { id: string }).id;
 
   return {
+    // Routes publiques : `req.auth` est absent pour un visiteur sans compte (NOISE-075).
     list: async (req: Request, res: Response) => {
-      res.json(await service.list(auth(req), res.locals.query as ListEventsQuery));
+      res.json(await service.list(req.auth?.userId ?? null, res.locals.query as ListEventsQuery));
     },
     listMine: async (req: Request, res: Response) => {
       res.json(await service.listMine(auth(req), res.locals.query as ListMyEventsQuery));
     },
     get: async (req: Request, res: Response) => {
-      res.json({ event: await service.get(auth(req), eventId(res)) });
+      res.json({ event: await service.get(req.auth?.userId ?? null, eventId(res)) });
     },
     create: async (req: Request, res: Response) => {
       res
