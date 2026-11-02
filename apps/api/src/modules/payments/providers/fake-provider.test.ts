@@ -22,6 +22,19 @@ describe('FakePaymentProvider', () => {
     expect(transaction).toMatchObject({ status: 'SUCCEEDED', amountXof: 5000, currency: 'XOF' });
   });
 
+  it('identifiants uniques même après un redémarrage (base conservée, fournisseur vidé)', async () => {
+    const before = new FakePaymentProvider('secret');
+    const first = await before.initiate(input({ paymentId: 'payment-a' }));
+    const second = await before.initiate(input({ paymentId: 'payment-b' }));
+    // Un nouveau fournisseur repart de zéro, comme l'API après un déploiement.
+    const after = new FakePaymentProvider('secret');
+    const third = await after.initiate(input({ paymentId: 'payment-c' }));
+
+    const ids = [first, second, third].map((r) => r.providerTransactionId);
+    expect(new Set(ids).size).toBe(3);
+    for (const id of ids) expect(Number.isSafeInteger(Number(id))).toBe(true);
+  });
+
   it('scénario échec', async () => {
     const provider = new FakePaymentProvider('secret');
     const { providerTransactionId } = await provider.initiate(

@@ -1,6 +1,8 @@
 import type { OrderStatusResponse } from '@noise/shared';
 
 import {
+  createIntentKeys,
+  keepsIntentKey,
   localPhoneFromE164,
   maxQuantity,
   pollDelay,
@@ -51,5 +53,24 @@ describe('règles du tunnel d’achat', () => {
     const now = Date.parse('2026-10-15T12:00:00Z');
     expect(secondsUntil('2026-10-15T12:15:00Z', now)).toBe(900);
     expect(secondsUntil('2026-10-15T11:00:00Z', now)).toBe(0);
+  });
+
+  it('une clé par intention : même requête, même clé ; autre requête ou après succès, nouvelle clé', () => {
+    let n = 0;
+    const keys = createIntentKeys(() => `cle-${++n}`);
+    const a = keys.keyFor({ ticketTypeId: 't', quantity: 1 });
+    expect(keys.keyFor({ ticketTypeId: 't', quantity: 1 })).toBe(a);
+    expect(keys.keyFor({ ticketTypeId: 't', quantity: 2 })).not.toBe(a);
+    keys.settle();
+    expect(keys.keyFor({ ticketTypeId: 't', quantity: 2 })).toBe('cle-3');
+  });
+
+  it('clé gardée seulement si le résultat est inconnu : pas de réponse ou 5xx', () => {
+    expect(keepsIntentKey(null)).toBe(true);
+    expect(keepsIntentKey(500)).toBe(true);
+    expect(keepsIntentKey(503)).toBe(true);
+    expect(keepsIntentKey(400)).toBe(false);
+    expect(keepsIntentKey(409)).toBe(false);
+    expect(keepsIntentKey(429)).toBe(false);
   });
 });
