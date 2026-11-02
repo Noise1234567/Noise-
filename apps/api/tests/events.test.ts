@@ -547,8 +547,18 @@ describe("capacité et frais d'organisation (NOISE-044)", () => {
 });
 
 describe('liste (GET /events)', () => {
-  it('401 sans jeton', async () => {
-    expect((await request(app).get('/api/v1/events')).status).toBe(401);
+  it('visiteur sans compte (NOISE-075) : soirées publiées seulement', async () => {
+    const owner = await organizer();
+    await seedEvent(owner.user.id, { title: 'Publié' });
+    await seedEvent(owner.user.id, { title: 'Brouillon', status: 'DRAFT' });
+    const res = await request(app).get('/api/v1/events');
+    expect(res.status).toBe(200);
+    expect(res.body.data.map((e: { title: string }) => e.title)).toEqual(['Publié']);
+  });
+
+  it('jeton invalide : 401, pas de bascule silencieuse en visiteur', async () => {
+    const res = await request(app).get('/api/v1/events').set('Authorization', 'Bearer faux');
+    expect(res.status).toBe(401);
   });
 
   it('ne montre aux participants que les événements publiés et à venir', async () => {
@@ -853,10 +863,21 @@ describe('détail (GET /events/:id)', () => {
     );
   });
 
-  it('401 sans jeton, 400 si identifiant invalide, 404 si inconnu', async () => {
+  it('visiteur sans compte (NOISE-075) : détail d’une soirée publiée, jamais d’un brouillon', async () => {
+    const owner = await organizer();
+    const published = await seedEvent(owner.user.id);
+    const draft = await seedEvent(owner.user.id, { status: 'DRAFT' });
+    expect((await request(app).get(`/api/v1/events/${published.id}`)).status).toBe(200);
+    expect((await request(app).get(`/api/v1/events/${draft.id}`)).status).toBe(404);
+  });
+
+  it('400 si identifiant invalide, 404 si inconnu, 401 avec un jeton invalide', async () => {
     const { headers } = await participant();
     const unknown = '5b9d7c1e-0f2a-4c64-8a43-1c2f3e4d5a6b';
-    expect((await request(app).get(`/api/v1/events/${unknown}`)).status).toBe(401);
+    expect(
+      (await request(app).get(`/api/v1/events/${unknown}`).set('Authorization', 'Bearer faux'))
+        .status,
+    ).toBe(401);
     expect((await request(app).get('/api/v1/events/abc').set(headers)).status).toBe(400);
     expect((await request(app).get(`/api/v1/events/${unknown}`).set(headers)).status).toBe(404);
   });

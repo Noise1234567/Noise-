@@ -71,7 +71,7 @@ describe('Soirée publiée', () => {
     const [mail] = mailer.sent;
     expect(mail?.subject).toBe('[Noise] Nouvelle soirée publiée : Soirée test');
     expect(mail?.text).toContain('Organisateur : Kossi Events (kossi@example.com)');
-    expect(mail?.text).toContain('Date : 01/11/2026 22:00 (heure de Cotonou)');
+    expect(mail?.text).toContain(`Date : ${cotonouDateTime(event.startsAt)} (heure de Cotonou)`);
     expect(mail?.text).toContain('Lieu : Club, Cotonou');
     expect(mail?.text).toContain('Capacité déclarée : 100 participants');
     expect(mail?.text).toMatch(/- .+ : \d[\d ]* FCFA × 10|- .+ : gratuit × 10/);
