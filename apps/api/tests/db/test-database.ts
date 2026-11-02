@@ -5,6 +5,9 @@ import { createPrismaClient, type PrismaClient } from '../../src/lib/prisma.js';
  * URL : TEST_DATABASE_URL (apps/api/.env en local), sinon DATABASE_URL (CI).
  * Le schéma doit être à jour : pnpm --filter @noise/api db:test:prepare.
  */
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
+
 export const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL ?? process.env.DATABASE_URL ?? '';
 
 export function createTestPrisma(): PrismaClient {
@@ -81,8 +84,9 @@ export const factories = {
         venue: 'Club',
         city: 'Cotonou',
         capacity: 100,
-        startsAt: new Date('2026-11-01T21:00:00Z'),
-        endsAt: new Date('2026-11-02T03:00:00Z'),
+        // Toujours à venir : une date fixe finit par passer, et publier un événement terminé est refusé (409).
+        startsAt: new Date(Date.now() + 30 * DAY_MS),
+        endsAt: new Date(Date.now() + 30 * DAY_MS + 6 * HOUR_MS),
       },
     }),
 

@@ -344,7 +344,7 @@ export class EventsService {
       throw new HttpError(
         403,
         'IDENTITY_REQUIRED',
-        'Envoie ta pièce d’identité pour pouvoir organiser des événements',
+        'Envoyez votre pièce d’identité pour pouvoir organiser des événements',
       );
     }
     if (identity.status === 'REFUSED') {

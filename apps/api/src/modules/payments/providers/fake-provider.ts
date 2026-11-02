@@ -33,6 +33,19 @@ const RAW_STATUSES: Record<ProviderPaymentStatus, string> = {
   FAILED: 'declined',
 };
 
+/**
+ * Identifiant de transaction : numérique et entier sûr (le webhook le transporte en nombre,
+ * comme FedaPay), unique même après un redémarrage. La base garde les paiements alors que ce
+ * fournisseur oublie tout : un compteur repartant de 1 à chaque démarrage réutilisait un
+ * identifiant déjà en base (contrainte unique, erreur 500 sur le premier paiement après chaque
+ * déploiement du staging). On part de l'heure en microsecondes, toujours croissante.
+ */
+let lastTransactionId = 0;
+function newTransactionId(): string {
+  lastTransactionId = Math.max(lastTransactionId + 1, Date.now() * 1000);
+  return String(lastTransactionId);
+}
+
 interface FakeTransaction {
   id: string;
   paymentId: string;
@@ -43,7 +56,6 @@ interface FakeTransaction {
 export class FakePaymentProvider implements PaymentProvider {
   readonly name = 'fake';
   private readonly transactions = new Map<string, FakeTransaction>();
-  private nextId = 1;
 
   constructor(private readonly webhookSecret: string) {}
 
@@ -55,7 +67,7 @@ export class FakePaymentProvider implements PaymentProvider {
       throw new PaymentProviderError('Fake : référence de paiement déjà utilisée', 400);
     }
 
-    const id = String(this.nextId++); // numérique, comme les identifiants FedaPay
+    const id = newTransactionId();
     const status: ProviderPaymentStatus =
       input.phoneNumber === FAKE_PHONE_NUMBERS.failure
         ? 'FAILED'
