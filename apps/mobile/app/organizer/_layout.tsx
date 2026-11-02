@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import type { ColorValue } from 'react-native';
 
+import { FULL_SCREEN_TAB, HIDDEN_TAB } from '../../src/components/tab-options';
 import { colors, fontFamily } from '../../src/theme';
 
 /** Icône d'onglet : contour au repos, pleine quand l'onglet est actif. */
@@ -38,16 +39,13 @@ export default function OrganizerLayout() {
       />
       <Tabs.Screen name="profile" options={{ title: 'Profil', tabBarIcon: tabIcon('person') }} />
       {/* Assistant de création : plein écran, sans onglet ni barre. */}
-      <Tabs.Screen name="create-event" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="create-event" options={FULL_SCREEN_TAB} />
       {/* Détail d'un événement (NOISE-054) : hors de la barre d'onglets. */}
-      <Tabs.Screen name="event/[id]" options={{ href: null, tabBarStyle: { display: 'none' } }} />
+      <Tabs.Screen name="event/[id]" options={FULL_SCREEN_TAB} />
       {/* Annulation d'un événement : plein écran (NOISE-029). */}
-      <Tabs.Screen
-        name="cancel-event/[eventId]"
-        options={{ href: null, tabBarStyle: { display: 'none' } }}
-      />
+      <Tabs.Screen name="cancel-event/[eventId]" options={FULL_SCREEN_TAB} />
       {/* Envoi de la pièce d'identité : atteint depuis la carte de statut, pas depuis la barre d'onglets. */}
-      <Tabs.Screen name="identity" options={{ href: null }} />
+      <Tabs.Screen name="identity" options={HIDDEN_TAB} />
     </Tabs>
   );
 }

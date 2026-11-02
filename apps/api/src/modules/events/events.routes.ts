@@ -7,7 +7,7 @@ import {
   updateEventSchema,
 } from '@noise/shared';
 import { Router } from 'express';
-import { requireAuth, requireRole } from '../../middlewares/auth.js';
+import { optionalAuth, requireAuth, requireRole } from '../../middlewares/auth.js';
 import { validateBody, validateParams, validateQuery } from '../../middlewares/validate.js';
 import type { ImageStorage } from '../uploads/image-storage.js';
 import { posterUpload } from '../uploads/poster-upload.js';
@@ -25,20 +25,30 @@ export function createEventsRouter(
   const controller = createEventsController(service);
   const router = Router();
 
-  router.use(requireAuth(accessTokenSecret));
+  const signedIn = requireAuth(accessTokenSecret);
+  // Lecture publique (mode invité, NOISE-075) : soirées publiées sans compte.
+  const anyone = optionalAuth(accessTokenSecret);
 
-  router.get('/', validateQuery(listEventsQuerySchema), controller.list);
+  router.get('/', anyone, validateQuery(listEventsQuerySchema), controller.list);
   // Avant /:id, sinon « mine » serait pris pour un identifiant.
   router.get(
     '/mine',
+    signedIn,
     requireRole('ORGANIZER'),
     validateQuery(listMyEventsQuerySchema),
     controller.listMine,
   );
-  router.get('/:id', validateParams(eventIdParamSchema), controller.get);
-  router.post('/', requireRole('ORGANIZER'), validateBody(createEventSchema), controller.create);
+  router.get('/:id', anyone, validateParams(eventIdParamSchema), controller.get);
+  router.post(
+    '/',
+    signedIn,
+    requireRole('ORGANIZER'),
+    validateBody(createEventSchema),
+    controller.create,
+  );
   router.put(
     '/:id',
+    signedIn,
     requireRole('ORGANIZER'),
     validateParams(eventIdParamSchema),
     validateBody(updateEventSchema),
@@ -46,6 +56,7 @@ export function createEventsRouter(
   );
   router.post(
     '/:id/ticket-types',
+    signedIn,
     requireRole('ORGANIZER'),
     validateParams(eventIdParamSchema),
     validateBody(createTicketTypeSchema),
@@ -55,6 +66,7 @@ export function createEventsRouter(
   // Affiche (NOISE-012) : propriété vérifiée avant de lire le fichier, puis envoi au stockage.
   router.post(
     '/:id/poster',
+    signedIn,
     requireRole('ORGANIZER'),
     validateParams(eventIdParamSchema),
     controller.checkPosterAccess,
