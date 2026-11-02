@@ -2,22 +2,21 @@ import { StyleSheet, View } from 'react-native';
 
 import { logout } from '../../src/auth/session-service';
 import { Banner } from '../../src/components/Banner';
-import { Button } from '../../src/components/Button';
 import { GuestGate } from '../../src/components/GuestGate';
-import { Placeholder } from '../../src/components/Placeholder';
 import { Screen } from '../../src/components/Screen';
 import { SupportButton } from '../../src/components/SupportButton';
+import { ParticipantProfile } from '../../src/features/participant/profile/ParticipantProfile';
 import { useSession } from '../../src/state/session';
 import { spacing } from '../../src/theme';
 
 /**
- * Écran 16 : Profil Participant. Sans compte (NOISE-075) : invitation à se connecter, sans
- * « Se déconnecter ». Le profil complet, la confirmation de déconnexion et l'activation du rôle
- * arrivent avec NOISE-062.
+ * Écran 16 : Profil Participant (NOISE-062). Sans compte (NOISE-075) : invitation à se
+ * connecter, sans « Se déconnecter ».
  */
 export default function Profile() {
   const signedIn = useSession((s) => s.status === 'signedIn');
   const sessionExpired = useSession((s) => s.sessionExpired);
+  const user = useSession((s) => s.user);
 
   if (!signedIn) {
     return (
@@ -37,12 +36,10 @@ export default function Profile() {
     );
   }
 
-  const onLogout = () => void logout();
   return (
-    <Placeholder title="Profil" note="Informations du compte, activation du rôle Organisateur.">
-      <Button variant="secondary" label="Se déconnecter" onPress={onLogout} />
-      <SupportButton />
-    </Placeholder>
+    <Screen>
+      <ParticipantProfile user={user} onLogout={() => void logout()} footer={<SupportButton />} />
+    </Screen>
   );
 }
 

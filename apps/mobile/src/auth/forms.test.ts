@@ -1,4 +1,4 @@
-import { formatLocalPhone, toApiPhone, validateLogin, validateSignup } from './forms';
+import { displayPhone, formatLocalPhone, toApiPhone, validateLogin, validateSignup } from './forms';
 
 describe('formatage du téléphone', () => {
   it('regroupe les chiffres par deux et limite à 10', () => {
@@ -47,5 +47,12 @@ describe('validation des formulaires', () => {
       password: 'Entrez votre mot de passe',
     });
     expect(validateLogin({ phone: '01 97 45 21 38', password: 'x' })).toEqual({});
+  });
+});
+
+describe('displayPhone', () => {
+  it('affiche un numéro enregistré au format local', () => {
+    expect(displayPhone('+2290197454547')).toBe('01 97 45 45 47');
+    expect(displayPhone(null)).toBe('');
   });
 });
