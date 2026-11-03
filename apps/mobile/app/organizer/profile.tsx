@@ -1,20 +1,23 @@
-import { Button } from '../../src/components/Button';
-import { Placeholder } from '../../src/components/Placeholder';
+import { logout } from '../../src/auth/session-service';
+import { Screen } from '../../src/components/Screen';
 import { SupportButton } from '../../src/components/SupportButton';
 import { IdentitySection } from '../../src/features/identity/IdentitySection';
-import { logout } from '../../src/auth/session-service';
+import { OrganizerProfile } from '../../src/features/organizer/profile/OrganizerProfile';
+import { organizerProfileApi } from '../../src/features/organizer/profile/profile-api';
+import { useSession } from '../../src/state/session';
 
-/** Écran 26 : Profil Organisateur. */
+/** Écran 26 : Profil Organisateur (NOISE-061). */
 export default function Profile() {
-  const onLogout = () => void logout();
+  const user = useSession((s) => s.user);
   return (
-    <Placeholder
-      title="Profil"
-      note="Informations du compte, reversements, passage à la vue Participant."
-    >
-      <IdentitySection />
-      <Button variant="secondary" label="Se déconnecter" onPress={onLogout} />
-      <SupportButton />
-    </Placeholder>
+    <Screen>
+      <OrganizerProfile
+        api={organizerProfileApi}
+        user={user}
+        onLogout={() => void logout()}
+        identity={<IdentitySection />}
+        footer={<SupportButton />}
+      />
+    </Screen>
   );
 }

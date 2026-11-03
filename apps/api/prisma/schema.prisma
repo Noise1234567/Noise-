@@ -92,6 +92,7 @@ model User {
   decidedIdentities    IdentityVerification[] @relation("identityDecider")
   cancelledEvents      EventCancellation[]
   idempotencyKeys      IdempotencyKey[]
+  organizerProfile     OrganizerProfile?
 
   @@map("users")
 }
@@ -424,4 +425,20 @@ model IdempotencyKey {
   @@unique([userId, key])
   @@index([expiresAt])
   @@map("idempotency_keys")
+}
+
+/// Contacts publics d'un organisateur (NOISE-061), tous facultatifs : affichés aux participants sur
+/// la page de ses événements. WhatsApp en E.164 ; liens https vers Instagram, Facebook, TikTok.
+model OrganizerProfile {
+  userId        String   @id @map("user_id") @db.Uuid
+  whatsappPhone String?  @map("whatsapp_phone") @db.VarChar(16)
+  instagramUrl  String?  @map("instagram_url") @db.VarChar(200)
+  facebookUrl   String?  @map("facebook_url") @db.VarChar(200)
+  tiktokUrl     String?  @map("tiktok_url") @db.VarChar(200)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("organizer_profiles")
 }

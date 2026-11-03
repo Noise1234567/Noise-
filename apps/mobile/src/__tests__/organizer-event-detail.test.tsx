@@ -15,6 +15,7 @@ function event(values: Partial<EventDto> = {}): EventDto {
     id: 'evt',
     organizerId: 'org',
     organizerName: 'Kofi Events',
+    organizerContact: { whatsapp: null, instagram: null, facebook: null, tiktok: null },
     title: 'Afro Night',
     description: '',
     styles: ['Afrobeat'],
