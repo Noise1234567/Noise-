@@ -38,8 +38,8 @@ afterAll(() => prisma.$disconnect());
 const inHours = (hours: number) => new Date(Date.now() + hours * 60 * 60_000);
 
 async function eventWithTicket(options: { status?: 'VALID' | 'USED' | 'CANCELLED' } = {}) {
-  const organizer = await factories.user(prisma, ['ORGANIZER']);
-  const participant = await factories.user(prisma, ['PARTICIPANT']);
+  const organizer = await factories.user(prisma, 'ORGANIZER');
+  const participant = await factories.user(prisma, 'PARTICIPANT');
   const event = await prisma.event.create({
     data: {
       organizerId: organizer.id,

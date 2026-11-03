@@ -1,4 +1,4 @@
-import { activateRoleSchema, loginSchema, refreshSchema, registerSchema } from '@noise/shared';
+import { loginSchema, refreshSchema, registerSchema } from '@noise/shared';
 import { Router } from 'express';
 import { requireAuth } from '../../middlewares/auth.js';
 import { authRateLimit } from '../../middlewares/rate-limit.js';
@@ -33,7 +33,6 @@ export function createMeRouter(service: AuthService, accessTokenSecret: string):
 
   router.use(requireAuth(accessTokenSecret));
   router.get('/', controller.me);
-  router.patch('/roles', validateBody(activateRoleSchema), controller.activateRole);
 
   return router;
 }

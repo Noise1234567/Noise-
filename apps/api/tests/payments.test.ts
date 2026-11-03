@@ -39,7 +39,7 @@ afterAll(() => prisma.$disconnect());
 
 /** Participant, événement, type de billet à 5 000 FCFA et commande PENDING de 2 billets. */
 async function scenario(options: { expiresInMs?: number } = {}) {
-  const organizer = await factories.user(prisma, ['ORGANIZER']);
+  const organizer = await factories.user(prisma, 'ORGANIZER');
   const participant = await prisma.user.update({
     where: { id: (await factories.user(prisma)).id },
     data: { name: 'Aminata Sossou' },

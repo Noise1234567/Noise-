@@ -42,13 +42,13 @@ beforeEach(async () => {
 });
 afterAll(() => prisma.$disconnect());
 
-const bearer = async (user: { id: string; roles: UserRole[] }) =>
-  `Bearer ${await createAccessToken({ userId: user.id, roles: user.roles }, SECRET)}`;
+const bearer = async (user: { id: string; role: UserRole }) =>
+  `Bearer ${await createAccessToken({ userId: user.id, roles: [user.role] }, SECRET)}`;
 
 /** Brouillon prêt à publier, d'un organisateur vérifié. */
 async function draft() {
   const user = await prisma.user.update({
-    where: { id: (await factories.user(prisma, ['ORGANIZER'])).id },
+    where: { id: (await factories.user(prisma, 'ORGANIZER')).id },
     data: { name: 'Kossi Events', email: 'kossi@example.com' },
   });
   await factories.identity(prisma, user.id);
@@ -116,7 +116,7 @@ describe('Soirée publiée', () => {
 describe('Client à rembourser', () => {
   /** Participant, commande PENDING de 2 billets à 5 000 FCFA, paiement lancé. */
   async function paidOrder() {
-    const organizer = await factories.user(prisma, ['ORGANIZER']);
+    const organizer = await factories.user(prisma, 'ORGANIZER');
     const participant = await prisma.user.update({
       where: { id: (await factories.user(prisma)).id },
       data: { name: 'Aminata Sossou' },
@@ -133,7 +133,7 @@ describe('Client à rembourser', () => {
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
       },
     });
-    const auth = await bearer({ id: participant.id, roles: ['PARTICIPANT'] });
+    const auth = await bearer({ id: participant.id, role: 'PARTICIPANT' });
     await initiate(auth, order.id);
     return { order, auth };
   }

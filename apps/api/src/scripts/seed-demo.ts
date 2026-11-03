@@ -35,7 +35,7 @@ async function main(): Promise<number> {
       );
       out('Comptes (même mot de passe pour tous) :');
       for (const account of summary.accounts) {
-        out(`  ${account.phone}  ${account.name}  [${account.roles}]`);
+        out(`  ${account.phone}  ${account.name}  [${account.role}]`);
       }
       return 0;
     } finally {

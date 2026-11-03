@@ -49,12 +49,12 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockRouter.canGoBack.mockReturnValue(true);
   useIdentityStore.setState({ userId: null, identity: null });
-  useSession.getState().signIn(['ORGANIZER'], 'ORGANIZER', {
+  useSession.getState().signIn('ORGANIZER', {
     id: 'u1',
     name: 'Awa Dossou',
     phone: '+22901020304',
     email: 'awa@mail.com',
-    roles: [] as never[],
+    role: 'ORGANIZER',
   });
 });
 

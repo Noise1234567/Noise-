@@ -27,15 +27,15 @@ afterAll(() => prisma.$disconnect());
 
 type Role = 'ADMIN' | 'ORGANIZER' | 'PARTICIPANT';
 
-async function account(roles: Role[]) {
-  const user = await factories.user(prisma, roles);
-  const token = await createAccessToken({ userId: user.id, roles }, SECRET);
+async function account(role: Role) {
+  const user = await factories.user(prisma, role);
+  const token = await createAccessToken({ userId: user.id, roles: [role] }, SECRET);
   return { user, auth: `Bearer ${token}` };
 }
 
 /** Un organisateur avec un événement publié et un autre en brouillon. */
 async function organizerWithEvents() {
-  const organizer = await account(['ORGANIZER']);
+  const organizer = await account('ORGANIZER');
   const published = await prisma.event.update({
     where: { id: (await factories.event(prisma, organizer.user.id)).id },
     data: { status: 'PUBLISHED' },
@@ -58,11 +58,11 @@ const validEvent = {
 
 describe('contrôle d’accès', () => {
   it('401 sans jeton, 403 pour un organisateur ou un participant', async () => {
-    const { user } = await account(['ORGANIZER']);
+    const { user } = await account('ORGANIZER');
     const target = `/api/v1/admin/users/${user.id}/suspend`;
     expect((await request(app).post(target).send(REASON)).status).toBe(401);
     for (const role of ['ORGANIZER', 'PARTICIPANT'] as const) {
-      const other = await account([role]);
+      const other = await account(role);
       const res = await request(app).post(target).set('Authorization', other.auth).send(REASON);
       expect(res.status).toBe(403);
     }
@@ -73,7 +73,7 @@ describe('contrôle d’accès', () => {
 
 describe('suspension d’un organisateur', () => {
   it('suspend le compte, révoque les sessions, retire les événements publiés et trace', async () => {
-    const admin = await account(['ADMIN']);
+    const admin = await account('ADMIN');
     const { organizer, published, draft } = await organizerWithEvents();
     await prisma.refreshToken.create({
       data: {
@@ -116,7 +116,7 @@ describe('suspension d’un organisateur', () => {
   });
 
   it('refuse un motif absent ou trop court (400), un id invalide (400), un inconnu (404)', async () => {
-    const admin = await account(['ADMIN']);
+    const admin = await account('ADMIN');
     const { organizer } = await organizerWithEvents();
     const post = (id: string, body: object) =>
       request(app)
@@ -131,9 +131,9 @@ describe('suspension d’un organisateur', () => {
   });
 
   it('409 si déjà suspendu ou si le compte n’est pas organisateur, 403 pour un admin', async () => {
-    const admin = await account(['ADMIN']);
+    const admin = await account('ADMIN');
     const { organizer } = await organizerWithEvents();
-    const participant = await account(['PARTICIPANT']);
+    const participant = await account('PARTICIPANT');
     const post = (id: string) =>
       request(app)
         .post(`/api/v1/admin/users/${id}/suspend`)
@@ -147,7 +147,7 @@ describe('suspension d’un organisateur', () => {
   });
 
   it('un organisateur suspendu ne peut plus créer ni modifier (jeton encore valide)', async () => {
-    const admin = await account(['ADMIN']);
+    const admin = await account('ADMIN');
     const { organizer, draft } = await organizerWithEvents();
     await request(app)
       .post(`/api/v1/admin/users/${organizer.user.id}/suspend`)
@@ -175,7 +175,7 @@ describe('suspension d’un organisateur', () => {
 
 describe('réactivation d’un organisateur', () => {
   it('remet en vente uniquement les événements retirés avec le compte', async () => {
-    const admin = await account(['ADMIN']);
+    const admin = await account('ADMIN');
     const { organizer, published } = await organizerWithEvents();
     const apart = await prisma.event.update({
       where: { id: (await factories.event(prisma, organizer.user.id)).id },
@@ -211,7 +211,7 @@ describe('réactivation d’un organisateur', () => {
   });
 
   it('409 si le compte n’est pas suspendu', async () => {
-    const admin = await account(['ADMIN']);
+    const admin = await account('ADMIN');
     const { organizer } = await organizerWithEvents();
     const res = await request(app)
       .post(`/api/v1/admin/users/${organizer.user.id}/reactivate`)
@@ -223,7 +223,7 @@ describe('réactivation d’un organisateur', () => {
 
 describe('suspension d’un événement', () => {
   it('suspend un événement publié puis le réactive, avec trace', async () => {
-    const admin = await account(['ADMIN']);
+    const admin = await account('ADMIN');
     const { published } = await organizerWithEvents();
     const call = (action: 'suspend' | 'reactivate') =>
       request(app)
@@ -241,7 +241,7 @@ describe('suspension d’un événement', () => {
   });
 
   it('refuse de suspendre un brouillon (409) et un événement inconnu (404)', async () => {
-    const admin = await account(['ADMIN']);
+    const admin = await account('ADMIN');
     const { draft } = await organizerWithEvents();
     const post = (id: string) =>
       request(app)
@@ -253,7 +253,7 @@ describe('suspension d’un événement', () => {
   });
 
   it('refuse de réactiver si l’organisateur est suspendu (409)', async () => {
-    const admin = await account(['ADMIN']);
+    const admin = await account('ADMIN');
     const { organizer, published } = await organizerWithEvents();
     await prisma.event.update({ where: { id: published.id }, data: { status: 'SUSPENDED' } });
     await prisma.user.update({ where: { id: organizer.user.id }, data: { status: 'SUSPENDED' } });
@@ -265,10 +265,10 @@ describe('suspension d’un événement', () => {
   });
 
   it('bloque les commandes et les paiements, mais pas la modification par l’organisateur', async () => {
-    const admin = await account(['ADMIN']);
+    const admin = await account('ADMIN');
     const { organizer, published } = await organizerWithEvents();
     const ticketType = await factories.ticketType(prisma, published.id);
-    const buyer = await account(['PARTICIPANT']);
+    const buyer = await account('PARTICIPANT');
     const pending = await prisma.order.create({
       data: {
         participantId: buyer.user.id,
@@ -341,7 +341,7 @@ describe('listes de commandes et de paiements', () => {
   }
 
   it('liste les commandes, filtrées, avec le téléphone masqué', async () => {
-    const admin = await account(['ADMIN']);
+    const admin = await account('ADMIN');
     const { published, buyer } = await sales();
     const get = (qs: string) =>
       request(app).get(`/api/v1/admin/orders?${qs}`).set('Authorization', admin.auth);
@@ -366,7 +366,7 @@ describe('listes de commandes et de paiements', () => {
   });
 
   it('pagine par curseur du plus récent au plus ancien', async () => {
-    const admin = await account(['ADMIN']);
+    const admin = await account('ADMIN');
     const { orders } = await sales();
     const page1 = await request(app)
       .get('/api/v1/admin/orders?limit=2')
@@ -384,7 +384,7 @@ describe('listes de commandes et de paiements', () => {
   });
 
   it('liste les paiements, filtrés par statut et opérateur', async () => {
-    const admin = await account(['ADMIN']);
+    const admin = await account('ADMIN');
     await sales();
     const get = (qs: string) =>
       request(app).get(`/api/v1/admin/payments?${qs}`).set('Authorization', admin.auth);
@@ -397,7 +397,7 @@ describe('listes de commandes et de paiements', () => {
   });
 
   it('réserve les listes aux administrateurs', async () => {
-    const organizer = await account(['ORGANIZER']);
+    const organizer = await account('ORGANIZER');
     for (const path of ['orders', 'payments']) {
       expect((await request(app).get(`/api/v1/admin/${path}`)).status).toBe(401);
       const res = await request(app)
@@ -410,7 +410,7 @@ describe('listes de commandes et de paiements', () => {
 
 describe('export des ventes', () => {
   it('laisse une trace d’audit pour le rapport JSON et le CSV', async () => {
-    const admin = await account(['ADMIN']);
+    const admin = await account('ADMIN');
     const { published } = await organizerWithEvents();
     const get = (suffix: string) =>
       request(app)

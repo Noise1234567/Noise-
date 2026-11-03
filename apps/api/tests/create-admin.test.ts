@@ -29,7 +29,7 @@ describe('création d’un compte administrateur', () => {
 
     const saved = await prisma.user.findUniqueOrThrow({ where: { id: admin.id } });
     expect(saved).toMatchObject({
-      roles: ['ADMIN'],
+      role: 'ADMIN',
       phone: '+2290197000001',
       email: 'admin@noise.bj',
     });
@@ -38,7 +38,7 @@ describe('création d’un compte administrateur', () => {
     const app = createApp(env, createLogger('silent'), { prisma });
     const login = await request(app)
       .post('/api/v1/auth/login')
-      .send({ phone: input.phone, password: input.password });
+      .send({ phone: input.phone, password: input.password, role: 'ADMIN' });
     expect(login.status).toBe(200);
     const orders = await request(app)
       .get('/api/v1/admin/orders')
@@ -46,12 +46,19 @@ describe('création d’un compte administrateur', () => {
     expect(orders.status).toBe(200);
   });
 
-  it('refuse un numéro ou un e-mail déjà utilisé', async () => {
-    const user = await factories.user(prisma, ['PARTICIPANT']);
-    await expect(createAdmin(prisma, { ...input, phone: user.phone })).rejects.toThrow(
+  it('refuse un numéro ou un e-mail déjà utilisé par un autre admin (un compte par rôle, DEC-029)', async () => {
+    // Le numéro d'un participant ne bloque pas : l'admin est un compte distinct.
+    const user = await factories.user(prisma, 'PARTICIPANT');
+    const sameNumber = await createAdmin(prisma, {
+      ...input,
+      phone: user.phone,
+      email: 'autre.admin@noise.bj',
+    });
+    expect(sameNumber.id).not.toBe(user.id);
+    await createAdmin(prisma, input);
+    await expect(createAdmin(prisma, { ...input, email: 'encore@noise.bj' })).rejects.toThrow(
       CreateAdminError,
     );
-    await createAdmin(prisma, input);
     await expect(createAdmin(prisma, { ...input, phone: '01 97 00 00 02' })).rejects.toThrow(
       /déjà un compte/,
     );

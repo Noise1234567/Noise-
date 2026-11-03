@@ -38,7 +38,8 @@ export async function createAdmin(
   const input = parsed.data;
 
   const existing = await prisma.user.findFirst({
-    where: { OR: [{ phone: input.phone }, { email: input.email }] },
+    // Unicité par rôle (DEC-029) : le numéro d'un participant ou d'un organisateur reste libre.
+    where: { role: 'ADMIN', OR: [{ phone: input.phone }, { email: input.email }] },
     select: { id: true },
   });
   if (existing) throw new CreateAdminError('Ce numéro ou cet e-mail a déjà un compte');
@@ -49,7 +50,7 @@ export async function createAdmin(
       phone: input.phone,
       email: input.email,
       passwordHash: await hashPassword(input.password),
-      roles: ['ADMIN'],
+      role: 'ADMIN',
     },
     select: { id: true, phone: true },
   });

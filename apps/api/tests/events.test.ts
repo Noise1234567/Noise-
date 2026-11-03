@@ -23,17 +23,17 @@ afterAll(() => prisma.$disconnect());
 const DAY = 24 * 60 * 60 * 1000;
 const inDays = (days: number) => new Date(Date.now() + days * DAY);
 
-const as = async (user: { id: string; roles: UserRole[] }) => ({
-  Authorization: `Bearer ${await createAccessToken({ userId: user.id, roles: user.roles }, SECRET)}`,
+const as = async (user: { id: string; role: UserRole }) => ({
+  Authorization: `Bearer ${await createAccessToken({ userId: user.id, roles: [user.role] }, SECRET)}`,
 });
 const organizer = async () => {
-  const user = await factories.user(prisma, ['ORGANIZER']);
+  const user = await factories.user(prisma, 'ORGANIZER');
   // DEC-018 : sans pièce d'identité envoyée, un organisateur ne peut ni créer ni publier.
   await factories.identity(prisma, user.id);
   return { user, headers: await as(user) };
 };
 const participant = async () => {
-  const user = await factories.user(prisma, ['PARTICIPANT']);
+  const user = await factories.user(prisma, 'PARTICIPANT');
   return { user, headers: await as(user) };
 };
 

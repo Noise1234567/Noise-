@@ -33,7 +33,8 @@ interface DemoUserDef {
   name: string;
   phone: string;
   email: string;
-  roles: Role[];
+  /** Un compte, un rôle (DEC-029). */
+  role: Role;
   suspended?: boolean;
   identity?: IdentityState;
 }
@@ -45,7 +46,7 @@ const USERS: DemoUserDef[] = [
     name: 'Kofi Démo',
     phone: '+2290100000001',
     email: 'kofi.demo@noise.test',
-    roles: ['ORGANIZER', 'PARTICIPANT'],
+    role: 'ORGANIZER',
     identity: 'VERIFIED',
   },
   {
@@ -53,14 +54,14 @@ const USERS: DemoUserDef[] = [
     name: 'Aminata Démo',
     phone: '+2290100000002',
     email: 'aminata.demo@noise.test',
-    roles: ['PARTICIPANT'],
+    role: 'PARTICIPANT',
   },
   {
     key: 'mariam',
     name: 'Mariam Sow',
     phone: '+2290100000003',
     email: 'mariam.sow@noise.test',
-    roles: ['ORGANIZER', 'PARTICIPANT'],
+    role: 'ORGANIZER',
     identity: 'VERIFIED',
   },
   {
@@ -68,7 +69,7 @@ const USERS: DemoUserDef[] = [
     name: 'Serge Adjovi',
     phone: '+2290100000004',
     email: 'serge.adjovi@noise.test',
-    roles: ['ORGANIZER', 'PARTICIPANT'],
+    role: 'ORGANIZER',
     identity: 'PENDING',
   },
   {
@@ -76,7 +77,7 @@ const USERS: DemoUserDef[] = [
     name: 'Ismaël Tossou',
     phone: '+2290100000005',
     email: 'ismael.tossou@noise.test',
-    roles: ['ORGANIZER', 'PARTICIPANT'],
+    role: 'ORGANIZER',
     identity: 'REFUSED',
   },
   {
@@ -84,7 +85,7 @@ const USERS: DemoUserDef[] = [
     name: 'Nadège Kpossou',
     phone: '+2290100000006',
     email: 'nadege.kpossou@noise.test',
-    roles: ['ORGANIZER', 'PARTICIPANT'],
+    role: 'ORGANIZER',
     identity: 'NONE',
   },
   {
@@ -92,35 +93,35 @@ const USERS: DemoUserDef[] = [
     name: 'Koffi Agbodjan',
     phone: '+2290100000007',
     email: 'koffi.agbodjan@noise.test',
-    roles: ['PARTICIPANT'],
+    role: 'PARTICIPANT',
   },
   {
     key: 'fatou',
     name: 'Fatou Diallo',
     phone: '+2290100000008',
     email: 'fatou.diallo@noise.test',
-    roles: ['PARTICIPANT'],
+    role: 'PARTICIPANT',
   },
   {
     key: 'yves',
     name: 'Yves Hounkpatin',
     phone: '+2290100000009',
     email: 'yves.hounkpatin@noise.test',
-    roles: ['PARTICIPANT'],
+    role: 'PARTICIPANT',
   },
   {
     key: 'chantal',
     name: 'Chantal Dossou',
     phone: '+2290100000010',
     email: 'chantal.dossou@noise.test',
-    roles: ['PARTICIPANT'],
+    role: 'PARTICIPANT',
   },
   {
     key: 'brice',
     name: 'Brice Akplogan',
     phone: '+2290100000011',
     email: 'brice.akplogan@noise.test',
-    roles: ['PARTICIPANT'],
+    role: 'PARTICIPANT',
     suspended: true,
   },
 ];
@@ -131,7 +132,7 @@ const ADMIN: DemoUserDef = {
   name: 'Admin Démo',
   phone: '+2290100000012',
   email: 'admin.demo@noise.test',
-  roles: ['ADMIN'],
+  role: 'ADMIN',
 };
 
 export interface DemoSeedOptions {
@@ -151,7 +152,7 @@ export interface DemoSeedSummary {
   tickets: number;
   scans: number;
   /** Numéros des comptes créés, pour l'affichage en fin de script. */
-  accounts: { name: string; phone: string; roles: string }[];
+  accounts: { name: string; phone: string; role: string }[];
 }
 
 type DemoUser = { id: string; name: string; phone: string };
@@ -280,7 +281,7 @@ export async function seedDemo(options: DemoSeedOptions): Promise<DemoSeedSummar
         phone: def.phone,
         email: def.email,
         passwordHash,
-        roles: def.roles,
+        role: def.role,
         status: def.suspended ? 'SUSPENDED' : 'ACTIVE',
       },
       select: { id: true, name: true, phone: true },
@@ -850,7 +851,7 @@ export async function seedDemo(options: DemoSeedOptions): Promise<DemoSeedSummar
     accounts: defs.map((def) => ({
       name: def.name,
       phone: def.phone,
-      roles: def.roles.join(' + '),
+      role: def.role,
     })),
   };
 }

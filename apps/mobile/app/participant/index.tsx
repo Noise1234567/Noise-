@@ -5,7 +5,6 @@ import { FlatList, Pressable, RefreshControl, StyleSheet, View } from 'react-nat
 
 import { OfflineBar } from '../../src/components/OfflineBar';
 import { Button } from '../../src/components/Button';
-import { RoleHeader } from '../../src/components/RoleHeader';
 import { Screen } from '../../src/components/Screen';
 import { Text } from '../../src/components/Text';
 import { EventCard } from '../../src/features/participant/EventCard';
@@ -46,9 +45,6 @@ export default function Home() {
     <Screen>
       {offline ? <OfflineBar onRetry={list.retry} /> : null}
       <View style={styles.header}>
-        <View style={styles.switcher}>
-          <RoleHeader />
-        </View>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Notifications"
@@ -141,8 +137,7 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  switcher: { flex: 1, marginRight: spacing.lg },
+  header: { flexDirection: 'row', justifyContent: 'flex-end' },
   title: { marginBottom: spacing.lg },
   bell: {
     width: minTouchTarget,

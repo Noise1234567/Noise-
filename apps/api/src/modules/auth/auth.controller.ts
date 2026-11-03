@@ -29,9 +29,5 @@ export function createAuthController(service: AuthService) {
     me: async (req: Request, res: Response) => {
       res.json({ user: await service.me(userId(req)) });
     },
-    activateRole: async (req: Request, res: Response) => {
-      const { role } = req.body as { role: 'PARTICIPANT' | 'ORGANIZER' };
-      res.json(await service.activateRole(userId(req), role));
-    },
   };
 }

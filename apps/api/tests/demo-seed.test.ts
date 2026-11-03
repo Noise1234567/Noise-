@@ -30,13 +30,13 @@ const run = (withAdmin = true) =>
 
 /** Compte « réel » : hors de la plage de numéros réservée à la démo (les fabriques de test y entrent). */
 let realCounter = 0;
-const realUser = (roles: ('PARTICIPANT' | 'ORGANIZER')[]) =>
+const realUser = (role: 'PARTICIPANT' | 'ORGANIZER') =>
   prisma.user.create({
     data: {
       name: 'Utilisateur réel',
       phone: `+22901970${String(++realCounter).padStart(7, '0')}`,
       passwordHash: 'x',
-      roles,
+      role,
     },
   });
 
@@ -138,10 +138,10 @@ describe('contenu du jeu de démonstration', () => {
 
   it('ne crée le compte administrateur que sur demande', async () => {
     await run(false);
-    expect(await prisma.user.count({ where: { roles: { has: 'ADMIN' } } })).toBe(0);
+    expect(await prisma.user.count({ where: { role: 'ADMIN' } })).toBe(0);
     expect(await prisma.adminAuditLog.count()).toBe(0);
     await run(true);
-    expect(await prisma.user.count({ where: { roles: { has: 'ADMIN' } } })).toBe(1);
+    expect(await prisma.user.count({ where: { role: 'ADMIN' } })).toBe(1);
     expect(await prisma.adminAuditLog.count()).toBeGreaterThan(0);
   });
 });
@@ -163,8 +163,8 @@ describe('rejouable', () => {
   });
 
   it('ne touche pas aux données réelles', async () => {
-    const organizer = await realUser(['ORGANIZER']);
-    const buyer = await realUser(['PARTICIPANT']);
+    const organizer = await realUser('ORGANIZER');
+    const buyer = await realUser('PARTICIPANT');
     const event = await factories.event(prisma, organizer.id);
     const type = await factories.ticketType(prisma, event.id);
     await run();
@@ -175,7 +175,7 @@ describe('rejouable', () => {
   });
 
   it('supprime l’achat qu’un testeur a fait avec un compte de démo sur un événement réel', async () => {
-    const organizer = await realUser(['ORGANIZER']);
+    const organizer = await realUser('ORGANIZER');
     const event = await factories.event(prisma, organizer.id);
     const type = await factories.ticketType(prisma, event.id, 10);
     await run();
@@ -200,27 +200,30 @@ describe('utilisation par l’application', () => {
     QR_SIGNING_SECRET: QR_SECRET,
   });
   const app = () => createApp(env, createLogger('silent'), { prisma });
-  const login = (phone: string) =>
-    request(app()).post('/api/v1/auth/login').send({ phone, password: DEMO_DEFAULT_PASSWORD });
+  // Un compte par rôle (DEC-029) : la connexion précise le rôle du compte.
+  const login = (phone: string, role: 'PARTICIPANT' | 'ORGANIZER' | 'ADMIN') =>
+    request(app())
+      .post('/api/v1/auth/login')
+      .send({ phone, password: DEMO_DEFAULT_PASSWORD, role });
 
   it('les comptes de démo peuvent se connecter, sauf le compte suspendu', async () => {
     await run();
-    expect((await login('+2290100000001')).status).toBe(200);
-    expect((await login('+2290100000002')).status).toBe(200);
-    expect((await login('+2290100000012')).status).toBe(200);
-    expect((await login('+2290100000011')).status).not.toBe(200);
+    expect((await login('+2290100000001', 'ORGANIZER')).status).toBe(200);
+    expect((await login('+2290100000002', 'PARTICIPANT')).status).toBe(200);
+    expect((await login('+2290100000012', 'ADMIN')).status).toBe(200);
+    expect((await login('+2290100000011', 'PARTICIPANT')).status).not.toBe(200);
   });
 
   it('la participante de démo voit ses billets et l’organisateur voit ses statistiques', async () => {
     await run();
-    const aminata = await login('+2290100000002');
+    const aminata = await login('+2290100000002', 'PARTICIPANT');
     const tickets = await request(app())
       .get('/api/v1/tickets/mine')
       .set('Authorization', `Bearer ${aminata.body.accessToken}`);
     expect(tickets.status).toBe(200);
     expect(JSON.stringify(tickets.body)).toContain('NOISE1.');
 
-    const kofi = await login('+2290100000001');
+    const kofi = await login('+2290100000001', 'ORGANIZER');
     const past = await prisma.event.findFirstOrThrow({
       where: { title: 'Gala Amapiano Haie Vive' },
     });

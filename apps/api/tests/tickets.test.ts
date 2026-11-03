@@ -28,18 +28,18 @@ afterAll(() => prisma.$disconnect());
 const DAY = 24 * 60 * 60_000;
 const inDays = (days: number) => new Date(Date.now() + days * DAY);
 
-const as = async (user: { id: string; roles: UserRole[] }) => ({
-  Authorization: `Bearer ${await createAccessToken({ userId: user.id, roles: user.roles }, SECRET)}`,
+const as = async (user: { id: string; role: UserRole }) => ({
+  Authorization: `Bearer ${await createAccessToken({ userId: user.id, roles: [user.role] }, SECRET)}`,
 });
 const buyer = async () => {
-  const user = await factories.user(prisma, ['PARTICIPANT']);
+  const user = await factories.user(prisma, 'PARTICIPANT');
   return { user, headers: await as(user) };
 };
 
 async function setupEvent(
   options: { priceXof?: number; startsInDays?: number; title?: string } = {},
 ) {
-  const organizer = await factories.user(prisma, ['ORGANIZER']);
+  const organizer = await factories.user(prisma, 'ORGANIZER');
   const event = await prisma.event.create({
     data: {
       organizerId: organizer.id,
@@ -249,7 +249,7 @@ describe('GET /tickets/mine', () => {
 
   it('refuse sans connexion (401) et à un organisateur (403)', async () => {
     expect((await request(app).get('/api/v1/tickets/mine')).status).toBe(401);
-    const organizer = await factories.user(prisma, ['ORGANIZER']);
+    const organizer = await factories.user(prisma, 'ORGANIZER');
     expect((await mine(await as(organizer))).status).toBe(403);
   });
 });

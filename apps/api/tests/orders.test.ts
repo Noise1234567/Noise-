@@ -25,11 +25,11 @@ const MINUTE = 60_000;
 const DAY = 24 * 60 * MINUTE;
 const inDays = (days: number) => new Date(Date.now() + days * DAY);
 
-const as = async (user: { id: string; roles: UserRole[] }) => ({
-  Authorization: `Bearer ${await createAccessToken({ userId: user.id, roles: user.roles }, SECRET)}`,
+const as = async (user: { id: string; role: UserRole }) => ({
+  Authorization: `Bearer ${await createAccessToken({ userId: user.id, roles: [user.role] }, SECRET)}`,
 });
 const buyer = async () => {
-  const user = await factories.user(prisma, ['PARTICIPANT']);
+  const user = await factories.user(prisma, 'PARTICIPANT');
   return { user, headers: await as(user) };
 };
 
@@ -45,7 +45,7 @@ async function setup(
     endsAt?: Date;
   } = {},
 ) {
-  const organizer = await factories.user(prisma, ['ORGANIZER']);
+  const organizer = await factories.user(prisma, 'ORGANIZER');
   const event = await prisma.event.create({
     data: {
       organizerId: organizer.id,
@@ -145,7 +145,7 @@ describe('création d’une commande', () => {
       (await request(app).post('/api/v1/orders').send({ ticketTypeId: ticketType.id, quantity: 1 }))
         .status,
     ).toBe(401);
-    const organizerOnly = await factories.user(prisma, ['ORGANIZER']);
+    const organizerOnly = await factories.user(prisma, 'ORGANIZER');
     const res = await order(await as(organizerOnly), ticketType.id, 1);
     expect(res.status).toBe(403);
   });

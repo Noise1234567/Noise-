@@ -12,7 +12,7 @@ const session = (n: number): AuthSession => ({
     name: 'Awa',
     phone: '+22901020304',
     email: 'awa@example.com',
-    roles: ['PARTICIPANT'],
+    role: 'PARTICIPANT',
   },
 });
 
