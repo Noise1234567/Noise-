@@ -4,10 +4,13 @@ import {
   type CancellationResultDto,
   type CancellationSummaryDto,
   type EventRefundsResponse,
+  type MarkRefundInput,
+  type RefundDto,
 } from '@noise/shared';
 import type { Logger } from 'pino';
 import type { Prisma } from '../../generated/prisma/client.js';
 import { HttpError } from '../../lib/http-error.js';
+import { writeAuditLog } from '../admin/admin-audit.js';
 import type { PrismaClient } from '../../lib/prisma.js';
 
 /**
@@ -20,6 +23,26 @@ import type { PrismaClient } from '../../lib/prisma.js';
  */
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Commande payée puis annulée avec son événement : la seule à rembourser (DEC-025). */
+const refundableOrder = { status: 'CANCELLED', totalXof: { gt: 0 } } as const;
+
+type RefundOrder = Prisma.OrderGetPayload<{
+  include: { participant: { select: { name: true; phone: true } } };
+}>;
+
+function toRefundDto(order: RefundOrder): RefundDto {
+  return {
+    orderId: order.id,
+    participantName: order.participant.name,
+    participantPhone: order.participant.phone,
+    quantity: order.quantity,
+    refundXof: order.totalXof,
+    paidAt: order.paidAt?.toISOString() ?? null,
+    refundedAt: order.refundedAt?.toISOString() ?? null,
+    refundReference: order.refundReference,
+  };
+}
 
 /** Prévient les acheteurs (notifications push, NOISE-028) : appelé après la validation. */
 export type CancellationNotifier = (
@@ -172,26 +195,58 @@ export class CancellationService {
     if (!cancellation)
       throw new HttpError(404, 'NOT_FOUND', 'Aucune annulation pour cet événement');
     const orders = await this.prisma.order.findMany({
-      where: { ticketType: { eventId }, status: 'CANCELLED', totalXof: { gt: 0 } },
+      where: { ticketType: { eventId }, ...refundableOrder },
       include: { participant: { select: { name: true, phone: true } } },
       orderBy: { paidAt: 'asc' },
     });
-    const refunds = orders.map((order) => ({
-      orderId: order.id,
-      participantName: order.participant.name,
-      participantPhone: order.participant.phone,
-      quantity: order.quantity,
-      refundXof: order.totalXof,
-      paidAt: order.paidAt?.toISOString() ?? null,
-    }));
+    const refunds = orders.map(toRefundDto);
+    const refundedXof = refunds
+      .filter((r) => r.refundedAt !== null)
+      .reduce((sum, r) => sum + r.refundXof, 0);
+    const refundTotalXof = refunds.reduce((sum, r) => sum + r.refundXof, 0);
     return {
       eventId,
       cancelledAt: cancellation.createdAt.toISOString(),
       returnDueAt: cancellation.returnDueAt.toISOString(),
       organizerOwesXof: cancellation.cancellationFeeXof + cancellation.paidOutXof,
-      refundTotalXof: refunds.reduce((sum, r) => sum + r.refundXof, 0),
+      refundTotalXof,
+      refundedXof,
+      remainingXof: refundTotalXof - refundedXof,
       refunds,
     };
+  }
+
+  /**
+   * Marque un remboursement comme effectué (NOISE-066), une seule fois : la mise à jour est
+   * conditionnée à refundedAt vide, deux administrateurs simultanés ne peuvent pas la faire tous
+   * les deux. Journalisé dans la même transaction (DEC-020).
+   */
+  async markRefunded(adminId: string, orderId: string, input: MarkRefundInput): Promise<RefundDto> {
+    return this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({ where: { id: orderId } });
+      if (!order) throw new HttpError(404, 'NOT_FOUND', 'Commande introuvable');
+      if (order.status !== refundableOrder.status || order.totalXof <= 0)
+        throw new HttpError(409, 'CONFLICT', 'Cette commande n’est pas à rembourser');
+      const { count } = await tx.order.updateMany({
+        where: { id: orderId, refundedAt: null },
+        data: { refundedAt: new Date(), refundedById: adminId, refundReference: input.reference },
+      });
+      if (count === 0)
+        throw new HttpError(409, 'CONFLICT', 'Ce remboursement a déjà été marqué comme effectué');
+      await writeAuditLog(tx, {
+        adminId,
+        action: 'REFUND_MARKED',
+        targetType: 'ORDER',
+        targetId: orderId,
+        metadata: { refundXof: order.totalXof, reference: input.reference },
+      });
+      return toRefundDto(
+        await tx.order.findUniqueOrThrow({
+          where: { id: orderId },
+          include: { participant: { select: { name: true, phone: true } } },
+        }),
+      );
+    });
   }
 
   /** 404 inconnu, 403 si l'événement est à un autre organisateur, 409 si déjà annulé ou terminé. */

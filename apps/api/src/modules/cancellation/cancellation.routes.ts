@@ -1,8 +1,11 @@
 import {
   adminEventIdParamSchema,
+  adminOrderIdParamSchema,
   cancelEventSchema,
   eventIdParamSchema,
+  markRefundSchema,
   type CancelEventInput,
+  type MarkRefundInput,
 } from '@noise/shared';
 import { Router, type Request } from 'express';
 import { requireAuth, requireRole } from '../../middlewares/auth.js';
@@ -48,15 +51,28 @@ export function createAdminRefundsRouter(
   accessTokenSecret: string,
 ): Router {
   const router = Router();
+  const admin = [requireAuth(accessTokenSecret), requireRole('ADMIN')];
   router.get(
     '/events/:eventId/refunds',
-    requireAuth(accessTokenSecret),
-    requireRole('ADMIN'),
+    ...admin,
     validateParams(adminEventIdParamSchema),
     async (req, res) => {
       const { eventId } = res.locals.params as { eventId: string };
       req.log.info({ adminId: userId(req), eventId }, 'Liste des remboursements consultée');
       res.json(await service.refunds(eventId));
+    },
+  );
+  // Transfert fait à la main par l'administrateur (NOISE-066) : il le note ici avec sa référence.
+  router.post(
+    '/orders/:orderId/refund',
+    ...admin,
+    validateParams(adminOrderIdParamSchema),
+    validateBody(markRefundSchema),
+    async (req, res) => {
+      const { orderId } = res.locals.params as { orderId: string };
+      res.json({
+        refund: await service.markRefunded(userId(req), orderId, req.body as MarkRefundInput),
+      });
     },
   );
   return router;

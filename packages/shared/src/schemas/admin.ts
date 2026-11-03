@@ -28,6 +28,9 @@ export const adminUserIdParamSchema = z.object({
 export const adminEventIdParamSchema = z.object({
   eventId: z.uuid({ error: 'Identifiant invalide' }),
 });
+export const adminOrderIdParamSchema = z.object({
+  orderId: z.uuid({ error: 'Identifiant invalide' }),
+});
 
 const listBase = {
   eventId: z.uuid({ error: 'Identifiant invalide' }).optional(),
