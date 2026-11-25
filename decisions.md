@@ -37,6 +37,7 @@ Statuts : Proposée · Acceptée · En attente (bloquée par une information ou 
 | DEC-027 | Solde de l'organisateur, virements à la demande, reste versé sous 72 h après l'événement      | Acceptée                | 2026-10-15 |
 | DEC-028 | Staging sur un serveur Hetzner dédié (Docker Compose, Caddy), déploiement depuis GitHub       | Acceptée                | 2026-10-21 |
 | DEC-029 | Un compte par rôle : plus de sélecteur participant / organisateur                             | Acceptée (Yannis)       | 2026-10-21 |
+| DEC-030 | Interface d'administration web servie sous /admin (écart à DEC-020)                           | Proposée                | 2026-11-02 |
 
 ---
 
@@ -300,3 +301,11 @@ Choix du fournisseur (NOISE-010, 2026-10-01) — statut : Acceptée (proposée p
 - Statut : option retenue par Yannis, à confirmer par Orias à la relecture (décision commune).
 - Conséquences : tâche NOISE-060 ; changement de schéma (unicité du numéro) pour l'option A ; comptes existants à deux rôles à traiter ; tests de session et de redirection à revoir.
 - Personnes : Yannis, Orias (décision commune : métier et schéma).
+
+## DEC-030 — Interface d'administration web
+
+- Contexte : DEC-020 prévoyait des endpoints d'administration et Prisma Studio, sans interface dédiée. Avec la vérification d'identité (DEC-018), les alertes de remboursement (NOISE-059) et le suivi des annulations (NOISE-066), l'équipe devrait manipuler la base et des requêtes à la main pour des opérations sensibles.
+- Proposition (Yannis, 2026-11-02) : une interface web `apps/admin` (Vite + React), servie par l'API sous `/admin`, réservée au rôle ADMIN. Conception et découpage dans docs/admin-interface.md.
+- Statut : Proposée, à valider par Orias (décision commune : sécurité).
+- Conséquences : DEC-020 passe à « Remplacée » une fois celle-ci acceptée ; nouvelles routes de lecture sous `/admin` ; dépendances React ajoutées au monorepo ; Prisma Studio n'est plus utilisé en staging ni en production.
+- Personnes : Yannis, Orias.
